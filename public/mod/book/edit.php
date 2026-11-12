@@ -87,48 +87,78 @@ if ($mform->is_cancelled()) {
 
 } else if ($data = $mform->get_data()) {
 
-    if ($data->id) {
-        // store the files
-        $data->timemodified = time();
-        $data = file_postupdate_standard_editor($data, 'content', $options, $context, 'mod_book', 'chapter', $data->id);
-        $DB->update_record('book_chapters', $data);
-        $DB->set_field('book', 'revision', $book->revision+1, array('id'=>$book->id));
-        $chapter = $DB->get_record('book_chapters', array('id' => $data->id));
-
-        core_tag_tag::set_item_tags('mod_book', 'book_chapters', $chapter->id, $context, $data->tags);
-
-        \mod_book\event\chapter_updated::create_from_chapter($book, $context, $chapter)->trigger();
+    if (optional_param('previewchapter', null, PARAM_RAW) !== null) {
+        // The editor's submitted HTML and draft files are shown, but nothing is persisted.
+        $previewdata = $data;
     } else {
-        // adding new chapter
-        $data->bookid        = $book->id;
-        $data->hidden        = 0;
-        $data->timecreated   = time();
-        $data->timemodified  = time();
-        $data->importsrc     = '';
-        $data->content       = '';          // updated later
-        $data->contentformat = FORMAT_HTML; // updated later
+        if ($data->id) {
+            // store the files
+            $data->timemodified = time();
+            $data = file_postupdate_standard_editor($data, 'content', $options, $context, 'mod_book', 'chapter', $data->id);
+            $DB->update_record('book_chapters', $data);
+            $DB->set_field('book', 'revision', $book->revision+1, array('id'=>$book->id));
+            $chapter = $DB->get_record('book_chapters', array('id' => $data->id));
 
-        // make room for new page
-        $sql = "UPDATE {book_chapters}
-                   SET pagenum = pagenum + 1
-                 WHERE bookid = ? AND pagenum >= ?";
-        $DB->execute($sql, array($book->id, $data->pagenum));
+            core_tag_tag::set_item_tags('mod_book', 'book_chapters', $chapter->id, $context, $data->tags);
 
-        $data->id = $DB->insert_record('book_chapters', $data);
+            \mod_book\event\chapter_updated::create_from_chapter($book, $context, $chapter)->trigger();
+        } else {
+            // adding new chapter
+            $data->bookid        = $book->id;
+            $data->hidden        = 0;
+            $data->timecreated   = time();
+            $data->timemodified  = time();
+            $data->importsrc     = '';
+            $data->content       = '';          // updated later
+            $data->contentformat = FORMAT_HTML; // updated later
 
-        // store the files
-        $data = file_postupdate_standard_editor($data, 'content', $options, $context, 'mod_book', 'chapter', $data->id);
-        $DB->update_record('book_chapters', $data);
-        $DB->set_field('book', 'revision', $book->revision+1, array('id'=>$book->id));
-        $chapter = $DB->get_record('book_chapters', array('id' => $data->id));
+            // make room for new page
+            $sql = "UPDATE {book_chapters}
+                       SET pagenum = pagenum + 1
+                     WHERE bookid = ? AND pagenum >= ?";
+            $DB->execute($sql, array($book->id, $data->pagenum));
 
-        core_tag_tag::set_item_tags('mod_book', 'book_chapters', $chapter->id, $context, $data->tags);
+            $data->id = $DB->insert_record('book_chapters', $data);
 
-        \mod_book\event\chapter_created::create_from_chapter($book, $context, $chapter)->trigger();
+            // store the files
+            $data = file_postupdate_standard_editor($data, 'content', $options, $context, 'mod_book', 'chapter', $data->id);
+            $DB->update_record('book_chapters', $data);
+            $DB->set_field('book', 'revision', $book->revision+1, array('id'=>$book->id));
+            $chapter = $DB->get_record('book_chapters', array('id' => $data->id));
+
+            core_tag_tag::set_item_tags('mod_book', 'book_chapters', $chapter->id, $context, $data->tags);
+
+            \mod_book\event\chapter_created::create_from_chapter($book, $context, $chapter)->trigger();
+        }
+
+        book_preload_chapters($book); // fix structure
+
+        if (optional_param('saveandnewchapter', null, PARAM_RAW) !== null) {
+            $saved = $DB->get_record('book_chapters', ['id' => $data->id, 'bookid' => $book->id],
+                '*', MUST_EXIST);
+            $insertpagenum = (int) $saved->pagenum;
+            if (!$saved->subchapter) {
+                // A new main chapter must be inserted after all subchapters of the
+                // current main chapter, not between the parent and its children.
+                $following = $DB->get_records_select('book_chapters',
+                    'bookid = :bookid AND pagenum > :pagenum',
+                    ['bookid' => $book->id, 'pagenum' => $saved->pagenum], 'pagenum ASC');
+                foreach ($following as $candidate) {
+                    if (!$candidate->subchapter) {
+                        break;
+                    }
+                    $insertpagenum = (int) $candidate->pagenum;
+                }
+            }
+            redirect(new moodle_url('/mod/book/edit.php', [
+                'cmid' => $cm->id,
+                'pagenum' => $insertpagenum,
+                'subchapter' => $saved->subchapter,
+            ]), get_string('chaptercreatedsaved', 'mod_book'));
+        }
+
+        redirect("view.php?id=$cm->id&chapterid=$data->id");
     }
-
-    book_preload_chapters($book); // fix structure
-    redirect("view.php?id=$cm->id&chapterid=$data->id");
 }
 
 // Otherwise fill and print the form.
@@ -145,6 +175,19 @@ $PAGE->activityheader->set_attrs([
 ]);
 
 echo $OUTPUT->header();
+
+if (!empty($previewdata)) {
+    echo $OUTPUT->notification(get_string('previewnotpublished', 'mod_book'), 'info', false);
+    echo $OUTPUT->box_start('generalbox book-chapter-preview');
+    echo $OUTPUT->heading(format_string($previewdata->title, true, ['context' => $context]), 3);
+    $content = $previewdata->content_editor;
+    echo format_text($content['text'], $content['format'], [
+        'context' => $context,
+        'overflowdiv' => true,
+        'noclean' => false,
+    ]);
+    echo $OUTPUT->box_end();
+}
 
 $mform->display();
 

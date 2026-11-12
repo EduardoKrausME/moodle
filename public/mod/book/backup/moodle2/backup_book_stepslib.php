@@ -38,7 +38,7 @@ class backup_book_activity_structure_step extends backup_activity_structure_step
         $chapters = new backup_nested_element('chapters');
         $chapter = new backup_nested_element('chapter', array('id'), array(
             'pagenum', 'subchapter', 'title', 'content', 'contentformat',
-            'hidden', 'timemcreated', 'timemodified', 'importsrc'));
+            'hidden', 'timecreated', 'timemodified', 'importsrc'));
 
         $tags = new backup_nested_element('chaptertags');
         $tag = new backup_nested_element('tag', array('id'), array('itemid', 'rawname'));
@@ -46,9 +46,30 @@ class backup_book_activity_structure_step extends backup_activity_structure_step
         $book->add_child($chapters);
         $chapters->add_child($chapter);
 
+        // Keep personal reading data out of backups made without user information.
+        $readings = new backup_nested_element('readings');
+        $reading = new backup_nested_element('reading', ['id'], [
+            'chapterid', 'userid', 'firstviewed', 'lastviewed',
+        ]);
+        $book->add_child($readings);
+        $readings->add_child($reading);
+
+        $personalrecords = new backup_nested_element('personalrecords');
+        $personalrecord = new backup_nested_element('personalrecord', ['id'], [
+            'chapterid', 'userid', 'favourite', 'note', 'timecreated', 'timemodified',
+        ]);
+        $book->add_child($personalrecords);
+        $personalrecords->add_child($personalrecord);
+
         // Define sources
         $book->set_source_table('book', array('id' => backup::VAR_ACTIVITYID));
         $chapter->set_source_table('book_chapters', array('bookid' => backup::VAR_PARENTID));
+        if ($this->get_setting_value('userinfo')) {
+            $reading->set_source_table('book_chapter_reads', ['bookid' => backup::VAR_PARENTID]);
+            $reading->annotate_ids('user', 'userid');
+            $personalrecord->set_source_table('book_chapter_userdata', ['bookid' => backup::VAR_PARENTID]);
+            $personalrecord->annotate_ids('user', 'userid');
+        }
 
         // Define file annotations
         $book->annotate_files('mod_book', 'intro', null); // This file area hasn't itemid

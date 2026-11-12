@@ -69,7 +69,7 @@ class mod_book_external extends external_api {
      * @throws moodle_exception
      */
     public static function view_book($bookid, $chapterid = 0) {
-        global $DB, $CFG;
+        global $DB, $CFG, $USER;
         require_once($CFG->dirroot . "/mod/book/lib.php");
         require_once($CFG->dirroot . "/mod/book/locallib.php");
 
@@ -80,6 +80,7 @@ class mod_book_external extends external_api {
                                             ));
         $bookid = $params['bookid'];
         $chapterid = $params['chapterid'];
+        $requestedchapterid = $chapterid;
 
         $warnings = array();
 
@@ -127,7 +128,16 @@ class mod_book_external extends external_api {
             }
 
             // Trigger the chapter viewed event.
-            book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapterid, $chapters), $course, $cm, $context);
+            // Do not overwrite the last-read chapter when the mobile app opens the Book without an explicit page.
+            $trackreading = isloggedin() && !isguestuser();
+            if ($trackreading && !$requestedchapterid) {
+                $previousreading = \mod_book\reading_progress::get_progress(
+                    (int) $book->id, $chapters, (int) $USER->id, $viewhidden);
+                $trackreading = \mod_book\reading_progress::should_track_view(
+                    (int) $requestedchapterid, (int) ($previousreading['lastchapterid'] ?? 0));
+            }
+            book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapterid, $chapters),
+                $course, $cm, $context, $trackreading);
         }
 
         $result = array();

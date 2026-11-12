@@ -35,6 +35,8 @@ class restore_book_activity_structure_step extends restore_activity_structure_st
         $paths[] = new restore_path_element('book', '/activity/book');
         $paths[] = new restore_path_element('book_chapter', '/activity/book/chapters/chapter');
         $paths[] = new restore_path_element('book_chapter_tag', '/activity/book/chaptertags/tag');
+        $paths[] = new restore_path_element('book_reading', '/activity/book/readings/reading');
+        $paths[] = new restore_path_element('book_personalrecord', '/activity/book/personalrecords/personalrecord');
 
         // Return the paths wrapped into standard activity structure
         return $this->prepare_activity_structure($paths);
@@ -65,14 +67,76 @@ class restore_book_activity_structure_step extends restore_activity_structure_st
     protected function process_book_chapter($data) {
         global $DB;
 
-        $data = (object)$data;
+        $data = (object) $data;
         $oldid = $data->id;
-        $data->course = $this->get_courseid();
-
+        // book_chapters has no course column; only the parent Book holds course.
         $data->bookid = $this->get_new_parentid('book');
 
         $newitemid = $DB->insert_record('book_chapters', $data);
         $this->set_mapping('book_chapter', $oldid, $newitemid, true);
+    }
+
+    /**
+     * Restore reading history only when the user and chapter can be remapped.
+     *
+     * @param array $data Serialized record.
+     */
+    protected function process_book_reading($data) {
+        global $DB;
+
+        $data = (object) $data;
+        $userid = $this->get_mappingid('user', $data->userid);
+        $chapterid = $this->get_mappingid('book_chapter', $data->chapterid);
+        if (!$userid || !$chapterid) {
+            return;
+        }
+
+        $record = (object) [
+            'bookid' => $this->get_new_parentid('book'),
+            'chapterid' => $chapterid,
+            'userid' => $userid,
+            'firstviewed' => $data->firstviewed,
+            'lastviewed' => $data->lastviewed,
+        ];
+
+        // Users may already have history when the restore merges into an existing course.
+        if (!$DB->record_exists('book_chapter_reads', [
+                'bookid' => $record->bookid,
+                'chapterid' => $record->chapterid,
+                'userid' => $record->userid,
+            ])) {
+            $DB->insert_record('book_chapter_reads', $record);
+        }
+    }
+
+    /**
+     * Restore private notes and bookmarks only when the user and chapter are mapped.
+     *
+     * @param array $data Serialized user record.
+     */
+    protected function process_book_personalrecord($data) {
+        global $DB;
+
+        $data = (object) $data;
+        $userid = $this->get_mappingid('user', $data->userid);
+        $chapterid = $this->get_mappingid('book_chapter', $data->chapterid);
+        if (!$userid || !$chapterid) {
+            return;
+        }
+
+        $bookid = $this->get_new_parentid('book');
+        $conditions = [
+            'bookid' => $bookid, 'chapterid' => $chapterid, 'userid' => $userid,
+        ];
+        if ($DB->record_exists('book_chapter_userdata', $conditions)) {
+            return;
+        }
+        $DB->insert_record('book_chapter_userdata', (object) ($conditions + [
+            'favourite' => (int) $data->favourite,
+            'note' => (string) $data->note,
+            'timecreated' => (int) $data->timecreated,
+            'timemodified' => (int) $data->timemodified,
+        ]));
     }
 
     protected function process_book_chapter_tag($data) {

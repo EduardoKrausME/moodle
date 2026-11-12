@@ -67,6 +67,8 @@ if ($confirm) {
                 // This is subchapter of the chapter being removed.
                 core_tag_tag::remove_all_item_tags('mod_book', 'book_chapters', $ch->id);
                 $fs->delete_area_files($context->id, 'mod_book', 'chapter', $ch->id);
+                $DB->delete_records('book_chapter_reads', ['bookid' => $book->id, 'chapterid' => $ch->id]);
+                $DB->delete_records('book_chapter_userdata', ['bookid' => $book->id, 'chapterid' => $ch->id]);
                 $DB->delete_records('book_chapters', ['id' => $ch->id]);
                 \mod_book\event\chapter_deleted::create_from_chapter($book, $context, $ch)->trigger();
 
@@ -79,6 +81,8 @@ if ($confirm) {
     // Now delete the actual chapter.
     core_tag_tag::remove_all_item_tags('mod_book', 'book_chapters', $chapter->id);
     $fs->delete_area_files($context->id, 'mod_book', 'chapter', $chapter->id);
+    $DB->delete_records('book_chapter_reads', ['bookid' => $book->id, 'chapterid' => $chapter->id]);
+    $DB->delete_records('book_chapter_userdata', ['bookid' => $book->id, 'chapterid' => $chapter->id]);
     $DB->delete_records('book_chapters', ['id' => $chapter->id]);
 
     \mod_book\event\chapter_deleted::create_from_chapter($book, $context, $chapter)->trigger();

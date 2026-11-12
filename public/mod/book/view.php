@@ -31,6 +31,9 @@ $id        = optional_param('id', 0, PARAM_INT);        // Course Module ID
 $bid       = optional_param('b', 0, PARAM_INT);         // Book id
 $chapterid = optional_param('chapterid', 0, PARAM_INT); // Chapter ID
 $edit      = optional_param('edit', -1, PARAM_BOOL);    // Edit mode
+$requestedchapterid = $chapterid; // Preserve whether a specific chapter was requested.
+$searchquery = trim(optional_param('q', '', PARAM_TEXT));
+$searchquery = \core_text::substr($searchquery, 0, 100);
 
 // =========================================================================
 // security checks START - teachers edit; students view
@@ -117,16 +120,228 @@ if (!$chapterid) {
         $courseurl = new moodle_url('/course/view.php', ['id' => $course->id]);
         throw new moodle_exception('errorchapter', 'mod_book', $courseurl);
     }
-    // Add the Book TOC block.
+    // Keep the standard Book TOC as a fallback for themes without the course index.
     book_add_fake_block($chapters, $chapter, $book, $cm, $edit);
-    book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapter->id, $chapters), $course, $cm, $context);
+
+    // Render the chapters in a separate template so the course index only needs to mount it.
+    $courseindexchapters = [];
+    foreach ($chapters as $ch) {
+        if ($ch->hidden && !$viewhidden) {
+            continue;
+        }
+        $chaptertitle = book_get_chapter_title($ch->id, $chapters, $book, $context);
+        $entry = [
+            'id' => (int) $ch->id,
+            'title' => trim(html_entity_decode(strip_tags($chaptertitle), ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+            'url' => (new moodle_url('/mod/book/view.php', [
+                'id' => $cm->id,
+                'chapterid' => $ch->id,
+            ]))->out(false),
+            'current' => (int) $ch->id === (int) $chapter->id,
+            'visited' => false,
+            'hidden' => (bool) $ch->hidden,
+            'subchapters' => [],
+            'hassubchapters' => false,
+        ];
+        if ($ch->subchapter && $courseindexchapters) {
+            $lastindex = count($courseindexchapters) - 1;
+            $courseindexchapters[$lastindex]['subchapters'][] = $entry;
+            $courseindexchapters[$lastindex]['hassubchapters'] = true;
+        } else {
+            $courseindexchapters[] = $entry;
+        }
+    }
+    // Opening a Book without a chapter ID must not reset the last chapter read.
+    // Fetch the previous position before optionally marking the landing chapter as visited.
+    $readinguserid = (isloggedin() && !isguestuser()) ? (int) $USER->id : 0;
+    $previousreading = null;
+    if ($readinguserid && !$requestedchapterid) {
+        $previousreading = \mod_book\reading_progress::get_progress((int) $book->id, $chapters,
+            $readinguserid, $viewhidden);
+    }
+
+    $trackreading = (bool) $readinguserid && \mod_book\reading_progress::should_track_view(
+        (int) $requestedchapterid, (int) ($previousreading['lastchapterid'] ?? 0));
+    book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapter->id, $chapters),
+        $course, $cm, $context, $trackreading);
+
+    $readinghtml = '';
+    if ($readinguserid) {
+        $reading = \mod_book\reading_progress::get_progress((int) $book->id, $chapters,
+            $readinguserid, $viewhidden);
+        $resume = null;
+        if (!$requestedchapterid && !empty($previousreading['lastchapterid']) &&
+                $previousreading['lastchapterid'] != $chapter->id) {
+            $lastid = $previousreading['lastchapterid'];
+            $lasttitle = book_get_chapter_title($lastid, $chapters, $book, $context);
+            $resume = [
+                'url' => (new moodle_url('/mod/book/view.php', [
+                    'id' => $cm->id,
+                    'chapterid' => $lastid,
+                ]))->out(false),
+                'title' => trim(html_entity_decode(strip_tags($lasttitle), ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+                'label' => get_string('continuereading', 'mod_book'),
+            ];
+        }
+
+        // Annotate the already-rendered course index links with visited state.
+        foreach ($courseindexchapters as &$parententry) {
+            $parententry['visited'] = isset($reading['visitedids'][$parententry['id']]);
+            foreach ($parententry['subchapters'] as &$subentry) {
+                $subentry['visited'] = isset($reading['visitedids'][$subentry['id']]);
+            }
+            unset($subentry);
+        }
+        unset($parententry);
+
+        $readinghtml = $OUTPUT->render_from_template('mod_book/reading_progress', [
+            'label' => get_string('readingprogress', 'mod_book'),
+            'visitedcount' => $reading['visitedcount'],
+            'totalcount' => $reading['totalcount'],
+            'percent' => $reading['percent'],
+            'resume' => $resume,
+        ]);
+    }
+
+    $courseindexhtml = $OUTPUT->render_from_template('mod_book/courseindex_chapters', [
+        'cmid' => (int) $cm->id,
+        'toclabel' => get_string('toc', 'mod_book'),
+        'collapselabel' => get_string('collapse', 'core'),
+        'chapters' => $courseindexchapters,
+    ]);
+    $PAGE->requires->js_call_amd('mod_book/courseindex', 'init', [[
+        'cmid' => (int) $cm->id,
+        'html' => $courseindexhtml,
+        'expandlabel' => get_string('expand', 'core'),
+        'collapselabel' => get_string('collapse', 'core'),
+        'hideoriginaltoc' => !$edit,
+    ]]);
+
+    // Search only accessible Book chapters; never include a hidden chapter in the result list.
+    $searchresults = [];
+    if ($searchquery !== '') {
+        $matches = \mod_book\chapter_search::find($chapters, $searchquery, $viewhidden);
+        foreach ($matches as $match) {
+            $match['url'] = (new moodle_url('/mod/book/view.php', [
+                'id' => $cm->id, 'chapterid' => $match['chapterid'],
+            ]))->out(false);
+            $searchresults[] = $match;
+        }
+    }
+    $searchhtml = $OUTPUT->render_from_template('mod_book/chapter_search', [
+        'cmid' => (int) $cm->id,
+        'searchurl' => (new moodle_url('/mod/book/view.php'))->out(false),
+        'query' => $searchquery,
+        'searched' => $searchquery !== '',
+        'count' => count($searchresults),
+        'results' => $searchresults,
+    ]);
+
+    // Only authenticated users can see or edit their own notes and favourites.
+    $personalhtml = '';
+    if ($readinguserid) {
+        $personal = \mod_book\reading_tools::get((int) $book->id, (int) $chapter->id, $readinguserid);
+        $permitted = [];
+        foreach ($chapters as $item) {
+            if (!$item->hidden || $viewhidden) {
+                $permitted[$item->id] = $item;
+            }
+        }
+        $favouriteids = \mod_book\reading_tools::get_favourites((int) $book->id,
+            $readinguserid, $permitted);
+        $favourites = [];
+        foreach ($favouriteids as $fid) {
+            $favourites[] = [
+                'url' => (new moodle_url('/mod/book/view.php', [
+                    'id' => $cm->id, 'chapterid' => $fid,
+                ]))->out(false),
+                'title' => trim(html_entity_decode(strip_tags($permitted[$fid]->title),
+                    ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+            ];
+        }
+        $printurl = '';
+        if (has_capability('booktool/print:print', $context)) {
+            $printurl = (new moodle_url('/mod/book/tool/print/index.php', ['id' => $cm->id]))->out(false);
+        }
+        $personalhtml = $OUTPUT->render_from_template('mod_book/reading_tools', [
+            'cmid' => (int) $cm->id,
+            'chapterid' => (int) $chapter->id,
+            'sesskey' => sesskey(),
+            'posturl' => (new moodle_url('/mod/book/personal.php'))->out(false),
+            'exporturl' => (new moodle_url('/mod/book/exportpersonal.php',
+                ['id' => $cm->id]))->out(false),
+            'printurl' => $printurl,
+            'favourite' => $personal['favourite'],
+            'note' => $personal['note'],
+            'favourites' => $favourites,
+            'favouritecount' => count($favourites),
+            'hasfavourites' => (bool) $favourites,
+        ]);
+    }
+
+    $reporturl = '';
+    if ($allowedit && has_capability('moodle/course:viewparticipants',
+            context_course::instance($course->id))) {
+        $reporturl = (new moodle_url('/mod/book/report.php', ['id' => $cm->id]))->out(false);
+    }
+
+    $managerhtml = '';
+    if ($allowedit && $edit) {
+        // Build one draggable group per main chapter. Moving a group keeps its children.
+        $editorgroups = [];
+        $lastgroupindex = -1;
+        foreach ($chapters as $ch) {
+            $title = book_get_chapter_title($ch->id, $chapters, $book, $context);
+            $title = trim(html_entity_decode(strip_tags($title), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $entry = [
+                'id' => (int) $ch->id,
+                'title' => $title,
+                'url' => (new moodle_url('/mod/book/view.php',
+                    ['id' => $cm->id, 'chapterid' => $ch->id]))->out(false),
+                'editurl' => (new moodle_url('/mod/book/edit.php',
+                    ['cmid' => $cm->id, 'id' => $ch->id]))->out(false),
+                'editlabel' => get_string('editchapter', 'mod_book', $title),
+                'duplicatelabel' => get_string('duplicatechapterlabel', 'mod_book', $title),
+                'uplabel' => get_string('movechapterup', 'mod_book', $title),
+                'downlabel' => get_string('movechapterdown', 'mod_book', $title),
+                'hidden' => (bool) $ch->hidden,
+                'children' => [],
+            ];
+            if ($ch->subchapter && $lastgroupindex >= 0) {
+                $editorgroups[$lastgroupindex]['children'][] = $entry;
+            } else {
+                $editorgroups[] = $entry;
+                $lastgroupindex = count($editorgroups) - 1;
+            }
+        }
+        $managerhtml = $OUTPUT->render_from_template('mod_book/editor_chapters', [
+            'groups' => $editorgroups,
+            'cmid' => (int) $cm->id,
+            'sesskey' => sesskey(),
+            'revision' => (int) $book->revision,
+            'duplicateurl' => (new moodle_url('/mod/book/duplicate.php'))->out(false),
+            'addurl' => (new moodle_url('/mod/book/edit.php',
+                ['cmid' => $cm->id, 'pagenum' => count($chapters)]))->out(false),
+        ]);
+        $PAGE->requires->js_call_amd('mod_book/editor_chapters', 'init', [[
+            'cmid' => (int) $cm->id,
+            'revision' => (int) $book->revision,
+            'sesskey' => sesskey(),
+            'url' => (new moodle_url('/mod/book/reorder.php'))->out(false),
+            'saving' => get_string('savingchapterorder', 'mod_book'),
+            'saved' => get_string('chapterordersaved', 'mod_book'),
+            'failed' => get_string('chapterorderfailed', 'mod_book'),
+        ]]);
+    }
 
     echo $OUTPUT->header();
-
-    $renderer = $PAGE->get_renderer('mod_book');
-    $actionmenu = new \mod_book\output\main_action_menu($cm->id, $chapters, $chapter, $book);
-    $renderedmenu = $renderer->render($actionmenu);
-    echo html_writer::div($renderedmenu, '', ['id' => 'mod_book-chaptersnavigation']);
+    if ($reporturl) {
+        echo html_writer::div(html_writer::link($reporturl, get_string('readingreport', 'mod_book'),
+            ['class' => 'btn btn-outline-secondary']), 'book-report-link');
+    }
+    echo $managerhtml;
+    echo $searchhtml;
+    echo $readinghtml;
 
     // The chapter itself.
     $hidden = $chapter->hidden ? ' dimmed_text' : null;
@@ -151,8 +366,16 @@ if (!$chapterid) {
 
     echo $OUTPUT->box_end();
 
+    echo $personalhtml;
+
     if (core_tag_tag::is_enabled('mod_book', 'book_chapters')) {
         echo $OUTPUT->tag_list(core_tag_tag::get_item_tags('mod_book', 'book_chapters', $chapter->id), null, 'book-tags');
     }
+
+    // Put previous and next chapter controls after the text, including on mobile.
+    $renderer = $PAGE->get_renderer('mod_book');
+    $actionmenu = new \mod_book\output\main_action_menu($cm->id, $chapters, $chapter);
+    $renderedmenu = $renderer->render($actionmenu);
+    echo html_writer::div($renderedmenu, '', ['id' => 'mod_book-chaptersnavigation']);
 }
 echo $OUTPUT->footer();

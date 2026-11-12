@@ -1,0 +1,79 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+    @template mod_book/editor_chapters
+
+    Teacher chapter editor. Top-level groups are moved with all their
+    subchapters; individual subchapters can be reordered or transferred.
+}}
+<details id="book-chapter-manager" class="book-chapter-manager" open>
+    <summary>{{#str}}managebookchapters, mod_book{{/str}}</summary>
+    <p class="book-chapter-manager__help">{{#str}}chapterdraghelp, mod_book{{/str}}</p>
+    <div class="book-chapter-manager__toolbar">
+        <a class="btn btn-outline-primary" href="{{addurl}}">{{#str}}addafter, mod_book{{/str}}</a>
+    </div>
+    <div class="book-chapter-manager__notice" role="status" aria-live="polite" data-book-status></div>
+    <ul class="book-chapter-manager__groups" data-book-list="groups">
+        {{#groups}}
+            <li class="book-chapter-manager__group" data-book-item="group" data-chapterid="{{id}}">
+                <div class="book-chapter-manager__row">
+                    <span class="book-chapter-manager__handle"
+                          data-book-drag-handle draggable="true"
+                          aria-hidden="true">&#8942;&#8942;</span>
+                    <a class="book-chapter-manager__title" href="{{url}}">{{title}}</a>
+                    {{#hidden}}<span class="book-chapter-manager__hidden">{{#str}}hiddenchapterlabel, mod_book{{/str}}</span>{{/hidden}}
+                    <a class="btn btn-sm btn-outline-secondary" href="{{editurl}}"
+                        aria-label="{{editlabel}}">{{#str}}edit, moodle{{/str}}</a>
+                    <form method="post" action="{{duplicateurl}}">
+                        <input type="hidden" name="id" value="{{cmid}}">
+                        <input type="hidden" name="chapterid" value="{{id}}">
+                        <input type="hidden" name="revision" value="{{revision}}">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary"
+                            aria-label="{{duplicatelabel}}">{{#str}}duplicatechapter, mod_book{{/str}}</button>
+                    </form>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        data-book-move="up" aria-label="{{uplabel}}">&#8593;</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        data-book-move="down" aria-label="{{downlabel}}">&#8595;</button>
+                </div>
+                <ul class="book-chapter-manager__children" data-book-list="children">
+                    {{#children}}
+                        <li class="book-chapter-manager__child" data-book-item="child" data-chapterid="{{id}}">
+                            <div class="book-chapter-manager__row">
+                                <span class="book-chapter-manager__handle"
+                                      data-book-drag-handle draggable="true"
+                                      aria-hidden="true">&#8942;&#8942;</span>
+                                <a class="book-chapter-manager__title" href="{{url}}">{{title}}</a>
+                                {{#hidden}}<span class="book-chapter-manager__hidden">{{#str}}hiddenchapterlabel, mod_book{{/str}}</span>{{/hidden}}
+                                <a class="btn btn-sm btn-outline-secondary" href="{{editurl}}"
+                                    aria-label="{{editlabel}}">{{#str}}edit, moodle{{/str}}</a>
+                                <form method="post" action="{{duplicateurl}}">
+                                    <input type="hidden" name="id" value="{{cmid}}">
+                                    <input type="hidden" name="chapterid" value="{{id}}">
+                        <input type="hidden" name="revision" value="{{revision}}">
+                                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                        aria-label="{{duplicatelabel}}">{{#str}}duplicatechapter, mod_book{{/str}}</button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-book-move="up" aria-label="{{uplabel}}">&#8593;</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-book-move="down" aria-label="{{downlabel}}">&#8595;</button>
+                            </div>
+                        </li>
+                    {{/children}}
+                </ul>
+            </li>
+        {{/groups}}
+    </ul>
+</details>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/book/db" VERSION="20250414" COMMENT="XMLDB file for Moodle mod_book"
+<XMLDB PATH="mod/book/db" VERSION="2026111201" COMMENT="XMLDB file for Moodle mod_book"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -42,6 +42,43 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="bookid" UNIQUE="false" FIELDS="bookid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="book_chapter_reads" COMMENT="Chapter reading history for each user">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="bookid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="chapterid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="firstviewed" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="lastviewed" TYPE="int" LENGTH="20" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="bookuserchapter" UNIQUE="true" FIELDS="bookid, userid, chapterid"/>
+        <INDEX NAME="bookuserlast" UNIQUE="false" FIELDS="bookid, userid, lastviewed"/>
+        <INDEX NAME="userbook" UNIQUE="false" FIELDS="userid, bookid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="book_chapter_userdata" COMMENT="Personal bookmarks and plain-text annotations for chapters">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="bookid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="chapterid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="favourite" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="note" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="bookuserchapter" UNIQUE="true" FIELDS="bookid, userid, chapterid"/>
+        <INDEX NAME="userbook" UNIQUE="false" FIELDS="userid, bookid"/>
       </INDEXES>
     </TABLE>
   </TABLES>

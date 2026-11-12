@@ -131,23 +131,47 @@ class main_action_menu implements templatable, renderable {
         $previous = $this->get_previous_chapter();
 
         $context = \context_module::instance($this->cmid);
-        $data = [];
+        $viewhidden = has_capability('mod/book:viewhiddenchapters', $context);
+        $chapterposition = 0;
+        $totalchapters = 0;
+
+        foreach ($this->chapters as $chapter) {
+            if ($chapter->hidden && !$viewhidden) {
+                continue;
+            }
+            $totalchapters++;
+            if ($chapter->id == $this->chapter->id) {
+                $chapterposition = $totalchapters;
+            }
+        }
+
+        $data = [
+            'position' => get_string('chapterposition', 'mod_book', (object) [
+                'current' => $chapterposition,
+                'total' => $totalchapters,
+            ]),
+        ];
 
         if ($next) {
-            $nextchaptertitle = format_string($next->title, options: ['context' => $context, 'escape' => false]);
-            $nextdata = [
-                'title' => get_string('navnexttitle', 'book', $nextchaptertitle),
-                'url' => (new moodle_url('/mod/book/view.php', ['id' => $this->cmid, 'chapterid' => $next->id]))->out(false)
+            $nextchaptertitle = trim(html_entity_decode(strip_tags(format_string($next->title, true,
+                ['context' => $context])), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $data['next'] = [
+                'title' => get_string('navnexttitle', 'mod_book', $nextchaptertitle),
+                'chaptertitle' => $nextchaptertitle,
+                'url' => (new moodle_url('/mod/book/view.php',
+                    ['id' => $this->cmid, 'chapterid' => $next->id]))->out(false),
             ];
-            $data['next'] = $nextdata;
         }
+
         if ($previous) {
-            $previouschaptertitle = format_string($previous->title, options: ['context' => $context, 'escape' => false]);
-            $previousdata = [
-                'title' => get_string('navprevtitle', 'book', $previouschaptertitle),
-                'url' => (new moodle_url('/mod/book/view.php', ['id' => $this->cmid, 'chapterid' => $previous->id]))->out(false)
+            $previouschaptertitle = trim(html_entity_decode(strip_tags(format_string($previous->title, true,
+                ['context' => $context])), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $data['previous'] = [
+                'title' => get_string('navprevtitle', 'mod_book', $previouschaptertitle),
+                'chaptertitle' => $previouschaptertitle,
+                'url' => (new moodle_url('/mod/book/view.php',
+                    ['id' => $this->cmid, 'chapterid' => $previous->id]))->out(false),
             ];
-            $data['previous'] = $previousdata;
         }
 
         return $data;

@@ -109,3 +109,69 @@
         margin-top: 45%;
     }
 }
+
+/* Better paper/PDF export: keep media within the page and prevent broken headings. */
+@media print {
+    @page {
+        size: A4;
+        margin: 16mm 15mm;
+    }
+
+    .book .book_title {
+        margin-top: 1rem !important;
+    }
+
+    .book .book_chapter,
+    .book .book_description {
+        break-before: page;
+        page-break-before: always;
+    }
+
+    .book h1,
+    .book h2,
+    .book h3,
+    .book h4 {
+        break-after: avoid-page;
+        page-break-after: avoid;
+    }
+
+    .book p,
+    .book li,
+    .book blockquote {
+        orphans: 3;
+        widows: 3;
+    }
+
+    .book img,
+    .book svg,
+    .book video,
+    .book table,
+    .book pre {
+        max-width: 100% !important;
+        break-inside: avoid-page;
+        page-break-inside: avoid;
+    }
+
+    .book img,
+    .book video {
+        height: auto !important;
+    }
+
+    .book pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .book table {
+        border-collapse: collapse;
+    }
+
+    .book td,
+    .book th {
+        overflow-wrap: anywhere;
+    }
+
+    .book thead {
+        display: table-header-group;
+    }
+}

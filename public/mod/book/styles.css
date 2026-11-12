@@ -49,79 +49,506 @@
     list-style: none;
 }
 
-.path-mod-book #mod_book-chaptersnavigation {
-    top: 80px;
-    width: inherit;
-    margin: 0 -50px;
-    position: sticky; /* Make navigation sticky. */
-}
 
-.path-mod-book #mod_book-chaptersnavigation .tertiary-navigation .navitem {
-    margin-bottom: -52px;
-}
-
+/* Chapter content and bottom navigation are in document flow, not floating over reading text. */
 .path-mod-book .book_content {
-    margin: 0 15px;
-    padding-right: 15px;
-    padding-left: 15px;
-    position: relative; /* Chapter navigation should not float on top of content. */
+    position: relative;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: clamp(0.75rem, 2vw, 1.75rem);
 }
 
-.path-mod-book .btn-previous,
-.path-mod-book .btn-next {
-    box-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 0.075);
-    width: 48px;
-    height: 48px;
-    padding: 16px 12px;
-    background-color: #fff;
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
-    transform: translateY(100px);
+.path-mod-book #mod_book-chaptersnavigation {
+    position: static;
+    top: auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 1.5rem auto 2rem;
 }
 
-.path-mod-book.dir-rtl .btn-previous .icon,
-.path-mod-book.dir-rtl .btn-next .icon {
-    transform: scale(-1, -1); /* Flip the icons in RTL languages */
+.path-mod-book .book-chapter-footer {
+    border-top: 1px solid var(--bs-border-color);
+    padding-top: 1.25rem;
 }
 
-.path-mod-book .btn-previous .icon,
-.path-mod-book .btn-next .icon {
-    width: auto;
-    height: auto;
-    margin-left: 6px;
+.path-mod-book .book-chapter-footer__position {
+    color: var(--bs-secondary-color, inherit);
+    font-size: 0.875rem;
+    text-align: center;
+    margin-bottom: 0.75rem;
+}
+
+.path-mod-book .book-chapter-footer__controls {
     display: flex;
-    font-size: 16px;
-    color: #212529;
+    align-items: stretch;
+    gap: 0.75rem;
 }
 
-#mod_book-chaptersnavigation .btn-link:hover {
+.path-mod-book .book-chapter-footer__link {
+    display: flex;
+    align-items: center;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 3.5rem;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+    color: inherit;
+    background: var(--bs-body-bg);
     text-decoration: none;
 }
 
-#mod_book-chaptersnavigation .btn:hover {
-    background-color: #dee2e6;
-    border-color: #dee2e6;
+.path-mod-book .book-chapter-footer__link--next {
+    margin-inline-start: auto;
+    text-align: end;
+    justify-content: flex-end;
 }
 
-@media (max-width: 768px) {
-    .path-mod-book #mod_book-chaptersnavigation {
-        top: calc(100% - 250px);
-        margin: 0 -0.5rem;
-        z-index: 1;
-    }
+.path-mod-book .book-chapter-footer__link:hover {
+    color: inherit;
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-primary);
+    text-decoration: none;
+}
 
-    .path-mod-book .btn-previous,
-    .path-mod-book .btn-next {
-        opacity: 0.85;
-        border-radius: 25px;
-        padding: 10px;
-        width: 45px;
-        height: 45px;
-        transform: none;
-    }
+.path-mod-book .book-chapter-footer__link:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 3px;
+}
 
+.path-mod-book .book-chapter-footer__icon {
+    flex-shrink: 0;
+}
+
+.path-mod-book .book-chapter-footer__icon .icon {
+    margin: 0;
+}
+
+.path-mod-book.dir-rtl .book-chapter-footer__icon .icon {
+    transform: rotate(180deg);
+}
+
+.path-mod-book .book-chapter-footer__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.path-mod-book .book-chapter-footer__label {
+    color: var(--bs-secondary-color, inherit);
+    font-size: 0.8rem;
+}
+
+.path-mod-book .book-chapter-footer__title {
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+/* Chapter tree mounted below the Book course-index activity. */
+.path-mod-book #course-index .book-courseindex-parent {
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.path-mod-book #course-index .book-courseindex-toggle {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 auto;
+    width: 1.875rem;
+    height: 1.875rem;
+    padding: 0;
+    margin-inline-start: auto;
+    border: 0;
+    border-radius: 0.3rem;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+}
+
+.path-mod-book #course-index .book-courseindex-chevron {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-inline-end: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+}
+
+.path-mod-book #course-index .book-courseindex-toggle[aria-expanded="false"] .book-courseindex-chevron {
+    transform: translateY(2px) rotate(-135deg);
+}
+
+.path-mod-book #course-index .book-courseindex-toggle:hover {
+    background: var(--bs-secondary-bg);
+}
+
+.path-mod-book #course-index .book-courseindex-toggle:focus-visible,
+.path-mod-book #course-index .book-courseindex-link:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+.path-mod-book #course-index .book-courseindex-tree {
+    order: 10;
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 0;
+    padding-inline-start: 1.15rem;
+    padding-bottom: 0.3rem;
+}
+
+.path-mod-book #course-index .book-courseindex-tree[hidden] {
+    display: none;
+}
+
+.path-mod-book #course-index .book-courseindex-list,
+.path-mod-book #course-index .book-courseindex-subchapters {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.path-mod-book #course-index .book-courseindex-subchapters {
+    padding-inline-start: 0.75rem;
+}
+
+.path-mod-book #course-index .book-courseindex-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.375rem 0.5rem;
+    border-inline-start: 2px solid transparent;
+    border-radius: 0.25rem;
+    color: inherit;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+}
+
+.path-mod-book #course-index .book-courseindex-link:hover {
+    background: var(--bs-secondary-bg);
+    text-decoration: none;
+}
+
+.path-mod-book #course-index .book-courseindex-link[aria-current="page"] {
+    background: var(--bs-secondary-bg);
+    border-inline-start-color: var(--bs-primary);
+    font-weight: 600;
+}
+
+/* Hide the duplicate right TOC only after the chapter tree was successfully mounted. */
+body.path-mod-book.mod-book-courseindex-active .block_book_toc {
+    display: none !important;
+}
+
+@media (max-width: 600px) {
     .path-mod-book .book_content {
-        margin-left: -5px;
-        margin-right: -5px;
+        padding: 0.75rem;
+    }
+
+    .path-mod-book .book-chapter-footer__controls {
+        flex-direction: column;
+    }
+
+    .path-mod-book .book-chapter-footer__link--next {
+        width: 100%;
+    }
+}
+
+/* Reader progress is a per-user visit count, independent of activity completion. */
+.path-mod-book .book-reading-progress {
+    max-width: 100%;
+    margin: 0 0 1.25rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+}
+
+.path-mod-book .book-reading-progress__heading {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.path-mod-book .book-reading-progress__bar {
+    display: block;
+    width: 100%;
+    height: 0.55rem;
+    border-radius: 0.5rem;
+    accent-color: var(--bs-primary);
+}
+
+.path-mod-book .book-reading-progress__resume {
+    display: inline-block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    margin-top: 0.8rem;
+    text-align: start;
+}
+
+.path-mod-book #course-index .book-courseindex-chaptertitle {
+    min-width: 0;
+    flex: 1;
+}
+
+.path-mod-book #course-index .book-courseindex-visited {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--bs-success, #198754);
+}
+
+/* Teacher-only chapter manager. Groups move together with their subchapters. */
+.path-mod-book .book-chapter-manager {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.65rem;
+    margin-bottom: 1.5rem;
+    padding: 0.8rem 1rem;
+    background: var(--bs-body-bg);
+}
+
+.path-mod-book .book-chapter-manager > summary {
+    cursor: pointer;
+    font-weight: 650;
+    padding: 0.35rem;
+}
+
+.path-mod-book .book-chapter-manager__help {
+    margin: 0.65rem 0;
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+}
+
+.path-mod-book .book-chapter-manager__toolbar {
+    margin-bottom: 0.75rem;
+}
+
+.path-mod-book .book-chapter-manager__notice {
+    min-height: 1.15rem;
+    color: var(--bs-secondary-color);
+    font-size: 0.825rem;
+}
+
+.path-mod-book .book-chapter-manager__groups,
+.path-mod-book .book-chapter-manager__children {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.path-mod-book .book-chapter-manager__group {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.45rem;
+    margin-bottom: 0.55rem;
+    background: var(--bs-body-bg);
+}
+
+.path-mod-book .book-chapter-manager__children {
+    padding-inline-start: 1.5rem;
+    margin: 0.3rem 0.45rem 0.45rem;
+    border-inline-start: 2px solid var(--bs-border-color);
+}
+
+.path-mod-book .book-chapter-manager__child {
+    border-radius: 0.35rem;
+}
+
+.path-mod-book .book-chapter-manager__row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    padding: 0.45rem 0.55rem;
+}
+
+.path-mod-book .book-chapter-manager__title {
+    flex: 1 1 12rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--bs-body-color);
+}
+
+.path-mod-book .book-chapter-manager__handle {
+    flex-shrink: 0;
+    padding: 0.35rem;
+    min-width: 1.5rem;
+    font-size: 1.25rem;
+    line-height: 1;
+    text-align: center;
+    cursor: grab;
+    color: var(--bs-secondary-color);
+    user-select: none;
+}
+
+.path-mod-book .book-chapter-manager__handle:active {
+    cursor: grabbing;
+}
+
+.path-mod-book .book-chapter-manager__dragging {
+    opacity: 0.35;
+}
+
+.path-mod-book .book-chapter-manager__hidden {
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+}
+
+.path-mod-book .book-chapter-manager__row form {
+    display: contents;
+}
+
+.path-mod-book .book-chapter-manager__row .btn {
+    white-space: nowrap;
+}
+
+.path-mod-book .book-chapter-manager__row button:focus-visible,
+.path-mod-book .book-chapter-manager__row a:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+.path-mod-book .book-chapter-preview {
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-primary);
+    border-radius: 0.45rem;
+}
+
+.path-mod-book .book-chapter-preview img,
+.path-mod-book .book-chapter-preview video {
+    max-width: 100%;
+    height: auto;
+}
+
+@media (max-width: 600px) {
+    .path-mod-book .book-chapter-manager {
+        padding: 0.6rem;
+    }
+
+    .path-mod-book .book-chapter-manager__children {
+        padding-inline-start: 0.7rem;
+    }
+
+    .path-mod-book .book-chapter-manager__row {
+        gap: 0.3rem;
+    }
+
+    .path-mod-book .book-chapter-manager__title {
+        flex-basis: calc(100% - 3rem);
+    }
+}
+
+/* Scoped chapter search and personal reading tools. */
+.path-mod-book .book-search,
+.path-mod-book .book-personal-tools {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.65rem;
+    background: var(--bs-body-bg);
+    padding: clamp(0.75rem, 2vw, 1.2rem);
+    margin: 1rem 0;
+}
+
+.path-mod-book .book-search__form label,
+.path-mod-book .book-personal-tools label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+
+.path-mod-book .book-search__field,
+.path-mod-book .book-personal-tools__top {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.path-mod-book .book-search__field input {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.path-mod-book .book-search__results {
+    margin-top: 1rem;
+    border-top: 1px solid var(--bs-border-color);
+    padding-top: 0.8rem;
+}
+
+.path-mod-book .book-search__result {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.path-mod-book .book-search__result p {
+    margin: 0.3rem 0 0;
+    color: var(--bs-secondary-color);
+    overflow-wrap: anywhere;
+}
+
+.path-mod-book .book-personal-tools__details {
+    margin-top: 0.75rem;
+    border-top: 1px solid var(--bs-border-color);
+    padding-top: 0.75rem;
+}
+
+.path-mod-book .book-personal-tools__details > summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.path-mod-book .book-personal-tools__hint {
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+    margin: 0.5rem 0;
+}
+
+.path-mod-book .book-personal-tools textarea {
+    width: 100%;
+    resize: vertical;
+    max-width: 100%;
+}
+
+.path-mod-book .book-report-link {
+    display: flex;
+    justify-content: end;
+    margin: 0.65rem 0;
+}
+
+.path-mod-book .book-reading-report__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1.25rem;
+}
+
+.path-mod-book .book-reading-report .table td,
+.path-mod-book .book-reading-report .table th {
+    vertical-align: middle;
+}
+
+.path-mod-book .book-reading-report__pages {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 600px) {
+    .path-mod-book .book-search__field > button,
+    .path-mod-book .book-search__field > input {
+        width: 100%;
+    }
+
+    .path-mod-book .book-personal-tools__top form,
+    .path-mod-book .book-personal-tools__top form button {
+        max-width: 100%;
     }
 }
