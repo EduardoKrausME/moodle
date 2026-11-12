@@ -22,14 +22,6 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['settingssectionstitle'] = 'Assignment settings sections';
-$string['settingssectionshelp'] = 'Go to a section to find its options. Expand collapsed sections to edit their settings.';
-$string['settingsgeneralhint'] = 'Give this assignment a clear name, instructions and any supporting files.';
-$string['settingsavailabilityhint'] = 'Set the submission dates and time limit. Changing an existing due date may require grade penalty recalculation.';
-$string['settingssubmissionshint'] = 'Choose how students save drafts, confirm submissions and make additional attempts.';
-$string['settingsgroupshint'] = 'Group submission options apply when group submissions are enabled. Existing work can restrict changes.';
-$string['settingsnotificationshint'] = 'Choose when notifications are sent to teachers and students.';
-$string['settingsgradinghint'] = 'Configure grading, anonymous submissions and marking workflow. Some options cannot be changed after work has been submitted.';
 $string['activityattachments'] = 'Assignment activity attachments';
 $string['activitydate:submissionsdue'] = 'Due:';
 $string['activitydate:submissionsopen'] = 'Opens:';
@@ -667,6 +659,14 @@ $string['selectedusers'] = 'Selected users';
 $string['setmarkingworkflowstateforlog'] = 'Set marking workflow state : (id={$a->id}, fullname={$a->fullname}, state={$a->state}). ';
 $string['setmarkerallocationforlog'] = 'Set marking allocation : (id={$a->id}, fullname={$a->fullname}, marker={$a->marker}). ';
 $string['settings'] = 'Assignment settings';
+$string['settingsavailabilityhint'] = 'Set the submission dates and time limit. Changing an existing due date may require grade penalty recalculation.';
+$string['settingsgeneralhint'] = 'Give this assignment a clear name, instructions and any supporting files.';
+$string['settingsgradinghint'] = 'Configure grading, anonymous submissions and marking workflow. Some options cannot be changed after work has been submitted.';
+$string['settingsgroupshint'] = 'Group submission options apply when group submissions are enabled. Existing work can restrict changes.';
+$string['settingsnotificationshint'] = 'Choose when notifications are sent to teachers and students.';
+$string['settingssectionshelp'] = 'Go to a section to find its options. Expand collapsed sections to edit their settings.';
+$string['settingssectionstitle'] = 'Assignment settings sections';
+$string['settingssubmissionshint'] = 'Choose how students save drafts, confirm submissions and make additional attempts.';
 $string['showrecentsubmissions'] = 'Show recent submissions';
 $string['status'] = 'Status';
 $string['studentnotificationworkflowstateerror'] = 'Marking workflow state must be \'Released\' to notify students.';
