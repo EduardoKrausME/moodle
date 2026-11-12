@@ -33,6 +33,6 @@ if ((int) $book->revision !== $expectedrevision) {
 }
 $DB->get_record('book_chapters', ['id' => $chapterid, 'bookid' => $book->id], '*', MUST_EXIST);
 
-$newchapterid = \mod_book\chapter_management::duplicate($book, $chapterid, $context);
+$newchapterid = \mod_book\chapter_management::duplicate($book, $chapterid, $context, $expectedrevision);
 redirect(new moodle_url('/mod/book/view.php', ['id' => $cm->id, 'chapterid' => $newchapterid]),
     get_string('chapterduplicated', 'mod_book'));
