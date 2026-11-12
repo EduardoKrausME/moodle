@@ -32,6 +32,8 @@ $bid       = optional_param('b', 0, PARAM_INT);         // Book id
 $chapterid = optional_param('chapterid', 0, PARAM_INT); // Chapter ID
 $edit      = optional_param('edit', -1, PARAM_BOOL);    // Edit mode
 $requestedchapterid = $chapterid; // Preserve whether a specific chapter was requested.
+$searchquery = trim(optional_param('q', '', PARAM_TEXT));
+$searchquery = \core_text::substr($searchquery, 0, 100);
 
 // =========================================================================
 // security checks START - teachers edit; students view
@@ -215,6 +217,74 @@ if (!$chapterid) {
         'hideoriginaltoc' => true,
     ]]);
 
+    // Search only accessible Book chapters; never include a hidden chapter in the result list.
+    $searchresults = [];
+    if ($searchquery !== '') {
+        $matches = \mod_book\chapter_search::find($chapters, $searchquery, $viewhidden);
+        foreach ($matches as $match) {
+            $match['url'] = (new moodle_url('/mod/book/view.php', [
+                'id' => $cm->id, 'chapterid' => $match['chapterid'],
+            ]))->out(false);
+            $searchresults[] = $match;
+        }
+    }
+    $searchhtml = $OUTPUT->render_from_template('mod_book/chapter_search', [
+        'cmid' => (int) $cm->id,
+        'searchurl' => (new moodle_url('/mod/book/view.php'))->out(false),
+        'query' => $searchquery,
+        'searched' => $searchquery !== '',
+        'count' => count($searchresults),
+        'results' => $searchresults,
+    ]);
+
+    // Only authenticated users can see or edit their own notes and favourites.
+    $personalhtml = '';
+    if ($readinguserid) {
+        $personal = \mod_book\reading_tools::get((int) $book->id, (int) $chapter->id, $readinguserid);
+        $permitted = [];
+        foreach ($chapters as $item) {
+            if (!$item->hidden || $viewhidden) {
+                $permitted[$item->id] = $item;
+            }
+        }
+        $favouriteids = \mod_book\reading_tools::get_favourites((int) $book->id,
+            $readinguserid, $permitted);
+        $favourites = [];
+        foreach ($favouriteids as $fid) {
+            $favourites[] = [
+                'url' => (new moodle_url('/mod/book/view.php', [
+                    'id' => $cm->id, 'chapterid' => $fid,
+                ]))->out(false),
+                'title' => trim(html_entity_decode(strip_tags($permitted[$fid]->title),
+                    ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+            ];
+        }
+        $printurl = '';
+        if (has_capability('booktool/print:print', $context)) {
+            $printurl = (new moodle_url('/mod/book/tool/print/index.php', ['id' => $cm->id]))->out(false);
+        }
+        $personalhtml = $OUTPUT->render_from_template('mod_book/reading_tools', [
+            'cmid' => (int) $cm->id,
+            'chapterid' => (int) $chapter->id,
+            'sesskey' => sesskey(),
+            'posturl' => (new moodle_url('/mod/book/personal.php'))->out(false),
+            'exporturl' => (new moodle_url('/mod/book/exportpersonal.php',
+                ['id' => $cm->id]))->out(false),
+            'printurl' => $printurl,
+            'favourite' => $personal['favourite'],
+            'note' => $personal['note'],
+            'favourites' => $favourites,
+            'favouritecount' => count($favourites),
+            'hasfavourites' => (bool) $favourites,
+        ]);
+    }
+
+    $reporturl = '';
+    if ($allowedit && has_capability('moodle/course:viewparticipants',
+            context_course::instance($course->id))) {
+        $reporturl = (new moodle_url('/mod/book/report.php', ['id' => $cm->id]))->out(false);
+    }
+
     $managerhtml = '';
     if ($allowedit && $edit) {
         // Build one draggable group per main chapter. Moving a group keeps its children.
@@ -265,7 +335,12 @@ if (!$chapterid) {
     }
 
     echo $OUTPUT->header();
+    if ($reporturl) {
+        echo html_writer::div(html_writer::link($reporturl, get_string('readingreport', 'mod_book'),
+            ['class' => 'btn btn-outline-secondary']), 'book-report-link');
+    }
     echo $managerhtml;
+    echo $searchhtml;
     echo $readinghtml;
 
     // The chapter itself.
@@ -290,6 +365,8 @@ if (!$chapterid) {
         'context' => $context]);
 
     echo $OUTPUT->box_end();
+
+    echo $personalhtml;
 
     if (core_tag_tag::is_enabled('mod_book', 'book_chapters')) {
         echo $OUTPUT->tag_list(core_tag_tag::get_item_tags('mod_book', 'book_chapters', $chapter->id), null, 'book-tags');
