@@ -1143,6 +1143,10 @@ class renderer extends \plugin_renderer_base {
      * @return string
      */
     public function render_assign_attempt_history(\assign_attempt_history $history) {
+        if ($history->modern) {
+            return $this->render_assign_attempt_history_timeline($history);
+        }
+
         $o = '';
 
         // Don't show the last one because it is the current submission.
@@ -1280,6 +1284,162 @@ class renderer extends \plugin_renderer_base {
         $this->page->requires->yui_module('moodle-mod_assign-history', 'Y.one("#' . $containerid . '").history');
 
         return $o;
+    }
+
+    /**
+     * Render accessible student chronology without modifying native submission actions.
+     *
+     * Historical content is rendered through the existing plugin summary renderables.
+     * When the gradebook or marking workflow hides feedback, no historical grade or
+     * feedback plugin data is interpolated into the Mustache context.
+     *
+     * @param \assign_attempt_history $history Authorised viewer's attempt data.
+     * @return string
+     */
+    private function render_assign_attempt_history_timeline(\assign_attempt_history $history): string {
+        $records = \mod_assign\local\attempt_history_overview::describe(
+            $history->submissions,
+            $history->grades,
+            (bool) $history->showgrades
+        );
+        if (!$records) {
+            return '';
+        }
+
+        $attempts = [];
+        foreach ($records as $record) {
+            $submission = $record['submission'];
+            $status = $record['status'];
+            $allowedstatuses = [
+                ASSIGN_SUBMISSION_STATUS_NEW,
+                ASSIGN_SUBMISSION_STATUS_DRAFT,
+                ASSIGN_SUBMISSION_STATUS_SUBMITTED,
+                ASSIGN_SUBMISSION_STATUS_REOPENED,
+            ];
+            $statuslabel = in_array($status, $allowedstatuses, true) ?
+                get_string('submissionstatus_' . $status, 'assign') :
+                get_string('nosubmission', 'assign');
+
+            $grade = $record['grade'];
+            $number = $record['attemptnumber'] + 1;
+            $current = $record['iscurrent'];
+            $hasgrade = $grade && isset($grade->gradefordisplay) &&
+                trim((string) $grade->gradefordisplay) !== '';
+            $attempt = [
+                'title' => get_string('attempthistorytimelineattempt', 'assign', $number),
+                'current' => $current,
+                'currentlabel' => get_string('attempthistorytimelinecurrent', 'assign'),
+                'currenthint' => get_string('attempthistorytimelinecurrenthint', 'assign'),
+                'state' => $status,
+                'status' => $statuslabel,
+                'hasmodified' => $record['modified'] > 0,
+                'modifiedlabel' => get_string('attempthistorytimelinelastmodified', 'assign'),
+                'modified' => $record['modified'] > 0 ? userdate($record['modified']) : '',
+                'datetime' => $record['modified'] > 0 ? gmdate('c', $record['modified']) : '',
+                'hasgrade' => (bool) $hasgrade,
+                'gradelabel' => get_string('gradenoun'),
+                'gradehtml' => $hasgrade ? (string) $grade->gradefordisplay : '',
+                'hasdetails' => !$current,
+                'detailslabel' => get_string('attempthistorytimelinedetails', 'assign'),
+                'detailshtml' => !$current ?
+                    $this->render_assign_attempt_history_details($history, $submission, $grade) : '',
+                'hasextension' => $current && $history->extensionduedate > 0,
+                'extensionlabel' => get_string('extensionduedate', 'assign'),
+                'extensiondate' => $current && $history->extensionduedate > 0 ?
+                    userdate($history->extensionduedate) : '',
+                'extensiondatetime' => $current && $history->extensionduedate > 0 ?
+                    gmdate('c', $history->extensionduedate) : '',
+            ];
+            $attempts[] = $attempt;
+        }
+
+        return $this->render_from_template('mod_assign/attempt_history_timeline', [
+            'heading' => get_string('attempthistory', 'assign'),
+            'attemptcount' => count($attempts),
+            'attempts' => $attempts,
+        ]);
+    }
+
+    /**
+     * Render old attempt contents via native submission and feedback plugin summaries.
+     *
+     * @param \assign_attempt_history $history Authorised learner's history.
+     * @param \stdClass $submission Previous attempt.
+     * @param \stdClass|null $grade Grade already filtered by visibility.
+     * @return string
+     */
+    private function render_assign_attempt_history_details(
+        \assign_attempt_history $history,
+        \stdClass $submission,
+        ?\stdClass $grade
+    ): string {
+        $table = new \html_table();
+        $table->attributes['class'] = 'generaltable table table-striped';
+        $table->caption = get_string('attempthistorytimelineattempt', 'assign', $submission->attemptnumber + 1);
+        $table->captionhide = true;
+
+        $status = (string) ($submission->status ?? ASSIGN_SUBMISSION_STATUS_NEW);
+        $statusknown = in_array($status, [
+            ASSIGN_SUBMISSION_STATUS_NEW,
+            ASSIGN_SUBMISSION_STATUS_DRAFT,
+            ASSIGN_SUBMISSION_STATUS_SUBMITTED,
+            ASSIGN_SUBMISSION_STATUS_REOPENED,
+        ], true);
+        $this->add_table_row_tuple(
+            $table,
+            get_string('submissionstatus', 'assign'),
+            $statusknown ? get_string('submissionstatus_' . $status, 'assign') : get_string('nosubmission', 'assign')
+        );
+
+        foreach ($history->submissionplugins as $plugin) {
+            if (!$plugin->is_enabled() || !$plugin->is_visible() || !$plugin->has_user_summary() ||
+                    ($plugin->is_empty($submission) && $plugin->allow_submissions())) {
+                continue;
+            }
+            $pluginsubmission = new \assign_submission_plugin_submission(
+                $plugin,
+                $submission,
+                \assign_submission_plugin_submission::SUMMARY,
+                $history->coursemoduleid,
+                $history->returnaction,
+                $history->returnparams
+            );
+            $this->add_table_row_tuple($table, $plugin->get_name(), $this->render($pluginsubmission));
+        }
+
+        if ($grade && $history->showgrades) {
+            $this->add_table_row_tuple(
+                $table,
+                get_string('gradenoun'),
+                (string) ($grade->gradefordisplay ?? '')
+            );
+            if (!empty($grade->timemodified)) {
+                $this->add_table_row_tuple(
+                    $table,
+                    get_string('gradedon', 'assign'),
+                    userdate((int) $grade->timemodified)
+                );
+            }
+            // Intentionally omit the grader's identity: anonymous marking and
+            // hide-grader permissions must not be inferred from historical data.
+            foreach ($history->feedbackplugins as $plugin) {
+                if (!$plugin->is_enabled() || !$plugin->is_visible() ||
+                        !$plugin->has_user_summary() || $plugin->is_empty($grade)) {
+                    continue;
+                }
+                $feedback = new \assign_feedback_plugin_feedback(
+                    $plugin,
+                    $grade,
+                    \assign_feedback_plugin_feedback::SUMMARY,
+                    $history->coursemoduleid,
+                    $history->returnaction,
+                    $history->returnparams
+                );
+                $this->add_table_row_tuple($table, $plugin->get_name(), $this->render($feedback));
+            }
+        }
+
+        return \html_writer::table($table);
     }
 
     /**
