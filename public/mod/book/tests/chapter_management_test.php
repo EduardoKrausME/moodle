@@ -78,6 +78,37 @@ final class chapter_management_test extends \advanced_testcase {
         ], $previousrevision, $context);
     }
 
+    public function test_subchapter_can_move_between_visible_groups(): void {
+        global $DB;
+
+        [$course, $book, $context, $first, $child, $second] = $this->make_book();
+        $revision = (int) $DB->get_field('book', 'revision', ['id' => $book->id]);
+        chapter_management::reorder($book, [
+            ['id' => $first->id, 'children' => []],
+            ['id' => $second->id, 'children' => [$child->id]],
+        ], $revision, $context);
+
+        $ordered = array_values($DB->get_records('book_chapters', ['bookid' => $book->id],
+            'pagenum ASC'));
+        $this->assertSame([$first->id, $second->id, $child->id],
+            array_map(fn($chapter) => (int) $chapter->id, $ordered));
+        $this->assertSame(1, (int) $ordered[2]->subchapter);
+    }
+
+    public function test_duplicate_refuses_stale_revision_without_creating_chapters(): void {
+        global $DB;
+
+        [$course, $book, $context, $first] = $this->make_book();
+        $revision = (int) $DB->get_field('book', 'revision', ['id' => $book->id]);
+        try {
+            chapter_management::duplicate($book, $first->id, $context, $revision - 1);
+            $this->fail('Stale editor revision was accepted.');
+        } catch (\\moodle_exception $e) {
+            $this->assertSame('chapterorderchanged', $e->errorcode);
+        }
+        $this->assertSame(3, $DB->count_records('book_chapters', ['bookid' => $book->id]));
+    }
+
     public function test_rejects_missing_and_duplicate_chapters_without_changes(): void {
         global $DB;
         [$course, $book, $context, $first, $child, $second] = $this->make_book();
