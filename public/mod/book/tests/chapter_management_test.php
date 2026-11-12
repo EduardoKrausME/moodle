@@ -158,7 +158,7 @@ final class chapter_management_test extends \advanced_testcase {
         $newid = chapter_management::duplicate($book, $first->id, $context);
         $rows = array_values($DB->get_records('book_chapters', ['bookid' => $book->id], 'pagenum ASC'));
         $this->assertCount(5, $rows);
-        $this->assertSame([$first->id, $child->id, $newid, $rows[3]->id, $second->id],
+        $this->assertSame([$first->id, $child->id, $newid, (int) $rows[3]->id, $second->id],
             array_map(fn($ch) => (int) $ch->id, $rows));
         $this->assertSame(0, (int) $rows[2]->subchapter);
         $this->assertSame(1, (int) $rows[3]->subchapter);
