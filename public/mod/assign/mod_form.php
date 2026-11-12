@@ -46,20 +46,6 @@ class mod_assign_mod_form extends moodleform_mod {
         $mform = $this->_form;
 
         $mform->addElement('header', 'general', get_string('general', 'form'));
-        // Provide an optional section index without changing the native form fields.
-        $navcontent = \html_writer::tag('h2', get_string('settingssectionstitle', 'assign'), ['class' => 'h5 mb-2']);
-        $navcontent .= \html_writer::tag('p', get_string('settingssectionshelp', 'assign'), ['class' => 'mb-3']);
-        $navcontent .= \html_writer::tag('ol', '', [
-            'class' => 'assign-settings-section-list',
-            'data-region' => 'assign-settings-section-list',
-        ]);
-        $mform->addElement('html', \html_writer::tag('nav', $navcontent, [
-            'class' => 'assign-settings-navigation',
-            'data-region' => 'assign-settings-navigation',
-            'aria-label' => get_string('settingssectionstitle', 'assign'),
-            'hidden' => 'hidden',
-        ]));
-
         $this->add_settings_section_hint('settingsgeneralhint');
 
         $mform->addElement('text', 'name', get_string('assignmentname', 'assign'), array('size'=>'64'));
@@ -423,7 +409,10 @@ class mod_assign_mod_form extends moodleform_mod {
 
         $this->add_action_buttons();
 
-        $PAGE->requires->js_call_amd('mod_assign/mod_form', 'init');
+        $PAGE->requires->js_call_amd('mod_assign/mod_form', 'init', [
+            get_string('settingssectionstitle', 'assign'),
+            get_string('settingssectionshelp', 'assign'),
+        ]);
     }
 
     /**

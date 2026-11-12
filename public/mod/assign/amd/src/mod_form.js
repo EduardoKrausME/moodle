@@ -39,40 +39,58 @@ const Selectors = {
  *
  * @param {HTMLFormElement} form Assignment edit form.
  */
-const initSectionNavigation = (form) => {
-    const navigation = form.querySelector('[data-region="assign-settings-navigation"]');
-    const list = navigation?.querySelector('[data-region="assign-settings-section-list"]');
-    if (!list) {
-        return;
-    }
-
+const initSectionNavigation = (form, title, help) => {
     const sections = Array.from(form.querySelectorAll('fieldset[id]')).filter(fieldset =>
         fieldset.querySelector(':scope > legend') && !fieldset.parentElement.closest('fieldset')
     );
+    if (!sections.length) {
+        return;
+    }
+
+    const navigation = document.createElement('nav');
+    navigation.className = 'assign-settings-navigation';
+    navigation.dataset.region = 'assign-settings-navigation';
+    navigation.setAttribute('aria-label', title);
+
+    const heading = document.createElement('h2');
+    heading.className = 'h5 mb-2';
+    heading.textContent = title;
+
+    const description = document.createElement('p');
+    description.className = 'mb-3';
+    description.textContent = help;
+
+    const list = document.createElement('ol');
+    list.className = 'assign-settings-section-list';
+    list.dataset.region = 'assign-settings-section-list';
+
     const fragment = document.createDocumentFragment();
     sections.forEach(fieldset => {
         const legend = fieldset.querySelector(':scope > legend');
-        const title = legend.textContent.replace(/\s+/g, ' ').trim();
-        if (!title) {
+        const sectionTitle = legend.textContent.replace(/\s+/g, ' ').trim();
+        if (!sectionTitle) {
             return;
         }
+
         const item = document.createElement('li');
         const link = document.createElement('a');
         link.href = '#' + encodeURIComponent(fieldset.id);
         link.className = 'assign-settings-section-link';
-        link.textContent = title;
+        link.textContent = sectionTitle;
         link.addEventListener('click', event => {
             if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
                 return;
             }
             event.preventDefault();
-            // The native Moodle toggle is a sibling of the visually hidden legend.
+
+            // Keep Bootstrap's native form-section collapse handling.
             const toggle = fieldset.querySelector('a[data-bs-toggle="collapse"][aria-expanded]');
             const collapsed = fieldset.classList.contains('collapsed') ||
                 toggle?.getAttribute('aria-expanded') === 'false';
             if (collapsed && toggle) {
                 toggle.click();
             }
+
             fieldset.scrollIntoView({block: 'start'});
             if (toggle) {
                 toggle.focus({preventScroll: true});
@@ -87,21 +105,22 @@ const initSectionNavigation = (form) => {
 
     if (fragment.childNodes.length) {
         list.appendChild(fragment);
-        navigation.hidden = false;
+        navigation.append(heading, description, list);
+        // Place the index outside every collapsible fieldset, including General.
+        sections[0].parentElement.insertBefore(navigation, sections[0]);
     }
 };
-
 /**
  * Update derived hidden fields in real time.
  */
-export const init = () => {
+export const init = (title, help) => {
     const form = document.querySelector(Selectors.form);
     if (!form) {
         return;
     }
 
     form.classList.add('mod-assign-settings-form');
-    initSectionNavigation(form);
+    initSectionNavigation(form, title, help);
 
     const updateDerivedFields = () => {
         const totalMarkerCount = form.querySelector(Selectors.derived.totalMarkerCount);
