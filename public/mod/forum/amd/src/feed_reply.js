@@ -26,6 +26,7 @@ export const init = (root, published) => {
     const list = root.querySelector('[data-region="feed-items"]');
     const drafts = new Map();
     let requestSequence = 0;
+    let mentionSearchTimer = null;
 
     const stateFor = postid => {
         if (!drafts.has(postid)) {
@@ -141,6 +142,9 @@ export const init = (root, published) => {
 
     const search = async(textarea) => {
         const card = getCard(textarea);
+        if (!card || !card.isConnected) {
+            return;
+        }
         const panel = getPanel(card);
         const caret = textarea.selectionStart;
         const match = textarea.value.slice(0, caret).match(/@([^\s@]{2,70})$/u);
@@ -272,7 +276,15 @@ export const init = (root, published) => {
         if (textarea) {
             const postid = getId(getCard(textarea));
             stateFor(postid).message = textarea.value;
-            search(textarea);
+            // A discussion can have hundreds of messages. Do not re-run
+            // permission-checked participant searches on every keystroke.
+            if (mentionSearchTimer !== null) {
+                clearTimeout(mentionSearchTimer);
+            }
+            mentionSearchTimer = setTimeout(() => {
+                mentionSearchTimer = null;
+                search(textarea);
+            }, 250);
         }
     });
 
