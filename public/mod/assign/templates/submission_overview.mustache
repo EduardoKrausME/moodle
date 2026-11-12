@@ -50,6 +50,48 @@
             </dl>
         {{/hasgrade}}
     </div>
+    {{#groupoverview}}
+        <section class="assign-group-overview assign-group-overview--{{state}} mt-3"
+                 data-region="assign-group-overview" aria-labelledby="assign-group-overview-heading">
+            <h3 id="assign-group-overview-heading" class="h5 mb-3">{{heading}}</h3>
+            {{#showgroupname}}
+                <dl class="assign-group-overview-summary mb-3">
+                    <div>
+                        <dt>{{namelabel}}</dt>
+                        <dd class="mb-0">{{{groupname}}}</dd>
+                    </div>
+                    <div>
+                        <dt>{{statuslabel}}</dt>
+                        <dd class="mb-0">{{nativestatus}}</dd>
+                    </div>
+                </dl>
+            {{/showgroupname}}
+            <p class="assign-group-overview-state mb-1"><strong>{{statelabel}}</strong></p>
+            <p class="mb-0">{{description}}</p>
+            {{#showprogress}}
+                <div class="assign-group-overview-progress mt-3" data-region="assign-group-confirmations">
+                    <p class="mb-2"><strong>{{countlabel}}</strong></p>
+                    <progress class="assign-group-overview-meter" value="{{confirmed}}" max="{{total}}"
+                              aria-label="{{progresslabel}}">{{countlabel}}</progress>
+                    {{#haspending}}
+                        <p class="mb-1">{{pendinglabel}}</p>
+                    {{/haspending}}
+                    {{#myconfirmed}}
+                        <p class="assign-group-overview-personal mb-0">{{myconfirmednote}}</p>
+                    {{/myconfirmed}}
+                    {{^myconfirmed}}
+                        <p class="assign-group-overview-personal mb-0">{{mypendingnote}}</p>
+                    {{/myconfirmed}}
+                </div>
+            {{/showprogress}}
+            {{#onecanfinish}}
+                <p class="assign-group-overview-note mt-2 mb-0">{{singleconfirmationnote}}</p>
+            {{/onecanfinish}}
+            {{#noeligiblemembers}}
+                <p class="assign-group-overview-note mt-2 mb-0">{{nomembersnote}}</p>
+            {{/noeligiblemembers}}
+        </section>
+    {{/groupoverview}}
     {{#workflow}}
         <section class="assign-submission-workflow assign-submission-workflow--{{state}} mt-3"
                  aria-labelledby="assign-submission-workflow-heading">
