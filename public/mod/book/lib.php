@@ -111,6 +111,7 @@ function book_delete_instance($id) {
     \core_completion\api::update_completion_date_event($cm->id, 'book', $id, null);
 
     $DB->delete_records('book_chapter_reads', ['bookid' => $book->id]);
+    $DB->delete_records('book_chapter_userdata', ['bookid' => $book->id]);
     $DB->delete_records('book_chapters', array('bookid'=>$book->id));
     $DB->delete_records('book', array('id'=>$book->id));
 
@@ -169,6 +170,7 @@ function book_reset_userdata($data) {
         if ($bookids) {
             list($insql, $params) = $DB->get_in_or_equal($bookids, SQL_PARAMS_NAMED);
             $DB->delete_records_select('book_chapter_reads', "bookid $insql", $params);
+            $DB->delete_records_select('book_chapter_userdata', "bookid $insql", $params);
         }
         $status[] = [
             'component' => get_string('modulenameplural', 'mod_book'),
