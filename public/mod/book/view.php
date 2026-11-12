@@ -212,10 +212,59 @@ if (!$chapterid) {
         'html' => $courseindexhtml,
         'expandlabel' => get_string('expand', 'core'),
         'collapselabel' => get_string('collapse', 'core'),
-        'hideoriginaltoc' => !$edit,
+        'hideoriginaltoc' => true,
     ]]);
 
+    $managerhtml = '';
+    if ($allowedit && $edit) {
+        // Build one draggable group per main chapter. Moving a group keeps its children.
+        $editorgroups = [];
+        $lastgroupindex = -1;
+        foreach ($chapters as $ch) {
+            $title = book_get_chapter_title($ch->id, $chapters, $book, $context);
+            $title = trim(html_entity_decode(strip_tags($title), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $entry = [
+                'id' => (int) $ch->id,
+                'title' => $title,
+                'url' => (new moodle_url('/mod/book/view.php',
+                    ['id' => $cm->id, 'chapterid' => $ch->id]))->out(false),
+                'editurl' => (new moodle_url('/mod/book/edit.php',
+                    ['cmid' => $cm->id, 'id' => $ch->id]))->out(false),
+                'editlabel' => get_string('editchapter', 'mod_book', $title),
+                'duplicatelabel' => get_string('duplicatechapterlabel', 'mod_book', $title),
+                'uplabel' => get_string('movechapterup', 'mod_book', $title),
+                'downlabel' => get_string('movechapterdown', 'mod_book', $title),
+                'hidden' => (bool) $ch->hidden,
+                'children' => [],
+            ];
+            if ($ch->subchapter && $lastgroupindex >= 0) {
+                $editorgroups[$lastgroupindex]['children'][] = $entry;
+            } else {
+                $editorgroups[] = $entry;
+                $lastgroupindex = count($editorgroups) - 1;
+            }
+        }
+        $managerhtml = $OUTPUT->render_from_template('mod_book/editor_chapters', [
+            'groups' => $editorgroups,
+            'cmid' => (int) $cm->id,
+            'sesskey' => sesskey(),
+            'duplicateurl' => (new moodle_url('/mod/book/duplicate.php'))->out(false),
+            'addurl' => (new moodle_url('/mod/book/edit.php',
+                ['cmid' => $cm->id, 'pagenum' => count($chapters)]))->out(false),
+        ]);
+        $PAGE->requires->js_call_amd('mod_book/editor_chapters', 'init', [[
+            'cmid' => (int) $cm->id,
+            'revision' => (int) $book->revision,
+            'sesskey' => sesskey(),
+            'url' => (new moodle_url('/mod/book/reorder.php'))->out(false),
+            'saving' => get_string('savingchapterorder', 'mod_book'),
+            'saved' => get_string('chapterordersaved', 'mod_book'),
+            'failed' => get_string('chapterorderfailed', 'mod_book'),
+        ]]);
+    }
+
     echo $OUTPUT->header();
+    echo $managerhtml;
     echo $readinghtml;
 
     // The chapter itself.
