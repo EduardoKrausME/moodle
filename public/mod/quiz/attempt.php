@@ -102,6 +102,9 @@ $autosaveperiod = get_config('quiz', 'autosaveperiod');
 if ($autosaveperiod) {
     $PAGE->requires->string_for_js('strftimedatetimeshortaccurate', 'langconfig');
     $PAGE->requires->string_for_js('lastautosave', 'quiz');
+    foreach (['pending', 'saving', 'saved', 'error', 'unavailable'] as $state) {
+        $PAGE->requires->string_for_js('autosavestatus' . $state, 'quiz');
+    }
     $PAGE->requires->yui_module('moodle-mod_quiz-autosave',
             'M.mod_quiz.autosave.init', [$autosaveperiod]);
 }

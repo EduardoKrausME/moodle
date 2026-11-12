@@ -95,7 +95,8 @@ M.mod_quiz.autosave = {
         CHANGE_ELEMENTS:       'input, select',
         HIDDEN_INPUTS:         'input[type=hidden]',
         CONNECTION_ERROR:      '#connection-error',
-        CONNECTION_OK:         '#connection-ok'
+        CONNECTION_OK:         '#connection-ok',
+        SAVE_STATUS:           '#mod-quiz-autosave-status'
     },
 
     /**
@@ -165,6 +166,21 @@ M.mod_quiz.autosave = {
      */
     savefailures: 0,
 
+    /** Number of file uploads currently in progress. */
+    uploads_in_progress: 0,
+
+    /** True until a file upload change has been acknowledged by the autosave endpoint. */
+    upload_unconfirmed: false,
+
+    /** Whether an uploadChanged event has been received since an upload started. */
+    upload_changed: false,
+
+    /** Autosaving stops when the form is submitted or the attempt is about to expire. */
+    stopped: false,
+
+    /** The last status shown, to avoid excessive screen-reader announcements. */
+    current_save_status: 'ready',
+
     /**
      * Properly bound key change handler.
      *
@@ -194,6 +210,7 @@ M.mod_quiz.autosave = {
     init: function(delay) {
         this.form = Y.one(this.SELECTORS.QUIZ_FORM);
         if (!this.form) {
+            Y.log('No response form found. Why did you try to set up autosave?', 'debug', 'moodle-mod_quiz-autosave');
             return;
         }
 
@@ -204,13 +221,49 @@ M.mod_quiz.autosave = {
         this.form.on('submit', this.stop_autosaving, this);
 
         require(['core_form/events'], function(FormEvent) {
-            window.addEventListener(FormEvent.eventTypes.uploadChanged, this.value_changed.bind(this));
+            window.addEventListener(FormEvent.eventTypes.uploadStarted, function() {
+                this.uploads_in_progress++;
+                this.upload_unconfirmed = true;
+                this.upload_changed = false;
+                this.set_save_status('pending');
+            }.bind(this));
+            window.addEventListener(FormEvent.eventTypes.uploadChanged, function(e) {
+                this.upload_changed = true;
+                if (this.uploads_in_progress === 0) {
+                    this.upload_unconfirmed = false;
+                }
+                this.value_changed(e);
+            }.bind(this));
+            window.addEventListener(FormEvent.eventTypes.uploadCompleted, function() {
+                this.uploads_in_progress = Math.max(0, this.uploads_in_progress - 1);
+                if (this.uploads_in_progress === 0 && this.upload_changed) {
+                    this.upload_unconfirmed = false;
+                    // Uploads need a server acknowledgement after completion, even if an earlier save succeeded.
+                    this.start_save_timer_if_necessary();
+                }
+            }.bind(this));
         }.bind(this));
 
         this.init_tinymce(this.TINYMCE_DETECTION_REPEATS);
 
         this.save_hidden_field_values();
         this.watch_hidden_fields();
+    },
+
+    /**
+     * Update only the presentation. This never initiates a save request.
+     * @param {String} state one of ready, pending, saving, saved, error or unavailable.
+     */
+    set_save_status: function(state) {
+        if (this.current_save_status === state) {
+            return;
+        }
+        this.current_save_status = state;
+        var indicator = Y.one(this.SELECTORS.SAVE_STATUS);
+        if (indicator) {
+            indicator.setAttribute('data-save-state', state);
+            indicator.set('text', M.util.get_string('autosavestatus' + state, 'quiz'));
+        }
     },
 
     save_hidden_field_values: function() {
@@ -259,10 +312,12 @@ M.mod_quiz.autosave = {
             if (repeatcount > 0) {
                 Y.later(this.TINYMCE_DETECTION_DELAY, this, this.init_tinymce, [repeatcount - 1]);
             } else {
+                Y.log('Gave up looking for TinyMCE.', 'debug', 'moodle-mod_quiz-autosave');
             }
             return;
         }
 
+        Y.log('Found TinyMCE.', 'debug', 'moodle-mod_quiz-autosave');
         this.editor_change_handler = Y.bind(this.editor_changed, this);
         if (window.tinyMCE.onAddEditor) {
             window.tinyMCE.onAddEditor.add(Y.bind(this.init_tinymce_editor, this));
@@ -287,6 +342,7 @@ M.mod_quiz.autosave = {
      * @param {Object} editor The TinyMCE editor object
      */
     init_tinymce_editor: function(e, editor) {
+        Y.log('Found TinyMCE editor ' + editor.id + '.', 'debug', 'moodle-mod_quiz-autosave');
         editor.onChange.add(this.editor_change_handler);
         editor.onRedo.add(this.editor_change_handler);
         editor.onUndo.add(this.editor_change_handler);
@@ -301,15 +357,23 @@ M.mod_quiz.autosave = {
 
         // Fallback to the ID when the name is not present (in the case of content editable).
         name = name || '#' + e.target.getAttribute('id');
+        Y.log('Detected a value change in element ' + name + '.', 'debug', 'moodle-mod_quiz-autosave');
         this.start_save_timer_if_necessary();
     },
 
     editor_changed: function(editor) {
+        Y.log('Detected a value change in editor ' + editor.id + '.', 'debug', 'moodle-mod_quiz-autosave');
         this.start_save_timer_if_necessary();
     },
 
     start_save_timer_if_necessary: function() {
+        if (this.stopped) {
+            return;
+        }
         this.dirty = true;
+        if (this.savefailures === 0) {
+            this.set_save_status('pending');
+        }
 
         if (this.delay_timer || this.save_transaction) {
             // Already counting down or daving.
@@ -333,13 +397,20 @@ M.mod_quiz.autosave = {
 
     save_changes: function() {
         this.cancel_delay();
-        this.dirty = false;
 
+        if (this.stopped) {
+            return;
+        }
         if (this.is_time_nearly_over()) {
+            Y.log('No more saving, time is nearly over.', 'debug', 'moodle-mod_quiz-autosave');
+            this.set_save_status('unavailable');
             this.stop_autosaving();
             return;
         }
 
+        this.dirty = false;
+        this.set_save_status('saving');
+        Y.log('Doing a save.', 'debug', 'moodle-mod_quiz-autosave');
         if (typeof window.tinyMCE !== 'undefined') {
             window.tinyMCE.triggerSave();
         }
@@ -366,8 +437,18 @@ M.mod_quiz.autosave = {
     },
 
     save_done: function(transactionid, response) {
-        var autosavedata = JSON.parse(response.responseText);
-        if (autosavedata.status !== 'OK') {
+        if (this.stopped) {
+            return;
+        }
+        var autosavedata;
+        try {
+            autosavedata = JSON.parse(response.responseText);
+        } catch (e) {
+            // HTTP 200 can still contain an invalid response. Never claim a successful save.
+            this.save_failed(transactionid, response);
+            return;
+        }
+        if (!autosavedata || autosavedata.status !== 'OK') {
             // Because IIS is useless, Moodle can't send proper HTTP response
             // codes, so we have to detect failures manually.
             this.save_failed(transactionid, response);
@@ -375,15 +456,24 @@ M.mod_quiz.autosave = {
         }
 
         if (typeof autosavedata.timeleft !== 'undefined') {
+            Y.log('Updating timer: ' + autosavedata.timeleft + ' seconds remain.', 'debug', 'moodle-mod_quiz-timer');
             M.mod_quiz.timer.updateEndTime(autosavedata.timeleft);
         }
 
         this.update_saved_time_display();
 
+        Y.log('Save completed.', 'debug', 'moodle-mod_quiz-autosave');
         this.save_transaction = null;
 
-        if (this.dirty) {
-            this.start_save_timer();
+        if (this.dirty || this.uploads_in_progress > 0 || this.upload_unconfirmed) {
+            // The acknowledgement may concern an older snapshot, never the latest changes.
+            this.set_save_status('pending');
+            if (this.dirty) {
+                Y.log('Dirty after save.', 'debug', 'moodle-mod_quiz-autosave');
+                this.start_save_timer();
+            }
+        } else {
+            this.set_save_status('saved');
         }
 
         if (this.savefailures > 0) {
@@ -397,9 +487,15 @@ M.mod_quiz.autosave = {
     },
 
     save_failed: function() {
+        if (this.stopped) {
+            return;
+        }
+        Y.log('Save failed.', 'debug', 'moodle-mod_quiz-autosave');
         this.save_transaction = null;
+        this.dirty = true;
+        this.set_save_status('error');
 
-        // We want to retry soon.
+        // Preserve the existing automatic retry interval and connection warnings.
         this.start_save_timer();
 
         this.savefailures = Math.max(1, this.savefailures + 1);
@@ -435,6 +531,7 @@ M.mod_quiz.autosave = {
     },
 
     stop_autosaving: function() {
+        this.stopped = true;
         this.cancel_delay();
         this.delay_timer = true;
         if (this.save_transaction) {
@@ -442,6 +539,7 @@ M.mod_quiz.autosave = {
         }
     }
 };
+
 
 
 }, '@VERSION@', {

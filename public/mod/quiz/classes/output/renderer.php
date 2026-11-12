@@ -543,9 +543,28 @@ class renderer extends plugin_renderer_base {
         $output .= $this->during_attempt_tertiary_nav($attemptobj->view_url());
         $output .= $this->quiz_notices($messages);
         $output .= $this->countdown_timer($attemptobj, time());
+        $output .= $this->autosave_status();
         $output .= $this->attempt_form($attemptobj, $page, $slots, $id, $nextpage);
         $output .= $this->footer();
         return $output;
+    }
+
+    /**
+     * Render an independent, accessible save indicator outside the collapsible navigation block.
+     * Auto-save is disabled when the site setting is zero; do not imply server confirmation.
+     *
+     * @return string HTML for the status region.
+     */
+    public function autosave_status(): string {
+        $enabled = (bool) get_config('quiz', 'autosaveperiod');
+        return html_writer::tag('div', get_string($enabled ? 'autosavestatusready' : 'autosavestatusoff', 'quiz'), [
+            'id' => 'mod-quiz-autosave-status',
+            'class' => 'mod-quiz-autosave-status',
+            'data-save-state' => $enabled ? 'ready' : 'off',
+            'role' => 'status',
+            'aria-live' => 'polite',
+            'aria-atomic' => 'true',
+        ]);
     }
 
     /**

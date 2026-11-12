@@ -1,1 +1,320 @@
-YUI.add("moodle-mod_quiz-autosave",function(n,t){M.mod_quiz=M.mod_quiz||{},M.mod_quiz.autosave={TINYMCE_DETECTION_DELAY:500,TINYMCE_DETECTION_REPEATS:20,WATCH_HIDDEN_DELAY:1e3,FAILURES_BEFORE_NOTIFY:1,FIRST_SUCCESSFUL_SAVE:-1,SELECTORS:{QUIZ_FORM:"#responseform",VALUE_CHANGE_ELEMENTS:'input, textarea, [contenteditable="true"]',CHANGE_ELEMENTS:"input, select",HIDDEN_INPUTS:"input[type=hidden]",CONNECTION_ERROR:"#connection-error",CONNECTION_OK:"#connection-ok"},AUTOSAVE_HANDLER:M.cfg.wwwroot+"/mod/quiz/autosave.ajax.php",delay:12e4,form:null,dirty:!1,delay_timer:null,save_transaction:null,savefailures:0,editor_change_handler:null,hidden_field_values:{},init:function(t){this.form=n.one(this.SELECTORS.QUIZ_FORM),this.form&&(this.delay=1e3*t,this.form.delegate("valuechange",this.value_changed,this.SELECTORS.VALUE_CHANGE_ELEMENTS,this),this.form.delegate("change",this.value_changed,this.SELECTORS.CHANGE_ELEMENTS,this),this.form.on("submit",this.stop_autosaving,this),require(["core_form/events"],function(t){window.addEventListener(t.eventTypes.uploadChanged,this.value_changed.bind(this))}.bind(this)),this.init_tinymce(this.TINYMCE_DETECTION_REPEATS),this.save_hidden_field_values(),this.watch_hidden_fields())},save_hidden_field_values:function(){this.form.all(this.SELECTORS.HIDDEN_INPUTS).each(function(t){var e=t.get("name");e&&(this.hidden_field_values[e]=t.get("value"))},this)},watch_hidden_fields:function(){this.detect_hidden_field_changes(),n.later(this.WATCH_HIDDEN_DELAY,this,this.watch_hidden_fields)},detect_hidden_field_changes:function(){this.form.all(this.SELECTORS.HIDDEN_INPUTS).each(function(t){var e=t.get("name"),i=t.get("value");e&&(e in this.hidden_field_values&&i===this.hidden_field_values[e]||(this.hidden_field_values[e]=i,this.value_changed({target:t})))},this)},init_tinymce:function(t){var e;"undefined"!=typeof window.tinyMCE?(this.editor_change_handler=n.bind(this.editor_changed,this),window.tinyMCE.onAddEditor?window.tinyMCE.onAddEditor.add(n.bind(this.init_tinymce_editor,this)):window.tinyMCE.on&&(e=this.start_save_timer_if_necessary.bind(this),window.tinyMCE.on("AddEditor",function(t){t.editor.on("Change Undo Redo keydown",e)}),window.tinyMCE.get().forEach(function(t){t.on("Change Undo Redo keydown",e)}))):0<t&&n.later(this.TINYMCE_DETECTION_DELAY,this,this.init_tinymce,[t-1])},init_tinymce_editor:function(t,e){e.onChange.add(this.editor_change_handler),e.onRedo.add(this.editor_change_handler),e.onUndo.add(this.editor_change_handler),e.onKeyDown.add(this.editor_change_handler)},value_changed:function(t){var e=t.target.getAttribute("name");"thispage"===e||"scrollpos"===e||e&&e.match(/_:flagged$/)||(e=e||"#"+t.target.getAttribute("id"),this.start_save_timer_if_necessary())},editor_changed:function(t){this.start_save_timer_if_necessary()},start_save_timer_if_necessary:function(){this.dirty=!0,this.delay_timer||this.save_transaction||this.start_save_timer()},start_save_timer:function(){this.cancel_delay(),this.delay_timer=n.later(this.delay,this,this.save_changes)},cancel_delay:function(){this.delay_timer&&!0!==this.delay_timer&&this.delay_timer.cancel(),this.delay_timer=null},save_changes:function(){var t;this.cancel_delay(),this.dirty=!1,this.is_time_nearly_over()?this.stop_autosaving():("undefined"!=typeof window.tinyMCE&&window.tinyMCE.triggerSave(),(t=this.form.all("input[type=submit], button[type=submit]")).setAttribute("type","button"),this.save_transaction=n.io(this.AUTOSAVE_HANDLER,{method:"POST",form:{id:this.form},on:{success:this.save_done,failure:this.save_failed},context:this}),t.setAttribute("type","submit"))},save_done:function(t,e){var i=JSON.parse(e.responseText);"OK"===i.status?("undefined"!=typeof i.timeleft&&M.mod_quiz.timer.updateEndTime(i.timeleft),this.update_saved_time_display(),this.save_transaction=null,this.dirty&&this.start_save_timer(),0<this.savefailures?(n.one(this.SELECTORS.CONNECTION_ERROR).hide(),n.one(this.SELECTORS.CONNECTION_OK).show(),this.savefailures=this.FIRST_SUCCESSFUL_SAVE):this.savefailures===this.FIRST_SUCCESSFUL_SAVE&&(n.one(this.SELECTORS.CONNECTION_OK).hide(),this.savefailures=0)):this.save_failed(t,e)},save_failed:function(){this.save_transaction=null,this.start_save_timer(),this.savefailures=Math.max(1,this.savefailures+1),this.savefailures===this.FAILURES_BEFORE_NOTIFY&&(n.one(this.SELECTORS.CONNECTION_ERROR).show(),n.one(this.SELECTORS.CONNECTION_OK).hide())},update_saved_time_display:function(){require(["core/user_date","core/notification"],function(t,e){t.get([{timestamp:Math.floor(Date.now()/1e3),format:M.util.get_string("strftimedatetimeshortaccurate","langconfig")}]).then(function(t){var e=n.one("#mod_quiz_navblock .othernav .autosave_info");e.set("text",M.util.get_string("lastautosave","quiz",t[0])),e.show()})["catch"](e.exception)})},is_time_nearly_over:function(){return M.mod_quiz.timer&&M.mod_quiz.timer.endtime&&(new Date).getTime()+2*this.delay>M.mod_quiz.timer.endtime},stop_autosaving:function(){this.cancel_delay(),this.delay_timer=!0,this.save_transaction&&this.save_transaction.abort()}}},"@VERSION@",{requires:["base","node","event","event-valuechange","node-event-delegate","io-form","datatype-date-format"]});
+YUI.add('moodle-mod_quiz-autosave', function (Y, NAME) {
+
+
+
+M.mod_quiz = M.mod_quiz || {};
+M.mod_quiz.autosave = {
+    TINYMCE_DETECTION_DELAY:  500,
+    
+    TINYMCE_DETECTION_REPEATS: 20,
+    
+    WATCH_HIDDEN_DELAY:      1000,
+    
+    FAILURES_BEFORE_NOTIFY:     1,
+    
+    FIRST_SUCCESSFUL_SAVE:     -1,
+    
+    SELECTORS: {
+        QUIZ_FORM:             '#responseform',
+        VALUE_CHANGE_ELEMENTS: 'input, textarea, [contenteditable="true"]',
+        CHANGE_ELEMENTS:       'input, select',
+        HIDDEN_INPUTS:         'input[type=hidden]',
+        CONNECTION_ERROR:      '#connection-error',
+        CONNECTION_OK:         '#connection-ok',
+        SAVE_STATUS:           '#mod-quiz-autosave-status'
+    },
+    
+    AUTOSAVE_HANDLER: M.cfg.wwwroot + '/mod/quiz/autosave.ajax.php',
+    
+    delay: 120000,
+    
+    form: null,
+    
+    dirty: false,
+    
+    delay_timer: null,
+    
+    save_transaction: null,
+    
+    savefailures: 0,
+    
+    uploads_in_progress: 0,
+    
+    upload_unconfirmed: false,
+    
+    upload_changed: false,
+    
+    stopped: false,
+    
+    current_save_status: 'ready',
+    
+    editor_change_handler: null,
+    
+    hidden_field_values: {},
+    
+    init: function(delay) {
+        this.form = Y.one(this.SELECTORS.QUIZ_FORM);
+        if (!this.form) {
+            Y.log('No response form found. Why did you try to set up autosave?', 'debug', 'moodle-mod_quiz-autosave');
+            return;
+        }
+        this.delay = delay * 1000;
+        this.form.delegate('valuechange', this.value_changed, this.SELECTORS.VALUE_CHANGE_ELEMENTS, this);
+        this.form.delegate('change', this.value_changed, this.SELECTORS.CHANGE_ELEMENTS, this);
+        this.form.on('submit', this.stop_autosaving, this);
+        require(['core_form/events'], function(FormEvent) {
+            window.addEventListener(FormEvent.eventTypes.uploadStarted, function() {
+                this.uploads_in_progress++;
+                this.upload_unconfirmed = true;
+                this.upload_changed = false;
+                this.set_save_status('pending');
+            }.bind(this));
+            window.addEventListener(FormEvent.eventTypes.uploadChanged, function(e) {
+                this.upload_changed = true;
+                if (this.uploads_in_progress === 0) {
+                    this.upload_unconfirmed = false;
+                }
+                this.value_changed(e);
+            }.bind(this));
+            window.addEventListener(FormEvent.eventTypes.uploadCompleted, function() {
+                this.uploads_in_progress = Math.max(0, this.uploads_in_progress - 1);
+                if (this.uploads_in_progress === 0 && this.upload_changed) {
+                    this.upload_unconfirmed = false;
+                    this.start_save_timer_if_necessary();
+                }
+            }.bind(this));
+        }.bind(this));
+        this.init_tinymce(this.TINYMCE_DETECTION_REPEATS);
+        this.save_hidden_field_values();
+        this.watch_hidden_fields();
+    },
+    
+    set_save_status: function(state) {
+        if (this.current_save_status === state) {
+            return;
+        }
+        this.current_save_status = state;
+        var indicator = Y.one(this.SELECTORS.SAVE_STATUS);
+        if (indicator) {
+            indicator.setAttribute('data-save-state', state);
+            indicator.set('text', M.util.get_string('autosavestatus' + state, 'quiz'));
+        }
+    },
+    save_hidden_field_values: function() {
+        this.form.all(this.SELECTORS.HIDDEN_INPUTS).each(function(hidden) {
+            var name = hidden.get('name');
+            if (!name) {
+                return;
+            }
+            this.hidden_field_values[name] = hidden.get('value');
+        }, this);
+    },
+    watch_hidden_fields: function() {
+        this.detect_hidden_field_changes();
+        Y.later(this.WATCH_HIDDEN_DELAY, this, this.watch_hidden_fields);
+    },
+    detect_hidden_field_changes: function() {
+        this.form.all(this.SELECTORS.HIDDEN_INPUTS).each(function(hidden) {
+            var name = hidden.get('name'),
+                value = hidden.get('value');
+            if (!name) {
+                return;
+            }
+            if (!(name in this.hidden_field_values) || value !== this.hidden_field_values[name]) {
+                this.hidden_field_values[name] = value;
+                this.value_changed({target: hidden});
+            }
+        }, this);
+    },
+    
+    init_tinymce: function(repeatcount) {
+        if (typeof window.tinyMCE === 'undefined') {
+            if (repeatcount > 0) {
+                Y.later(this.TINYMCE_DETECTION_DELAY, this, this.init_tinymce, [repeatcount - 1]);
+            } else {
+                Y.log('Gave up looking for TinyMCE.', 'debug', 'moodle-mod_quiz-autosave');
+            }
+            return;
+        }
+        Y.log('Found TinyMCE.', 'debug', 'moodle-mod_quiz-autosave');
+        this.editor_change_handler = Y.bind(this.editor_changed, this);
+        if (window.tinyMCE.onAddEditor) {
+            window.tinyMCE.onAddEditor.add(Y.bind(this.init_tinymce_editor, this));
+        } else if (window.tinyMCE.on) {
+            var startSaveTimer = this.start_save_timer_if_necessary.bind(this);
+            window.tinyMCE.on('AddEditor', function(event) {
+                event.editor.on('Change Undo Redo keydown', startSaveTimer);
+            });
+            window.tinyMCE.get().forEach(function(editor) {
+                editor.on('Change Undo Redo keydown', startSaveTimer);
+            });
+         }
+    },
+    
+    init_tinymce_editor: function(e, editor) {
+        Y.log('Found TinyMCE editor ' + editor.id + '.', 'debug', 'moodle-mod_quiz-autosave');
+        editor.onChange.add(this.editor_change_handler);
+        editor.onRedo.add(this.editor_change_handler);
+        editor.onUndo.add(this.editor_change_handler);
+        editor.onKeyDown.add(this.editor_change_handler);
+    },
+    value_changed: function(e) {
+        var name = e.target.getAttribute('name');
+        if (name === 'thispage' || name === 'scrollpos' || (name && name.match(/_:flagged$/))) {
+            return; // Not interesting.
+        }
+        name = name || '#' + e.target.getAttribute('id');
+        Y.log('Detected a value change in element ' + name + '.', 'debug', 'moodle-mod_quiz-autosave');
+        this.start_save_timer_if_necessary();
+    },
+    editor_changed: function(editor) {
+        Y.log('Detected a value change in editor ' + editor.id + '.', 'debug', 'moodle-mod_quiz-autosave');
+        this.start_save_timer_if_necessary();
+    },
+    start_save_timer_if_necessary: function() {
+        if (this.stopped) {
+            return;
+        }
+        this.dirty = true;
+        if (this.savefailures === 0) {
+            this.set_save_status('pending');
+        }
+        if (this.delay_timer || this.save_transaction) {
+            return;
+        }
+        this.start_save_timer();
+    },
+    start_save_timer: function() {
+        this.cancel_delay();
+        this.delay_timer = Y.later(this.delay, this, this.save_changes);
+    },
+    cancel_delay: function() {
+        if (this.delay_timer && this.delay_timer !== true) {
+            this.delay_timer.cancel();
+        }
+        this.delay_timer = null;
+    },
+    save_changes: function() {
+        this.cancel_delay();
+        if (this.stopped) {
+            return;
+        }
+        if (this.is_time_nearly_over()) {
+            Y.log('No more saving, time is nearly over.', 'debug', 'moodle-mod_quiz-autosave');
+            this.set_save_status('unavailable');
+            this.stop_autosaving();
+            return;
+        }
+        this.dirty = false;
+        this.set_save_status('saving');
+        Y.log('Doing a save.', 'debug', 'moodle-mod_quiz-autosave');
+        if (typeof window.tinyMCE !== 'undefined') {
+            window.tinyMCE.triggerSave();
+        }
+        var allsubmitbuttons = this.form.all('input[type=submit], button[type=submit]');
+        allsubmitbuttons.setAttribute('type', 'button');
+        this.save_transaction = Y.io(this.AUTOSAVE_HANDLER, {
+            method:  'POST',
+            form:    {id: this.form},
+            on:      {
+                success: this.save_done,
+                failure: this.save_failed
+            },
+            context: this
+        });
+        allsubmitbuttons.setAttribute('type', 'submit');
+    },
+    save_done: function(transactionid, response) {
+        if (this.stopped) {
+            return;
+        }
+        var autosavedata;
+        try {
+            autosavedata = JSON.parse(response.responseText);
+        } catch (e) {
+            this.save_failed(transactionid, response);
+            return;
+        }
+        if (!autosavedata || autosavedata.status !== 'OK') {
+            this.save_failed(transactionid, response);
+            return;
+        }
+        if (typeof autosavedata.timeleft !== 'undefined') {
+            Y.log('Updating timer: ' + autosavedata.timeleft + ' seconds remain.', 'debug', 'moodle-mod_quiz-timer');
+            M.mod_quiz.timer.updateEndTime(autosavedata.timeleft);
+        }
+        this.update_saved_time_display();
+        Y.log('Save completed.', 'debug', 'moodle-mod_quiz-autosave');
+        this.save_transaction = null;
+        if (this.dirty || this.uploads_in_progress > 0 || this.upload_unconfirmed) {
+            this.set_save_status('pending');
+            if (this.dirty) {
+                Y.log('Dirty after save.', 'debug', 'moodle-mod_quiz-autosave');
+                this.start_save_timer();
+            }
+        } else {
+            this.set_save_status('saved');
+        }
+        if (this.savefailures > 0) {
+            Y.one(this.SELECTORS.CONNECTION_ERROR).hide();
+            Y.one(this.SELECTORS.CONNECTION_OK).show();
+            this.savefailures = this.FIRST_SUCCESSFUL_SAVE;
+        } else if (this.savefailures === this.FIRST_SUCCESSFUL_SAVE) {
+            Y.one(this.SELECTORS.CONNECTION_OK).hide();
+            this.savefailures = 0;
+        }
+    },
+    save_failed: function() {
+        if (this.stopped) {
+            return;
+        }
+        Y.log('Save failed.', 'debug', 'moodle-mod_quiz-autosave');
+        this.save_transaction = null;
+        this.dirty = true;
+        this.set_save_status('error');
+        this.start_save_timer();
+        this.savefailures = Math.max(1, this.savefailures + 1);
+        if (this.savefailures === this.FAILURES_BEFORE_NOTIFY) {
+            Y.one(this.SELECTORS.CONNECTION_ERROR).show();
+            Y.one(this.SELECTORS.CONNECTION_OK).hide();
+        }
+    },
+    
+    update_saved_time_display: function() {
+        require(['core/user_date', 'core/notification'], function(UserDate, Notification) {
+            UserDate.get([{
+                timestamp: Math.floor(Date.now() / 1000),
+                format: M.util.get_string('strftimedatetimeshortaccurate', 'langconfig'),
+            }]).then(function(dateStrs) {
+                var infoDiv = Y.one('#mod_quiz_navblock .othernav .autosave_info');
+                infoDiv.set('text', M.util.get_string('lastautosave', 'quiz', dateStrs[0]));
+                infoDiv.show();
+                return;
+            }).catch(Notification.exception);
+        });
+    },
+    is_time_nearly_over: function() {
+        return M.mod_quiz.timer && M.mod_quiz.timer.endtime &&
+                (new Date().getTime() + 2 * this.delay) > M.mod_quiz.timer.endtime;
+    },
+    stop_autosaving: function() {
+        this.stopped = true;
+        this.cancel_delay();
+        this.delay_timer = true;
+        if (this.save_transaction) {
+            this.save_transaction.abort();
+        }
+    }
+};
+
+}, '@VERSION@', {
+    "requires": [
+        "base",
+        "node",
+        "event",
+        "event-valuechange",
+        "node-event-delegate",
+        "io-form",
+        "datatype-date-format"
+    ]
+});
