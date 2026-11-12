@@ -583,7 +583,8 @@ class renderer extends plugin_renderer_base {
                         ['cmid' => $attemptobj->get_cmid()]), 'method' => 'post',
                         'enctype' => 'multipart/form-data', 'accept-charset' => 'utf-8',
                         'id' => 'responseform']);
-        $output .= html_writer::start_tag('div');
+        // Keep the existing form structure and question-engine markup unchanged.
+        $output .= html_writer::start_tag('div', ['class' => 'mod-quiz-attempt-content']);
 
         // Print all the questions.
         foreach ($slots as $slot) {
@@ -634,7 +635,11 @@ class renderer extends plugin_renderer_base {
     protected function attempt_navigation_buttons($page, $lastpage, $navmethod = 'free') {
         $output = '';
 
-        $output .= html_writer::start_tag('div', ['class' => 'submitbtns']);
+        $output .= html_writer::start_tag('div', [
+            'class' => 'submitbtns mod-quiz-attempt-navigation',
+            'role' => 'group',
+            'aria-label' => get_string('quiznavigation', 'quiz'),
+        ]);
         if ($page > 0 && $navmethod == 'free') {
             $output .= html_writer::empty_tag('input', ['type' => 'submit', 'name' => 'previous',
                     'value' => get_string('navigateprevious', 'quiz'), 'class' => 'mod_quiz-prev-nav btn btn-secondary',

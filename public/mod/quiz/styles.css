@@ -1295,3 +1295,140 @@ table.quizreviewsummary td.cell {
         width: 100%;
     }
 }
+
+/* Responsive question reading surface, scoped to in-progress quiz attempts only. */
+#page-mod-quiz-attempt #responseform .mod-quiz-attempt-content {
+    width: 100%;
+    max-width: 80rem;
+    min-width: 0;
+    margin-inline: auto;
+}
+
+#page-mod-quiz-attempt #responseform .mod-quiz-attempt-content > .que {
+    gap: clamp(0.75rem, 1.5vw, 1.5rem);
+    min-width: 0;
+    margin: 0 0 1.5rem;
+    padding: clamp(0.75rem, 2vw, 1.5rem);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg, 0.75rem);
+    background-color: var(--bs-body-bg);
+}
+
+#page-mod-quiz-attempt #responseform .mod-quiz-attempt-content > .que > .info {
+    border-color: var(--bs-border-color);
+    border-radius: var(--bs-border-radius, 0.375rem);
+    background-color: var(--bs-tertiary-bg);
+}
+
+#page-mod-quiz-attempt #responseform .mod-quiz-attempt-content > .que > .content {
+    min-width: 0;
+}
+
+#page-mod-quiz-attempt #responseform .que .formulation {
+    min-width: 0;
+    max-width: 100%;
+    padding: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+#page-mod-quiz-attempt #responseform .que .qtext,
+#page-mod-quiz-attempt #responseform .que .ablock {
+    min-width: 0;
+    max-width: 100%;
+}
+
+#page-mod-quiz-attempt #responseform .que .qtext {
+    overflow-x: auto;
+    overflow-wrap: break-word;
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+#page-mod-quiz-attempt #responseform .que .qtext img,
+#page-mod-quiz-attempt #responseform .que .ablock img,
+#page-mod-quiz-attempt #responseform .que .formulation video {
+    max-width: 100%;
+    height: auto;
+}
+
+#page-mod-quiz-attempt #responseform .que .qtext iframe,
+#page-mod-quiz-attempt #responseform .que .ablock iframe {
+    max-width: 100%;
+}
+
+#page-mod-quiz-attempt #responseform .que .qtext pre,
+#page-mod-quiz-attempt #responseform .que .ablock pre {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+#page-mod-quiz-attempt #responseform .que.multichoice .answer > div,
+#page-mod-quiz-attempt #responseform .que.truefalse .answer > div {
+    padding-block: 0.4rem;
+}
+
+#page-mod-quiz-attempt #responseform .que :focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+#page-mod-quiz-attempt #responseform .mod-quiz-attempt-navigation {
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-block: 1.5rem;
+    padding: 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg, 0.75rem);
+    background-color: var(--bs-tertiary-bg);
+}
+
+#page-mod-quiz-attempt #responseform .mod-quiz-attempt-navigation input[type="submit"] {
+    min-height: 2.75rem;
+    min-width: min(100%, 11rem);
+    padding-inline: 1.25rem;
+    white-space: normal;
+}
+
+#page-mod-quiz-attempt #responseform .mod-quiz-attempt-navigation .mod_quiz-next-nav {
+    margin-inline-start: auto;
+}
+
+@media (max-width: 767.98px) {
+    #page-mod-quiz-attempt #responseform .mod-quiz-attempt-content > .que {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #page-mod-quiz-attempt #responseform .mod-quiz-attempt-content > .que > .info,
+    #page-mod-quiz-attempt #responseform .mod-quiz-attempt-content > .que > .content {
+        width: 100%;
+    }
+
+    #page-mod-quiz-attempt #responseform .mod-quiz-attempt-content > .que > .info {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+    }
+
+    #page-mod-quiz-attempt #responseform .mod-quiz-attempt-content > .que > .info > div {
+        margin-top: 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+    #page-mod-quiz-attempt #responseform .mod-quiz-attempt-navigation {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #page-mod-quiz-attempt #responseform .mod-quiz-attempt-navigation input[type="submit"] {
+        width: 100%;
+        min-width: 0;
+    }
+
+    #page-mod-quiz-attempt #responseform .mod-quiz-attempt-navigation .mod_quiz-next-nav {
+        margin-inline-start: 0;
+    }
+}
