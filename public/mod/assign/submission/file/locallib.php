@@ -181,6 +181,41 @@ class assign_submission_file extends assign_submission_plugin {
                                                   'assignsubmission_file',
                                                   ASSIGNSUBMISSION_FILE_FILEAREA,
                                                   $submissionid);
+        // Explain the native filemanager limits before its controls. This is display only:
+        // validation, repositories, draft files and final storage stay with the File API.
+        global $CFG;
+        $effectivemaxbytes = get_max_upload_file_size(
+            $CFG->maxbytes,
+            $this->assignment->get_course()->maxbytes,
+            $fileoptions['maxbytes']
+        );
+        $limits = \mod_assign\local\submission_guidance::file_limits(
+            (int) $fileoptions['maxfiles'],
+            (int) $effectivemaxbytes,
+            (string) $this->get_config('filetypeslist')
+        );
+        $sizelabel = $limits['hassizelimit'] ?
+            display_size($limits['maxbytes']) :
+            get_string('submissionfilesizelimitunknown', 'assignsubmission_file');
+        $summary = (object) [
+            'count' => $limits['maxfiles'],
+            'size' => $sizelabel,
+        ];
+
+        $guidance = \html_writer::tag('p', get_string('submissionfileguidance', 'assignsubmission_file'), [
+            'class' => 'mb-1',
+        ]);
+        $guidance .= \html_writer::tag('p', get_string('submissionfilelimits', 'assignsubmission_file', $summary), [
+            'class' => 'mb-1',
+        ]);
+        $typeslabel = $limits['restrictedtypes'] ?
+            get_string('submissionfiletypes', 'assignsubmission_file', s($limits['types'])) :
+            get_string('submissionfiletypesany', 'assignsubmission_file');
+        $guidance .= \html_writer::tag('p', $typeslabel, ['class' => 'mb-0']);
+        $mform->addElement('html', \html_writer::tag('div', $guidance, [
+            'id' => 'assign-submission-file-guidance',
+            'class' => 'assign-submission-guidance assign-submission-guidance-file',
+        ]));
         $mform->addElement('filemanager', 'files_filemanager', $this->get_name(), null, $fileoptions);
 
         return true;

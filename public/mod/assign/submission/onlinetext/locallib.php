@@ -180,6 +180,40 @@ class assign_submission_onlinetext extends assign_submission_plugin {
                                              'assignsubmission_onlinetext',
                                              ASSIGNSUBMISSION_ONLINETEXT_FILEAREA,
                                              $submissionid);
+        // The editor remains the only source of submitted text and draft files.
+        // The optional live count only provides approximate visual guidance.
+        $wordlimit = \mod_assign\local\submission_guidance::word_limit(
+            (int) $this->get_config('wordlimit'),
+            (bool) $this->get_config('wordlimitenabled')
+        );
+        $guidance = \html_writer::tag('p', get_string('submissiontextguidance', 'assignsubmission_onlinetext'), [
+            'class' => 'mb-1',
+        ]);
+        if ($wordlimit !== null) {
+            $guidance .= \html_writer::tag(
+                'p',
+                get_string('submissiontextlimit', 'assignsubmission_onlinetext', $wordlimit),
+                ['class' => 'mb-1']
+            );
+            $counter = \html_writer::tag(
+                'output',
+                '0',
+                ['data-region' => 'assign-submission-wordcount-value']
+            );
+            $guidance .= \html_writer::tag(
+                'p',
+                get_string('submissiontextapproxcount', 'assignsubmission_onlinetext') . ' ' . $counter,
+                [
+                    'class' => 'mb-0',
+                    'data-region' => 'assign-submission-wordcount',
+                    'hidden' => 'hidden',
+                ]
+            );
+        }
+        $mform->addElement('html', \html_writer::tag('div', $guidance, [
+            'id' => 'assign-submission-text-guidance',
+            'class' => 'assign-submission-guidance assign-submission-guidance-text',
+        ]));
         $mform->addElement('editor', 'onlinetext_editor', $this->get_name(), null, $editoroptions);
 
         return true;
