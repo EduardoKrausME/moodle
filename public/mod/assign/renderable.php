@@ -39,17 +39,36 @@ class assign_submit_for_grading_page implements renderable {
     public $coursemoduleid = 0;
     /** @var moodleform $confirmform */
     public $confirmform = null;
+    /** @var \stdClass|null Native submission belonging to the current viewer. */
+    public $submission = null;
+    /** @var array Enabled plugins that provide native, visible submission summaries. */
+    public $reviewplugins = [];
+    /** @var bool Whether all group members must confirm individually. */
+    public $groupconfirmation = false;
 
     /**
      * Constructor
      * @param string $notifications - Any mesages to display
      * @param int $coursemoduleid
      * @param moodleform $confirmform
+     * @param \stdClass|null $submission Native submission for the current viewer.
+     * @param array $reviewplugins Visible submission plugins for the native summary.
+     * @param bool $groupconfirmation Whether group members may need to confirm individually.
      */
-    public function __construct($notifications, $coursemoduleid, $confirmform) {
+    public function __construct(
+        $notifications,
+        $coursemoduleid,
+        $confirmform,
+        ?\stdClass $submission = null,
+        array $reviewplugins = [],
+        bool $groupconfirmation = false
+    ) {
         $this->notifications = $notifications;
         $this->coursemoduleid = $coursemoduleid;
         $this->confirmform = $confirmform;
+        $this->submission = $submission;
+        $this->reviewplugins = $reviewplugins;
+        $this->groupconfirmation = $groupconfirmation;
     }
 
 }

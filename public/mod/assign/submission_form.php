@@ -56,6 +56,22 @@ class mod_assign_submission_form extends moodleform {
         }
 
         $assign->add_submission_form_elements($mform, $data);
+
+        // Keep the existing "Save changes" control and its action name. The
+        // explanation clarifies whether that button saves a draft or directly
+        // submits, without breaking other Moodle consumers and Behat selectors.
+        if ($instance->submissiondrafts) {
+            $messagekey = 'submissionworkflowsavedraft';
+        } else if ($submission && $submission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+            $messagekey = 'submissionworkflowupdateexisting';
+        } else {
+            $messagekey = 'submissionworkflowdirectsave';
+        }
+        $mform->addElement('html', \html_writer::tag('p', get_string($messagekey, 'assign'), [
+            'class' => 'assign-submission-savehint',
+            'data-region' => 'assign-submission-savehint',
+        ]));
+
         $this->add_action_buttons(true, get_string('savechanges', 'assign'));
 
         // Enhance only this submission form. Never replace the native plugin inputs.
