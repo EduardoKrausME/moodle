@@ -215,7 +215,9 @@
 }
 
 .path-mod-book #course-index .book-courseindex-link {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     padding: 0.375rem 0.5rem;
     border-inline-start: 2px solid transparent;
     border-radius: 0.25rem;
@@ -252,4 +254,52 @@ body.path-mod-book.mod-book-courseindex-active .block_book_toc {
     .path-mod-book .book-chapter-footer__link--next {
         width: 100%;
     }
+}
+
+/* Reader progress is a per-user visit count, independent of activity completion. */
+.path-mod-book .book-reading-progress {
+    max-width: 100%;
+    margin: 0 0 1.25rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+}
+
+.path-mod-book .book-reading-progress__heading {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.path-mod-book .book-reading-progress__bar {
+    display: block;
+    width: 100%;
+    height: 0.55rem;
+    border-radius: 0.5rem;
+    accent-color: var(--bs-primary);
+}
+
+.path-mod-book .book-reading-progress__resume {
+    display: inline-block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    margin-top: 0.8rem;
+    text-align: start;
+}
+
+.path-mod-book #course-index .book-courseindex-chaptertitle {
+    min-width: 0;
+    flex: 1;
+}
+
+.path-mod-book #course-index .book-courseindex-visited {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--bs-success, #198754);
 }
