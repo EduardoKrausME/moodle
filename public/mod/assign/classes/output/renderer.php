@@ -213,7 +213,49 @@ class renderer extends \plugin_renderer_base {
 
             $o .= $this->output->continue_button($cancelurl);
         } else {
-            // All submission plugins ready - show the confirmation form.
+            // The server has already run each enabled plugin's precheck_submission.
+            // The review is read-only; final submission still uses the Moodle form.
+            $o .= $this->output->container(
+                get_string('submissionworkflowreviewintro', 'assign'),
+                'assign-confirm-review-intro'
+            );
+            if ($page->submission && $page->reviewplugins) {
+                $o .= \html_writer::start_tag('section', [
+                    'class' => 'assign-confirm-review',
+                    'aria-labelledby' => 'assign-confirm-review-title',
+                ]);
+                $o .= \html_writer::tag('h4', s(get_string('submissionworkflowreviewheading', 'assign')), [
+                    'id' => 'assign-confirm-review-title',
+                    'class' => 'h5',
+                ]);
+                foreach ($page->reviewplugins as $plugin) {
+                    $o .= \html_writer::start_tag('div', ['class' => 'assign-confirm-review-item']);
+                    $o .= \html_writer::tag('h5', s($plugin->get_name()), ['class' => 'h6']);
+                    $pluginsubmission = new \assign_submission_plugin_submission(
+                        $plugin,
+                        $page->submission,
+                        \assign_submission_plugin_submission::SUMMARY,
+                        $page->coursemoduleid,
+                        'submit',
+                        []
+                    );
+                    $o .= $this->render($pluginsubmission);
+                    $o .= \html_writer::end_tag('div');
+                }
+                $o .= \html_writer::end_tag('section');
+            } else {
+                // Additional submission plugins may have no safe user summary.
+                $o .= $this->output->container(
+                    get_string('submissionworkflowreviewunavailable', 'assign'),
+                    'assign-confirm-review-fallback'
+                );
+            }
+            if ($page->groupconfirmation) {
+                $o .= $this->output->container(
+                    get_string('submissionworkflowgroupnotice', 'assign'),
+                    'assign-confirm-groupnote'
+                );
+            }
             $o .= $this->moodleform($page->confirmform);
         }
         $o .= $this->output->container_end();
@@ -661,12 +703,16 @@ class renderer extends \plugin_renderer_base {
      * @param \assign_submission_status $status Status already checked for the viewer.
      * @param \assign_feedback_status|null $feedback Feedback already checked for gradebook visibility.
      * @param bool $submissionopen Native submission availability for the current viewer.
+     * @param bool $requiresconfirmation Native setting requiring a final submission.
+     * @param bool $groupconfirmation Whether all team members must confirm.
      * @return string
      */
     public function render_submission_overview(
         \assign_submission_status $status,
         ?\assign_feedback_status $feedback = null,
-        bool $submissionopen = false
+        bool $submissionopen = false,
+        bool $requiresconfirmation = false,
+        bool $groupconfirmation = false
     ): string {
         if ($status->view !== \assign_submission_status::STUDENT_VIEW) {
             return '';
@@ -760,10 +806,33 @@ class renderer extends \plugin_renderer_base {
             );
         }
 
+        // Describe only. Native submission flags and buttons still determine which
+        // actions the student can perform, including group confirmation rules.
+        $workflowstate = \mod_assign\local\submission_workflow::describe(
+            is_object($submission) ? (string) $submission->status : ASSIGN_SUBMISSION_STATUS_NEW,
+            $requiresconfirmation,
+            (bool) $status->locked,
+            (bool) $status->cansubmit
+        );
+        $workflow = null;
+        if ($status->submissionsenabled &&
+                (!$status->teamsubmissionenabled || $status->submissiongroup ||
+                    !$status->preventsubmissionnotingroup)) {
+            $workflow = $workflowstate + [
+                'heading' => get_string('submissionworkflowheading', 'assign'),
+                'label' => get_string('submissionworkflowstate' . $workflowstate['state'], 'assign'),
+                'description' => get_string('submissionworkflowdescription' . $workflowstate['state'], 'assign'),
+                'step1' => get_string('submissionworkflowstepsave', 'assign'),
+                'step2' => get_string('submissionworkflowstepfinal', 'assign'),
+                'groupnote' => $groupconfirmation ? get_string('submissionworkflowgroupnotice', 'assign') : '',
+            ];
+        }
+
         return $this->render_from_template('mod_assign/submission_overview', [
             'submissionstatus' => $submissionlabel,
             'gradingstatus' => $gradinglabel,
             'availability' => $availabilityview,
+            'workflow' => $workflow,
             'duedate' => $duedate > 0 ? userdate($duedate) : '',
             'grade' => $grade,
             'hasgrade' => $grade !== '',

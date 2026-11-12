@@ -5883,9 +5883,32 @@ class assign {
                                                               $this->show_intro(),
                                                               $this->get_course_module()->id,
                                                               get_string('confirmsubmissionheading', 'assign')));
-        $submitforgradingpage = new assign_submit_for_grading_page($notifications,
-                                                                   $this->get_course_module()->id,
-                                                                   $mform);
+        // Reuse exactly the plugin summaries already shown on the native submission
+        // status page. Do not fetch other users' data or invent a second preview API.
+        $reviewplugins = [];
+        $validgroup = !$this->get_instance()->teamsubmission ||
+            !$this->get_instance()->preventsubmissionnotingroup ||
+            $this->get_submission_group($USER->id);
+        if (!$notifications && is_object($submission) && $validgroup &&
+                $this->can_view_submission($USER->id)) {
+            foreach ($plugins as $plugin) {
+                if ($plugin->is_enabled() && $plugin->is_visible() && $plugin->allow_submissions() &&
+                        $plugin->has_user_summary() && !$plugin->is_empty($submission)) {
+                    $reviewplugins[] = $plugin;
+                }
+            }
+        }
+        $groupconfirmation = (bool) (
+            $this->get_instance()->teamsubmission && $this->get_instance()->requireallteammemberssubmit
+        );
+        $submitforgradingpage = new assign_submit_for_grading_page(
+            $notifications,
+            $this->get_course_module()->id,
+            $mform,
+            is_object($submission) && $validgroup ? $submission : null,
+            $reviewplugins,
+            $groupconfirmation
+        );
         $o .= $this->get_renderer()->render($submitforgradingpage);
         $o .= $this->view_footer();
 
@@ -6195,8 +6218,13 @@ class assign {
 
                 // Only the activity landing page passes an action bar. Other consumers keep their original output.
                 if ($actionbar !== '') {
+                    $settings = $this->get_instance($user->id);
                     $o .= $this->get_renderer()->render_submission_overview(
-                        $submissionstatus, $feedbackstatus, $this->submissions_open($user->id)
+                        $submissionstatus,
+                        $feedbackstatus,
+                        $this->submissions_open($user->id),
+                        (bool) $settings->submissiondrafts,
+                        (bool) ($settings->teamsubmission && $settings->requireallteammemberssubmit)
                     );
                 }
 
