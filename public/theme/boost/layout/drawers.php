@@ -81,6 +81,22 @@ if ($PAGE->has_secondary_navigation()) {
 $primary = new core\navigation\output\primary($PAGE);
 $renderer = $PAGE->get_renderer('core');
 $primarymenu = $primary->export_for_template($renderer);
+
+// Give the React primary navigation and its no-JavaScript fallback a distinct, localised landmark name.
+// core/nav/Nav only creates the named <nav> when the navlabel property is supplied.
+if (!empty($primarymenu['moremenu']['reactprops'])) {
+    $reactprops = json_decode($primarymenu['moremenu']['reactprops'], true);
+    if (is_array($reactprops)) {
+        $navlabel = get_string('navigation', 'core');
+        $reactprops['navlabel'] = $navlabel;
+        $primarymenu['moremenu']['reactprops'] = json_encode(
+            $reactprops,
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+        $primarymenu['moremenu']['navlabel'] = $navlabel;
+    }
+}
+
 $buildregionmainsettings = !$PAGE->include_region_main_settings_in_header_actions() && !$PAGE->has_secondary_navigation();
 // If the settings menu will be included in the header then don't add it here.
 $regionmainsettingsmenu = $buildregionmainsettings ? $OUTPUT->region_main_settings_menu() : false;

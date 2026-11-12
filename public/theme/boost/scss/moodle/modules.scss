@@ -259,14 +259,14 @@ select {
 
     // Indent nested discussions.
     .indent {
-        margin-left: 5rem;
+        margin-left: 1.5rem;
 
         @include media-breakpoint-down(md) {
-            margin-left: 3.5rem;
+            margin-left: .7rem;
         }
 
         @include media-breakpoint-down(sm) {
-            margin-left: 2rem;
+            margin-left: .5rem;
         }
     }
 

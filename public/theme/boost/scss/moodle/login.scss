@@ -2,6 +2,7 @@ $login-layout-left-bg: $primary !default;
 $login-layout-panel-bg: darken($login-layout-left-bg, 25%);
 $login-layout-panel-padding: 3rem !default;
 $login-layout-content-width: 576px !default;
+$login-layout-mobile-content-width: 480px !default;
 $login-layout-copy-width: 450px !default;
 $login-input-bg: var(--#{$prefix}gray-100) !default;
 
@@ -187,13 +188,15 @@ $login-input-bg: var(--#{$prefix}gray-100) !default;
     }
 }
 
+// Below 992px, the left panel is hidden. Keep the login form
+// constrained and centred instead of stretching across the page.
 @include media-breakpoint-down(lg) {
     .login-layout-right {
         padding: 1.5rem 1rem;
     }
 
     .login-layout-right-content {
-        max-width: 100%;
-        margin: 0;
+        max-width: $login-layout-mobile-content-width;
+        margin: auto;
     }
 }

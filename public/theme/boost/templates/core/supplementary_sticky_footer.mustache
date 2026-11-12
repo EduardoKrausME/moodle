@@ -54,30 +54,55 @@
     {{/ disable }}
     {{$ extradata }}
         {{#extras}}
-        {{attribute}}="{{value}}"
+            {{attribute}}="{{value}}"
         {{/extras}}
     {{/ extradata }}
 >
-    {{# supplementary }}
-    <div class="sticky-footer-supplementary-wrapper d-flex justify-content-center align-items-center">
-        <div class="sticky-footer-supplementary" >
-            {{> core/action_link}}
-        </div>
-    </div>
-    {{/ supplementary }}
+    {{! Both navigation and supplementary link: render one row. }}
+    {{#supplementary}}
+        {{#stickycontent}}
+            <div class="sticky-footer-content-wrapper d-flex justify-content-center align-items-center">
+                <div class="sticky-footer-content sticky-footer-inline-layout w-100 {{!
+                        }} {{$ stickyclasses }}{{!
+                            }}{{# stickyclasses }}{{ stickyclasses }}{{/ stickyclasses }}{{!
+                            }}{{^ stickyclasses }}justify-content-end{{/ stickyclasses }}{{!
+                        }}{{/ stickyclasses }}"
+                >
+                    <div class="sticky-footer-main-content">
+                        {{{stickycontent}}}
+                    </div>
+                    <div class="sticky-footer-supplementary">
+                        {{> core/action_link}}
+                    </div>
+                </div>
+            </div>
+        {{/stickycontent}}
 
-    {{# stickycontent }}
-    <div class="sticky-footer-content-wrapper d-flex justify-content-center align-items-center">
-        <div class="sticky-footer-content w-100 {{!
-            }} {{$ stickyclasses }}{{!
-                }}{{# stickyclasses }}{{ stickyclasses }}{{/ stickyclasses }}{{!
-                }}{{^ stickyclasses }}justify-content-end{{/ stickyclasses }}{{!
-            }}{{/ stickyclasses }}"
-        >
-            {{{stickycontent}}}
-        </div>
-    </div>
-    {{/ stickycontent }}
+        {{! Supplementary link only: keep the original wrapper. }}
+        {{^stickycontent}}
+            <div class="sticky-footer-supplementary-wrapper d-flex justify-content-center align-items-center">
+                <div class="sticky-footer-supplementary">
+                    {{> core/action_link}}
+                </div>
+            </div>
+        {{/stickycontent}}
+    {{/supplementary}}
+
+    {{! Navigation only: keep the original wrapper. }}
+    {{#stickycontent}}
+        {{^supplementary}}
+            <div class="sticky-footer-content-wrapper d-flex justify-content-center align-items-center">
+                <div class="sticky-footer-content w-100 {{!
+                        }} {{$ stickyclasses }}{{!
+                            }}{{# stickyclasses }}{{ stickyclasses }}{{/ stickyclasses }}{{!
+                            }}{{^ stickyclasses }}justify-content-end{{/ stickyclasses }}{{!
+                        }}{{/ stickyclasses }}"
+                >
+                    {{{stickycontent}}}
+                </div>
+            </div>
+        {{/supplementary}}
+    {{/stickycontent}}
 </div>
 {{#js}}
 require(['theme_boost/sticky-footer'], function(footer) {

@@ -78,8 +78,76 @@ body {
     }
 }
 
-/* Course linear navigation fixes for sticky footer. */
+/*
+ * Put Previous | supplementary link | Next on one horizontal row.
+ * The course footer HTML already contains the previous link and a
+ * right-hand navigation container. Flatten only their layout wrappers
+ * so each becomes a grid item; no JavaScript or absolute positioning.
+ */
+.stickyfooter .sticky-footer-inline-layout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacer;
 
+    > .sticky-footer-main-content {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    > .sticky-footer-supplementary {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    // Moodle's course navigation is explicitly tagged by the renderer.
+    &.course-linear-navigation {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+        align-items: center;
+        column-gap: $spacer;
+
+        // Expose Previous and the right-hand navigation as grid items.
+        > .sticky-footer-main-content,
+        > .sticky-footer-main-content > .course-linear-navigation-footer-content {
+            display: contents !important;
+        }
+
+        > .sticky-footer-main-content > .course-linear-navigation-footer-content > .course-linear-navigation-link {
+            grid-column: 1;
+            grid-row: 1;
+            justify-self: start;
+            white-space: nowrap;
+        }
+
+        > .sticky-footer-supplementary {
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: center;
+            text-align: center;
+        }
+
+        > .sticky-footer-main-content > .course-linear-navigation-footer-content > [data-for="course-linear-navigation-footer"] {
+            grid-column: 3;
+            grid-row: 1;
+            justify-self: end;
+            min-width: 0;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            white-space: nowrap;
+        }
+    }
+}
+
+// A narrow screen may require horizontal scrolling, but never a second row.
+@include media-breakpoint-down(sm) {
+    .stickyfooter .sticky-footer-inline-layout.course-linear-navigation {
+        column-gap: $spacer * .5;
+        overflow-x: auto;
+    }
+}
+
+/* Course linear navigation fixes for sticky footer. */
 .stickyfooter .course-linear-navigation {
     max-width: $course-content-maxwidth;
     .course-linear-navigation-completion {
@@ -94,7 +162,6 @@ body {
 }
 
 /* Standard components fixes for sticky footer. */
-
 .stickyfooter ul.pagination {
     margin-bottom: map-get($spacers, 1);
 }
@@ -104,7 +171,6 @@ body {
 }
 
 /* Breakpoints fixes. */
-
 @include media-breakpoint-up(sm) {
     #page-wrapper {
         height: 100%;
