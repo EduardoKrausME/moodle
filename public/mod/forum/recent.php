@@ -45,6 +45,8 @@ foreach ($courses as &$course) {
 }
 unset($course);
 
+$PAGE->requires->js_call_amd('mod_forum/recent_feed', 'init', [$courseid, (bool)$unread]);
+
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('mod_forum/recent_feed_page', [
     'courses' => $courses,
@@ -53,5 +55,4 @@ echo $OUTPUT->render_from_template('mod_forum/recent_feed_page', [
     'allselected' => !$unread,
     'unreadselected' => (bool)$unread,
 ]);
-$PAGE->requires->js_call_amd('mod_forum/recent_feed', 'init', [$courseid, (bool)$unread]);
 echo $OUTPUT->footer();

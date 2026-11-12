@@ -111,7 +111,8 @@ export const init = (initialCourseId = 0, initialUnread = false) => {
             if (response.items.length === 0 && !response.hasmore && previousCount === 0) {
                 status.textContent = await getString('recentfeedempty', 'mod_forum');
             } else {
-                status.textContent = '';
+                status.textContent = await getString('recentfeedloaded', 'mod_forum',
+                    response.items.length);
             }
 
             // Keyboard users can continue from the first newly appended entry.

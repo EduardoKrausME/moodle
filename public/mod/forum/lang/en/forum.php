@@ -822,3 +822,4 @@ $string['recentfeedempty'] = 'No discussions found for these filters.';
 $string['recentfeederror'] = 'Unable to load discussions. Try again.';
 $string['recentfeedstatus'] = 'Recent discussions, newest first';
 $string['recentfeedpostunread'] = 'Unread message';
+$string['recentfeedloaded'] = '{$a} discussions loaded.';

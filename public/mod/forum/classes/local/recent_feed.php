@@ -34,6 +34,7 @@ final class recent_feed {
     /**
      * Discover courses visible through active enrolments or viewing roles.
      *
+     * @param int $filtercourseid Optional course filter to avoid full discovery.
      * @return array Course records keyed by course ID.
      */
     public static function get_accessible_courses(int $filtercourseid = 0): array {

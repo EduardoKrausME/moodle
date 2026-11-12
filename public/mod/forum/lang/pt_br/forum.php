@@ -19,3 +19,4 @@ $string['recentfeedempty'] = 'Nenhuma discussão encontrada para estes filtros.'
 $string['recentfeederror'] = 'Não foi possível carregar as discussões. Tente novamente.';
 $string['recentfeedstatus'] = 'Discussões recentes, da mais nova para a mais antiga';
 $string['recentfeedpostunread'] = 'Mensagem não lida';
+$string['recentfeedloaded'] = '{$a} discussões carregadas.';

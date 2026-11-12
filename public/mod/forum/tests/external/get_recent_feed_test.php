@@ -248,4 +248,35 @@ final class get_recent_feed_test extends \core_external\tests\externallib_testca
         $this->expectException(\invalid_parameter_exception::class);
         $this->call_feed(0, true, $first['nextcursor']);
     }
+
+    public function test_untracked_forums_are_not_treated_as_unread(): void {
+        $this->resetAfterTest();
+        [$student, $course, $generator] = $this->fixture();
+        $author = $generator->create_user();
+        $generator->enrol_user($author->id, $course->id);
+        $forum = $generator->create_module('forum', [
+            'course' => $course->id, 'trackingtype' => FORUM_TRACKING_OFF,
+        ]);
+        $generator->get_plugin_generator('mod_forum')->create_discussion((object)[
+            'forum' => $forum->id, 'course' => $course->id, 'userid' => $author->id,
+        ]);
+
+        $this->assertCount(1, $this->call_feed()['items']);
+        $this->assertEmpty($this->call_feed(0, true)['items']);
+    }
+
+    public function test_future_discussion_is_not_disclosed(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        [$student, $course, $generator] = $this->fixture();
+        $CFG->forum_enabletimedposts = 1;
+        $author = $generator->create_user();
+        $generator->enrol_user($author->id, $course->id);
+        $forum = $generator->create_module('forum', ['course' => $course->id]);
+        $generator->get_plugin_generator('mod_forum')->create_discussion((object)[
+            'forum' => $forum->id, 'course' => $course->id, 'userid' => $author->id,
+            'timestart' => time() + DAYSECS, 'timeend' => 0,
+        ]);
+        $this->assertEmpty($this->call_feed()['items']);
+    }
 }
