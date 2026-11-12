@@ -381,6 +381,13 @@ class assign_submission_status_compact extends assign_submission_status implemen
  */
 class assign_attempt_history implements renderable {
 
+    /** @var bool Whether to render the accessible, read-only student timeline. */
+    public $modern = false;
+    /** @var bool Determined by native gradebook visibility and marking workflow rules. */
+    public $showgrades = true;
+    /** @var int Current extension due date for the authorised learner (not a historical event). */
+    public $extensionduedate = 0;
+
     /** @var array submissions - The list of previous attempts */
     public $submissions = array();
     /** @var array grades - The grades for the previous attempts */

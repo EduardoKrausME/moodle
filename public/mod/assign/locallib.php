@@ -6303,6 +6303,7 @@ class assign {
      * @return string - the html summary
      */
     public function view_student_summary($user, $showlinks, string $actionbar = '') {
+        global $USER;
         $o = '';
 
         if ($this->can_view_submission($user->id)) {
@@ -6343,9 +6344,23 @@ class assign {
                 $o .= $this->get_renderer()->render($feedbackstatus);
             }
 
-            // Preserve the existing attempt history, including plugin summaries.
+            // The student-facing timeline includes the current attempt, while
+            // existing grader and chooser renderers keep their original controls.
             $history = $this->get_assign_attempt_history_renderable($user);
-            if (count($history->submissions) > 1) {
+            $history->modern = (int) $user->id === (int) $USER->id;
+            if ($history->modern) {
+                // A historical grade must not bypass the same gradebook and
+                // marking-workflow visibility rules as the native feedback panel.
+                $workflowreleased = !$this->get_instance()->markingworkflow ||
+                    $this->get_grading_status($user->id) === ASSIGN_MARKING_WORKFLOW_STATE_RELEASED;
+                $history->showgrades = $workflowreleased && $feedbackstatus !== null &&
+                    isset($feedbackstatus->gradefordisplay) &&
+                    $feedbackstatus->gradefordisplay !== null &&
+                    $feedbackstatus->gradefordisplay !== '';
+                $flags = $this->get_user_flags($user->id, false);
+                $history->extensionduedate = $flags ? (int) ($flags->extensionduedate ?? 0) : 0;
+            }
+            if (count($history->submissions) > ($history->modern ? 0 : 1)) {
                 $o .= $this->get_renderer()->render($history);
             }
         }
