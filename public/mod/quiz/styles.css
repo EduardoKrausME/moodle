@@ -1682,3 +1682,73 @@ table.quizreviewsummary td.cell {
         flex: 0 0 auto;
     }
 }
+
+/* Question progress reflects persisted question engine state, not form values. */
+.path-mod-quiz #mod-quiz-progress.mod-quiz-progress {
+    display: grid;
+    gap: 0.65rem;
+    margin: 0.75rem 0 1rem;
+    padding: 0.875rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg, 0.75rem);
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+.path-mod-quiz #mod-quiz-progress .mod-quiz-progress-heading {
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.path-mod-quiz #mod-quiz-progress .mod-quiz-progress-track {
+    height: 0.625rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: var(--bs-secondary-bg);
+}
+
+.path-mod-quiz #mod-quiz-progress .mod-quiz-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--bs-success);
+}
+
+.path-mod-quiz #mod-quiz-progress .mod-quiz-progress-counts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.path-mod-quiz #mod-quiz-progress .mod-quiz-progress-count {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.path-mod-quiz #mod-quiz-progress .mod-quiz-progress-number {
+    font-size: 1.35rem;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+.path-mod-quiz #mod-quiz-progress .mod-quiz-progress-count-label {
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+}
+
+.path-mod-quiz #mod-quiz-progress .mod-quiz-progress-note {
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color);
+}
+
+@media (max-width: 375px) {
+    .path-mod-quiz #mod-quiz-progress .mod-quiz-progress-counts {
+        gap: 0.35rem;
+    }
+
+    .path-mod-quiz #mod-quiz-progress .mod-quiz-progress-number {
+        font-size: 1.2rem;
+    }
+}

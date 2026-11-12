@@ -434,7 +434,8 @@ class renderer extends plugin_renderer_base {
                 html_writer::tag('span', '', ['class' => 'trafficlight']) .
                 get_string($qnostring, 'quiz', $a);
         $tagattributes = ['class' => implode(' ', $classes), 'id' => $button->id,
-                'title' => $tooltip, 'data-quiz-page' => $button->page];
+                'title' => $tooltip, 'data-quiz-page' => $button->page,
+                'data-progress-real' => $button->isrealquestion ? '1' : '0'];
 
         if ($button->url) {
             if ($button->aria_current_page) {

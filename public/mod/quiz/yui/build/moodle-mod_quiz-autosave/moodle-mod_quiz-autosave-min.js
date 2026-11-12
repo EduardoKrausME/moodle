@@ -254,6 +254,9 @@ M.mod_quiz.autosave = {
             }
         } else {
             this.set_save_status('saved');
+            if (autosavedata.progress && M.mod_quiz.progress) {
+                M.mod_quiz.progress.update(autosavedata.progress);
+            }
         }
         if (this.savefailures > 0) {
             Y.one(this.SELECTORS.CONNECTION_ERROR).hide();

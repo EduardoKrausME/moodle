@@ -109,6 +109,9 @@ if ($autosaveperiod) {
             'M.mod_quiz.autosave.init', [$autosaveperiod]);
 }
 
+// The progress widget also needs this message when autosave is disabled.
+$PAGE->requires->string_for_js('progresssummary', 'quiz');
+
 // Log this page view.
 $attemptobj->fire_attempt_viewed_event();
 

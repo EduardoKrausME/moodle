@@ -68,6 +68,8 @@ $timeleft = $attemptobj->get_time_left_display($timenow);
 // has a time limit.
 $r = new stdClass();
 $r->status = "OK";
+// Authenticated state counts only. Never expose responses, marks or correctness.
+$r->progress = \mod_quiz\output\attempt_progress::summarise($attemptobj);
 if ($timeleft !== false) {
     $r->timeleft = $timeleft;
 }

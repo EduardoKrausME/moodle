@@ -283,6 +283,65 @@ M.mod_quiz.filesUpload = {
     }
 };
 
+
+/**
+ * Question progress from the last server-confirmed autosave. Never infer
+ * answered status from form controls, and never expose grading information.
+ */
+M.mod_quiz.progress = {
+    update: function(progress) {
+        if (!progress) {
+            return;
+        }
+        var keys = ['total', 'answered', 'pending', 'flagged'];
+        if (!keys.every(function(key) {
+            return Number.isSafeInteger(progress[key]) && progress[key] >= 0;
+        }) || progress.answered + progress.pending !== progress.total ||
+                progress.flagged > progress.total) {
+            return;
+        }
+
+        var element = document.getElementById('mod-quiz-progress');
+        if (!element) {
+            return;
+        }
+        var bar = element.querySelector('[role="progressbar"]');
+        var fill = element.querySelector('.mod-quiz-progress-fill');
+        if (!bar || !fill) {
+            return;
+        }
+        keys.slice(1).forEach(function(key) {
+            var target = element.querySelector('[data-progress-count="' + key + '"]');
+            if (target) {
+                target.textContent = progress[key];
+            }
+        });
+        element.setAttribute('data-progress-total', progress.total);
+        bar.setAttribute('aria-valuemax', progress.total);
+        bar.setAttribute('aria-valuenow', progress.answered);
+        bar.setAttribute('aria-valuetext', M.util.get_string('progresssummary', 'quiz', {
+            answered: progress.answered,
+            total: progress.total
+        }));
+        fill.style.width = (progress.total ? Math.round(100 * progress.answered / progress.total) : 0) + '%';
+    },
+
+    syncFlags: function() {
+        var element = document.getElementById('mod-quiz-progress');
+        if (!element) {
+            return;
+        }
+        // Reuse the question flags that Moodle's native AJAX callback just
+        // confirmed, without counting description/info items.
+        var count = document.querySelectorAll(
+            '#mod_quiz_navblock .qnbutton[data-progress-real="1"].flagged').length;
+        var label = element.querySelector('[data-progress-count="flagged"]');
+        if (label) {
+            label.textContent = count;
+        }
+    }
+};
+
 M.mod_quiz.nav = M.mod_quiz.nav || {};
 
 M.mod_quiz.nav.update_flag_state = function(attemptid, questionid, newstate) {
@@ -295,6 +354,7 @@ M.mod_quiz.nav.update_flag_state = function(attemptid, questionid, newstate) {
     } else {
         navlink.one('.accesshide .flagstate').setContent('');
     }
+    M.mod_quiz.progress.syncFlags();
 };
 
 M.mod_quiz.nav.init = function(Y) {

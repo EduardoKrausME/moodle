@@ -472,6 +472,11 @@ M.mod_quiz.autosave = {
             }
         } else {
             this.set_save_status('saved');
+            // The response belongs to a fully acknowledged snapshot only
+            // when there were no subsequent edits or pending uploads.
+            if (autosavedata.progress && M.mod_quiz.progress) {
+                M.mod_quiz.progress.update(autosavedata.progress);
+            }
         }
 
         if (this.savefailures > 0) {

@@ -39,8 +39,57 @@ class navigation_panel_attempt extends navigation_panel_base {
     }
 
     public function render_before_button_bits(renderer $output) {
-        return html_writer::tag('div', get_string('navnojswarning', 'quiz'),
+        $warning = html_writer::tag('div', get_string('navnojswarning', 'quiz'),
                 ['id' => 'quiznojswarning']);
+        if ($this->page == -1) {
+            return $warning;
+        }
+
+        // Keep the summary outside the collapsible map, including without JS.
+        $progress = attempt_progress::summarise($this->attemptobj);
+        $percent = $progress['total'] ? round(100 * $progress['answered'] / $progress['total']) : 0;
+        $description = get_string('progresssummary', 'quiz', (object) [
+            'answered' => $progress['answered'], 'total' => $progress['total'],
+        ]);
+
+        $bar = html_writer::tag('div', html_writer::tag('div', '', [
+            'class' => 'mod-quiz-progress-fill',
+            'style' => 'width: ' . $percent . '%;',
+        ]), [
+            'class' => 'mod-quiz-progress-track',
+            'role' => 'progressbar',
+            'aria-label' => get_string('progresslabel', 'quiz'),
+            'aria-valuemin' => '0',
+            'aria-valuemax' => $progress['total'],
+            'aria-valuenow' => $progress['answered'],
+            'aria-valuetext' => $description,
+        ]);
+
+        $counts = '';
+        foreach (['answered', 'pending', 'flagged'] as $state) {
+            $counts .= html_writer::tag('div',
+                html_writer::tag('strong', $progress[$state], [
+                    'data-progress-count' => $state,
+                    'class' => 'mod-quiz-progress-number',
+                ]) . html_writer::tag('span', get_string('progress' . $state, 'quiz'), [
+                    'class' => 'mod-quiz-progress-count-label',
+                ]), ['class' => 'mod-quiz-progress-count']);
+        }
+
+        $html = html_writer::tag('section',
+            html_writer::tag('div', get_string('progresslabel', 'quiz'),
+                ['class' => 'mod-quiz-progress-heading']) .
+            $bar . html_writer::tag('div', $counts, ['class' => 'mod-quiz-progress-counts']) .
+            html_writer::tag('span', get_string('progresssavedonly', 'quiz'),
+                ['class' => 'mod-quiz-progress-note']),
+            [
+                'id' => 'mod-quiz-progress',
+                'class' => 'mod-quiz-progress',
+                'aria-label' => get_string('progresslabel', 'quiz'),
+                'data-progress-total' => $progress['total'],
+            ]);
+
+        return $html . $warning;
     }
 
     public function render_end_bits(renderer $output) {
