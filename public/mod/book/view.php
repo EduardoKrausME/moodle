@@ -117,8 +117,33 @@ if (!$chapterid) {
         $courseurl = new moodle_url('/course/view.php', ['id' => $course->id]);
         throw new moodle_exception('errorchapter', 'mod_book', $courseurl);
     }
-    // Add the Book TOC block.
+    // Keep the traditional TOC as a fallback when the theme does not provide a course index.
     book_add_fake_block($chapters, $chapter, $book, $cm, $edit);
+
+    // Add chapters directly under this Book activity in the course index, where available.
+    $courseindexchapters = [];
+    foreach ($chapters as $ch) {
+        if ($ch->hidden && !$viewhidden) {
+            continue;
+        }
+        $chaptertitle = book_get_chapter_title($ch->id, $chapters, $book, $context);
+        $courseindexchapters[] = [
+            'id' => (int) $ch->id,
+            'title' => trim(html_entity_decode(strip_tags($chaptertitle), ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+            'url' => (new moodle_url('/mod/book/view.php',
+                ['id' => $cm->id, 'chapterid' => $ch->id]))->out(false),
+            'subchapter' => (bool) $ch->subchapter,
+            'hidden' => (bool) $ch->hidden,
+        ];
+    }
+    $PAGE->requires->js_call_amd('mod_book/courseindex', 'init', [[
+        'cmid' => (int) $cm->id,
+        'chapterid' => (int) $chapter->id,
+        'chapters' => $courseindexchapters,
+        'toclabel' => get_string('toc', 'mod_book'),
+        'expandlabel' => get_string('expand', 'core'),
+        'collapselabel' => get_string('collapse', 'core'),
+    ]]);
     book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapter->id, $chapters), $course, $cm, $context);
 
     echo $OUTPUT->header();
