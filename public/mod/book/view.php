@@ -117,30 +117,45 @@ if (!$chapterid) {
         $courseurl = new moodle_url('/course/view.php', ['id' => $course->id]);
         throw new moodle_exception('errorchapter', 'mod_book', $courseurl);
     }
-    // Keep the traditional TOC as a fallback when the theme does not provide a course index.
+    // Keep the standard Book TOC as a fallback for themes without the course index.
     book_add_fake_block($chapters, $chapter, $book, $cm, $edit);
 
-    // Add chapters directly under this Book activity in the course index, where available.
+    // Render the chapters in a separate template so the course index only needs to mount it.
     $courseindexchapters = [];
     foreach ($chapters as $ch) {
         if ($ch->hidden && !$viewhidden) {
             continue;
         }
         $chaptertitle = book_get_chapter_title($ch->id, $chapters, $book, $context);
-        $courseindexchapters[] = [
+        $entry = [
             'id' => (int) $ch->id,
             'title' => trim(html_entity_decode(strip_tags($chaptertitle), ENT_QUOTES | ENT_HTML5, 'UTF-8')),
-            'url' => (new moodle_url('/mod/book/view.php',
-                ['id' => $cm->id, 'chapterid' => $ch->id]))->out(false),
-            'subchapter' => (bool) $ch->subchapter,
+            'url' => (new moodle_url('/mod/book/view.php', [
+                'id' => $cm->id,
+                'chapterid' => $ch->id,
+            ]))->out(false),
+            'current' => (int) $ch->id === (int) $chapter->id,
             'hidden' => (bool) $ch->hidden,
+            'subchapters' => [],
+            'hassubchapters' => false,
         ];
+        if ($ch->subchapter && $courseindexchapters) {
+            $lastindex = count($courseindexchapters) - 1;
+            $courseindexchapters[$lastindex]['subchapters'][] = $entry;
+            $courseindexchapters[$lastindex]['hassubchapters'] = true;
+        } else {
+            $courseindexchapters[] = $entry;
+        }
     }
+    $courseindexhtml = $OUTPUT->render_from_template('mod_book/courseindex_chapters', [
+        'cmid' => (int) $cm->id,
+        'toclabel' => get_string('toc', 'mod_book'),
+        'collapselabel' => get_string('collapse', 'core'),
+        'chapters' => $courseindexchapters,
+    ]);
     $PAGE->requires->js_call_amd('mod_book/courseindex', 'init', [[
         'cmid' => (int) $cm->id,
-        'chapterid' => (int) $chapter->id,
-        'chapters' => $courseindexchapters,
-        'toclabel' => get_string('toc', 'mod_book'),
+        'html' => $courseindexhtml,
         'expandlabel' => get_string('expand', 'core'),
         'collapselabel' => get_string('collapse', 'core'),
         'hideoriginaltoc' => !$edit,
@@ -148,11 +163,6 @@ if (!$chapterid) {
     book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapter->id, $chapters), $course, $cm, $context);
 
     echo $OUTPUT->header();
-
-    $renderer = $PAGE->get_renderer('mod_book');
-    $actionmenu = new \mod_book\output\main_action_menu($cm->id, $chapters, $chapter, $book);
-    $renderedmenu = $renderer->render($actionmenu);
-    echo html_writer::div($renderedmenu, '', ['id' => 'mod_book-chaptersnavigation']);
 
     // The chapter itself.
     $hidden = $chapter->hidden ? ' dimmed_text' : null;
@@ -180,5 +190,11 @@ if (!$chapterid) {
     if (core_tag_tag::is_enabled('mod_book', 'book_chapters')) {
         echo $OUTPUT->tag_list(core_tag_tag::get_item_tags('mod_book', 'book_chapters', $chapter->id), null, 'book-tags');
     }
+
+    // Put previous and next chapter controls after the text, including on mobile.
+    $renderer = $PAGE->get_renderer('mod_book');
+    $actionmenu = new \mod_book\output\main_action_menu($cm->id, $chapters, $chapter);
+    $renderedmenu = $renderer->render($actionmenu);
+    echo html_writer::div($renderedmenu, '', ['id' => 'mod_book-chaptersnavigation']);
 }
 echo $OUTPUT->footer();
