@@ -136,9 +136,23 @@ if ($mform->is_cancelled()) {
         if (optional_param('saveandnewchapter', null, PARAM_RAW) !== null) {
             $saved = $DB->get_record('book_chapters', ['id' => $data->id, 'bookid' => $book->id],
                 '*', MUST_EXIST);
+            $insertpagenum = (int) $saved->pagenum;
+            if (!$saved->subchapter) {
+                // A new main chapter must be inserted after all subchapters of the
+                // current main chapter, not between the parent and its children.
+                $following = $DB->get_records_select('book_chapters',
+                    'bookid = :bookid AND pagenum > :pagenum',
+                    ['bookid' => $book->id, 'pagenum' => $saved->pagenum], 'pagenum ASC');
+                foreach ($following as $candidate) {
+                    if (!$candidate->subchapter) {
+                        break;
+                    }
+                    $insertpagenum = (int) $candidate->pagenum;
+                }
+            }
             redirect(new moodle_url('/mod/book/edit.php', [
                 'cmid' => $cm->id,
-                'pagenum' => $saved->pagenum,
+                'pagenum' => $insertpagenum,
                 'subchapter' => $saved->subchapter,
             ]), get_string('chaptercreatedsaved', 'mod_book'));
         }
