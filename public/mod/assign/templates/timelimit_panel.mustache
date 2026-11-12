@@ -31,12 +31,13 @@
    }
 
 }}
-<div{{!
-    }} id="mod_assign-timer-{{uniqid}}"{{!
-    }} role="timer" aria-atomic="true"{{!
-    }} aria-relevant="text"{{!
-    }} data-starttime="{{timerstartvalue}}"{{!
-}}>
+<div id="mod_assign-timer-{{uniqid}}"
+     class="assign-timer-panel"
+     data-starttime="{{timerstartvalue}}">
+    <span class="assign-timer-value" data-region="timer-value"
+          role="timer" aria-live="off" aria-atomic="true"
+          aria-label="{{#str}}assigntimeleft, mod_assign{{/str}}">--:--</span>
+    <span class="visually-hidden" data-region="timer-announcement" aria-live="polite" aria-atomic="true"></span>
 </div>
 {{#js}}
 require(['mod_assign/timer'], function(Timer) {

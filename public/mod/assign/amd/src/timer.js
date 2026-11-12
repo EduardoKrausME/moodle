@@ -24,103 +24,103 @@ import {getString} from 'core/str';
  */
 
 /**
- * Timestamp at which time runs out.
- *
- * @property {Number} endTime
+ * Each countdown has its own monotonic clock and warning state.
+ * Inactive browser tabs can pause timeouts but must not extend the countdown.
  */
-let endTime = 0;
+const timers = new Map();
 
-/**
- * ID of the timeout that updates the clock.
- *
- * @property {Number} timeoutId
- */
-let timeoutId = null;
-
-/**
- * The timer element.
- *
- * @property {Element} timer
- */
-let timer = null;
-
-/**
- * Helper method to convert time remaining in seconds into HH:MM:SS format.
- *
- * @method formatSeconds
- * @param {Number} secs Time remaining in seconds to get value for.
- * @return {String} Time remaining in HH:MM:SS format.
- */
-const formatSeconds = (secs) => {
-    const hours = Math.floor(secs / 3600);
-    const minutes = Math.floor(secs / 60) % 60;
-    const seconds = secs % 60;
-
-    return [hours, minutes, seconds]
-        // Remove the hours column if there is less than 1 hour left.
-        .filter((value, index) => value !== 0 || index > 0)
-        // Ensure that all fields are two digit numbers.
-        .map(value => `${value}`.padStart(2, '0'))
-        .join(":");
+const formatSeconds = seconds => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor(seconds / 60) % 60;
+    const remainder = seconds % 60;
+    const parts = hours > 0 ? [hours, minutes, remainder] : [minutes, remainder];
+    return parts.map(value => String(value).padStart(2, '0')).join(':');
 };
 
-/**
- * Stop the timer, if it is running.
- *
- * @method stop
- */
-const stop = () => {
-    if (timeoutId) {
-        clearTimeout(timeoutId);
-    }
-};
-
-/**
- * Function to update the clock with the current time left.
- *
- * @method update
- */
-const update = () => {
-    const now = new Date().getTime();
-    const secondsLeft = Math.floor((endTime - now) / 1000);
-
-    // If time has expired, set the hidden form field that says time has expired.
-    if (secondsLeft <= 0) {
-        timer.classList.add('alert', 'alert-danger');
-        timer.innerHTML = '00:00:00';
-
-        // Only add a notification on the assign submission page.
-        if (document.getElementById("mod_assign_timelimit_block")) {
-            getString('caneditsubmission', 'mod_assign')
-                .then(message => Notification.addNotification({message}))
-                .catch(Notification.exception);
+const announce = (state, key, parameters) => {
+    getString(key, 'mod_assign', parameters).then(message => {
+        if (state.announcement?.isConnected) {
+            state.announcement.textContent = message;
         }
+    }).catch(Notification.exception);
+};
 
-        stop();
+const update = state => {
+    if (!state.timer.isConnected) {
+        clearTimeout(state.timeout);
+        timers.delete(state.id);
         return;
-    } else if (secondsLeft < 300) { // Add danger style when less than 5 minutes left.
-        timer.classList.remove('alert-warning');
-        timer.classList.add('alert', 'alert-danger');
-    } else if (secondsLeft < 900) { // Add warning style when less than 15 minutes left.
-        timer.classList.remove('alert-danger');
-        timer.classList.add('alert', 'alert-warning');
     }
 
-    // Update the time display.
-    timer.innerHTML = formatSeconds(secondsLeft);
+    const elapsed = performance.now() - state.started;
+    const seconds = Math.max(0, Math.ceil((state.duration - elapsed) / 1000));
+    state.output.textContent = formatSeconds(seconds);
+    state.timer.classList.toggle('assign-timer-panel--warning', seconds > 300 && seconds <= 900);
+    state.timer.classList.toggle('assign-timer-panel--danger', seconds <= 300);
 
-    // Arrange for this method to be called again soon.
-    timeoutId = setTimeout(update, 500);
+    if (seconds === 0) {
+        if (!state.expired) {
+            state.expired = true;
+            announce(state, 'availabilitytimerexpired');
+            // The native submission editor already shows a deadline notification.
+            if (document.getElementById('mod_assign_timelimit_block')) {
+                getString('availabilitytimerexpired', 'mod_assign').then(message => {
+                    Notification.addNotification({message});
+                }).catch(Notification.exception);
+            }
+        }
+        timers.delete(state.id);
+        return;
+    }
+
+    for (const threshold of [900, 300]) {
+        if (state.previous > threshold && seconds <= threshold) {
+            announce(state, 'availabilitytimerthreshold', threshold / 60);
+        }
+    }
+    state.previous = seconds;
+    state.timeout = setTimeout(() => update(state), 1000);
 };
 
 /**
- * Set up the submission timer.
+ * Initialise a native assignment timer. The server still decides whether any
+ * edit or submission is accepted when the countdown reaches zero.
  *
- * @method init
- * @param {Number} timerId Unique ID of the timer element.
+ * @param {String} timerId Timer panel element ID.
  */
-export const init = (timerId) => {
-    timer = document.getElementById(timerId);
-    endTime = M.pageloadstarttime.getTime() + (timer.dataset.starttime * 1000);
-    update();
+export const init = timerId => {
+    const timer = document.getElementById(timerId);
+    if (!timer) {
+        return;
+    }
+
+    const previous = timers.get(timerId);
+    if (previous) {
+        clearTimeout(previous.timeout);
+    }
+
+    const output = timer.querySelector('[data-region="timer-value"]') || timer;
+    const announcement = timer.querySelector('[data-region="timer-announcement"]');
+    const remaining = Math.max(0, Number(timer.dataset.starttime) || 0);
+
+    // Retain the original Moodle page-load alignment, but use a monotonic
+    // clock for all elapsed time after initialization.
+    const pageStart = typeof M !== 'undefined' && M.pageloadstarttime instanceof Date ?
+        M.pageloadstarttime.getTime() : Date.now();
+    const elapsedOnLoad = Math.max(0, Date.now() - pageStart);
+    const duration = Math.max(0, remaining * 1000 - elapsedOnLoad);
+
+    const state = {
+        id: timerId,
+        timer,
+        output,
+        announcement,
+        duration,
+        started: performance.now(),
+        previous: Math.ceil(duration / 1000),
+        expired: false,
+        timeout: null,
+    };
+    timers.set(timerId, state);
+    update(state);
 };
