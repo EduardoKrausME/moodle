@@ -1,0 +1,101 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+}}
+{{!
+    @template mod_assign/attempt_history_timeline
+    Read-only learner chronology. Current actions are rendered separately by
+    native Moodle. Previous plugin HTML is rendered and authorised by PHP.
+
+    Example context (json):
+    {
+        "heading": "Previous attempts",
+        "attempts": [
+            {
+                "title": "Attempt 2",
+                "current": true,
+                "currentlabel": "Current attempt",
+                "currenthint": "The current attempt is shown above.",
+                "state": "reopened",
+                "status": "Reopened",
+                "hasmodified": true,
+                "modifiedlabel": "Last updated",
+                "modified": "12 November 2026",
+                "datetime": "2026-11-12T12:00:00+00:00",
+                "hasgrade": false,
+                "hasdetails": false,
+                "hasextension": false
+            },
+            {
+                "title": "Attempt 1",
+                "current": false,
+                "state": "submitted",
+                "status": "Submitted for grading",
+                "hasmodified": false,
+                "hasgrade": false,
+                "hasdetails": true,
+                "detailslabel": "Review this previous attempt",
+                "detailshtml": "<p>Summary</p>",
+                "hasextension": false
+            }
+        ]
+    }
+}}
+<section class="assign-attempt-timeline" data-region="assign-attempt-timeline"
+         aria-labelledby="assign-attempt-timeline-heading">
+    <h3 id="assign-attempt-timeline-heading" class="h4 mb-3">{{heading}}</h3>
+    <ol class="assign-attempt-timeline-list">
+        {{#attempts}}
+            <li class="assign-attempt-timeline-item assign-attempt-timeline-item--{{state}}{{#current}} is-current{{/current}}"
+                data-region="assign-attempt" data-current="{{#current}}true{{/current}}{{^current}}false{{/current}}">
+                <div class="assign-attempt-timeline-header">
+                    <h4 class="h5 mb-0">{{title}}</h4>
+                    {{#current}}
+                        <span class="assign-attempt-timeline-current">{{currentlabel}}</span>
+                    {{/current}}
+                </div>
+                <dl class="assign-attempt-timeline-meta mb-0">
+                    <div>
+                        <dt>{{#str}}submissionstatus, mod_assign{{/str}}</dt>
+                        <dd>{{status}}</dd>
+                    </div>
+                    {{#hasmodified}}
+                        <div>
+                            <dt>{{modifiedlabel}}</dt>
+                            <dd><time datetime="{{datetime}}">{{modified}}</time></dd>
+                        </div>
+                    {{/hasmodified}}
+                    {{#hasgrade}}
+                        <div>
+                            <dt>{{gradelabel}}</dt>
+                            <dd>{{{gradehtml}}}</dd>
+                        </div>
+                    {{/hasgrade}}
+                    {{#hasextension}}
+                        <div>
+                            <dt>{{extensionlabel}}</dt>
+                            <dd><time datetime="{{extensiondatetime}}">{{extensiondate}}</time></dd>
+                        </div>
+                    {{/hasextension}}
+                </dl>
+                {{#current}}
+                    <p class="assign-attempt-timeline-hint mb-0">{{currenthint}}</p>
+                {{/current}}
+                {{#hasdetails}}
+                    <details class="assign-attempt-timeline-details">
+                        <summary>{{detailslabel}}</summary>
+                        <div class="assign-attempt-timeline-detail-content">
+                            {{{detailshtml}}}
+                        </div>
+                    </details>
+                {{/hasdetails}}
+            </li>
+        {{/attempts}}
+    </ol>
+</section>
