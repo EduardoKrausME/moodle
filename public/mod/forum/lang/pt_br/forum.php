@@ -9,7 +9,7 @@ $string['showinmycourses_help'] = 'Quando habilitado, as conversas recentes dest
 
 $string['recentfeedtitle'] = 'Discussões recentes';
 $string['recentfeedsubtitle'] = 'Atualizações dos seus cursos';
-$string['recentfeedall'] = 'Todas';
+$string['recentfeedall'] = 'Recentes';
 $string['recentfeedunread'] = 'Não lidas';
 $string['recentfeedcourse'] = 'Curso';
 $string['recentfeedallcourses'] = 'Todos os cursos';
@@ -20,3 +20,5 @@ $string['recentfeederror'] = 'Não foi possível carregar as discussões. Tente 
 $string['recentfeedstatus'] = 'Discussões recentes, da mais nova para a mais antiga';
 $string['recentfeedpostunread'] = 'Mensagem não lida';
 $string['recentfeedloaded'] = '{$a} discussões carregadas.';
+$string['recentfeedfilters'] = 'Exibir discussões';
+$string['recentfeedretry'] = 'Tentar novamente';
