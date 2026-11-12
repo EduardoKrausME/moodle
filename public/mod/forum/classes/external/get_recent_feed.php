@@ -71,6 +71,8 @@ final class get_recent_feed extends external_api {
                 'unread' => new external_value(PARAM_BOOL, 'Whether the visible post is unread'),
                 'favourited' => new external_value(PARAM_BOOL, 'Starred by the current user'),
                 'canfavourite' => new external_value(PARAM_BOOL, 'User can star this discussion'),
+                'canreply' => new external_value(PARAM_BOOL, 'May open the inline reply editor'),
+                'advancedurl' => new external_value(PARAM_URL, 'Native advanced reply form'),
             ])),
             'nextcursor' => new external_value(PARAM_RAW_TRIMMED, 'Next page token'),
             'hasmore' => new external_value(PARAM_BOOL, 'Whether more items may be available'),

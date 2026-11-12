@@ -30,6 +30,52 @@
             <span>{{author}}</span>
             <span>{{time}}</span>
         </div>
-        {{#preview}}<p class="forum-recent-feed__preview mb-0">{{preview}}</p>{{/preview}}
+        {{#preview}}<p class="forum-recent-feed__preview mb-2">{{preview}}</p>{{/preview}}
+        {{#canreply}}
+            <div class="forum-recent-feed__reply-actions d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-primary" data-action="feed-reply-open"
+                        aria-controls="forum-feed-reply-{{postid}}" aria-expanded="false">
+                    {{#str}}recentfeedreply, mod_forum{{/str}}
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-action="feed-quote-open"
+                        aria-controls="forum-feed-reply-{{postid}}" aria-expanded="false">
+                    {{#str}}recentfeedquote, mod_forum{{/str}}
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-action="feed-mention-open"
+                        aria-controls="forum-feed-reply-{{postid}}" aria-expanded="false">
+                    {{#str}}recentfeedmention, mod_forum{{/str}}
+                </button>
+            </div>
+            <div class="forum-recent-feed__reply-panel mt-3" data-region="feed-reply-panel"
+                 id="forum-feed-reply-{{postid}}" hidden>
+                <div class="forum-recent-feed__reply-quote border-start ps-3 mb-2"
+                     data-region="feed-reply-quote" hidden></div>
+                <form data-action="feed-reply-form" data-post-id="{{postid}}">
+                    <label class="form-label" for="forum-feed-message-{{postid}}">
+                        {{#str}}recentfeedreply, mod_forum{{/str}}
+                    </label>
+                    <textarea class="form-control mb-2" data-region="feed-reply-message"
+                              id="forum-feed-message-{{postid}}" rows="4" maxlength="12000"
+                              placeholder="{{#str}}recentfeedreplyplaceholder, mod_forum{{/str}}"
+                              required></textarea>
+                    <div data-region="feed-mention-suggestions" class="forum-recent-feed__mentions"
+                         aria-live="polite" hidden></div>
+                    <p class="small text-muted" data-region="feed-reply-feedback" role="status"
+                       aria-live="polite"></p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-primary" data-action="feed-reply-send">
+                            {{#str}}recentfeedreplysend, mod_forum{{/str}}
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary"
+                                data-action="feed-reply-cancel">
+                            {{#str}}recentfeedreplycancel, mod_forum{{/str}}
+                        </button>
+                        <a class="btn btn-link" href="{{advancedurl}}">
+                            {{#str}}recentfeedreplyadvanced, mod_forum{{/str}}
+                        </a>
+                    </div>
+                </form>
+            </div>
+        {{/canreply}}
     </article>
 {{/items}}

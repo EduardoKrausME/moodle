@@ -477,7 +477,14 @@ final class recent_feed {
                 $plain = preg_replace('/\s+/u', ' ', trim($plain));
                 $preview = \core_text::substr($plain ?? '', 0, self::SNIPPET_LENGTH);
             }
+            // A UI hint only: the reply endpoint revalidates every capability
+            // and the exact parent post before any write.
+            $canreply = empty($post->privatereplyto) && forum_user_can_post(
+                $forum, $discussion, $USER, $modulemap[(int)$forum->id]['cm'], $course, $context);
+            $advancedurl = new \moodle_url('/mod/forum/post.php', ['reply' => $post->id]);
             $items[] = [
+                'canreply' => (bool)$canreply,
+                'advancedurl' => $advancedurl->out(false),
                 'discussionid' => (int)$discussion->id,
                 'postid' => (int)$post->id,
                 'courseid' => (int)$course->id,
