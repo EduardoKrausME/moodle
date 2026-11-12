@@ -46,6 +46,15 @@ class provider implements
             'firstviewed' => 'privacy:metadata:book_chapter_reads:firstviewed',
             'lastviewed' => 'privacy:metadata:book_chapter_reads:lastviewed',
         ], 'privacy:metadata:book_chapter_reads');
+        $collection->add_database_table('book_chapter_userdata', [
+            'bookid' => 'privacy:metadata:book_chapter_userdata:bookid',
+            'chapterid' => 'privacy:metadata:book_chapter_userdata:chapterid',
+            'userid' => 'privacy:metadata:book_chapter_userdata:userid',
+            'favourite' => 'privacy:metadata:book_chapter_userdata:favourite',
+            'note' => 'privacy:metadata:book_chapter_userdata:note',
+            'timecreated' => 'privacy:metadata:book_chapter_userdata:timecreated',
+            'timemodified' => 'privacy:metadata:book_chapter_userdata:timemodified',
+        ], 'privacy:metadata:book_chapter_userdata');
         return $collection;
     }
 
@@ -57,17 +66,20 @@ class provider implements
      */
     public static function get_contexts_for_userid(int $userid): contextlist {
         $sql = "SELECT DISTINCT ctx.id
-                  FROM {book_chapter_reads} r
-                  JOIN {book} b ON b.id = r.bookid
+                  FROM {book} b
                   JOIN {course_modules} cm ON cm.instance = b.id
                   JOIN {modules} m ON m.id = cm.module AND m.name = :modname
                   JOIN {context} ctx ON ctx.instanceid = cm.id AND ctx.contextlevel = :contextlevel
-                 WHERE r.userid = :userid";
+                 WHERE EXISTS (SELECT 1 FROM {book_chapter_reads} r
+                                WHERE r.bookid = b.id AND r.userid = :readuserid)
+                    OR EXISTS (SELECT 1 FROM {book_chapter_userdata} u
+                                WHERE u.bookid = b.id AND u.userid = :personaluserid)";
         $contexts = new contextlist();
         $contexts->add_from_sql($sql, [
             'modname' => 'book',
             'contextlevel' => CONTEXT_MODULE,
-            'userid' => $userid,
+            'readuserid' => $userid,
+            'personaluserid' => $userid,
         ]);
         return $contexts;
     }
@@ -84,6 +96,9 @@ class provider implements
         }
         $userlist->add_from_sql('userid',
             "SELECT userid FROM {book_chapter_reads} WHERE bookid = :bookid",
+            ['bookid' => $bookid]);
+        $userlist->add_from_sql('userid',
+            "SELECT userid FROM {book_chapter_userdata} WHERE bookid = :bookid",
             ['bookid' => $bookid]);
     }
 
@@ -108,21 +123,45 @@ class provider implements
                      WHERE r.bookid = :bookid AND r.userid = :userid
                   ORDER BY r.firstviewed ASC, r.id ASC";
             $readings = $DB->get_records_sql($sql, ['bookid' => $bookid, 'userid' => $userid]);
-            if (!$readings) {
-                continue;
+            if ($readings) {
+                $chapters = [];
+                foreach ($readings as $record) {
+                    $chapters[] = (object) [
+                        'title' => $record->title,
+                        'firstviewed' => transform::datetime((int) $record->firstviewed),
+                        'lastviewed' => transform::datetime((int) floor($record->lastviewed / 1000)),
+                    ];
+                }
+                writer::with_context($context)->export_data(
+                    [get_string('readingprogress', 'mod_book')],
+                    (object) ['chapters' => $chapters]
+                );
             }
-            $chapters = [];
-            foreach ($readings as $record) {
-                $chapters[] = (object) [
-                    'title' => $record->title,
-                    'firstviewed' => transform::datetime((int) $record->firstviewed),
-                    'lastviewed' => transform::datetime((int) floor($record->lastviewed / 1000)),
-                ];
+
+            // Include personal notes even if the reader has no recorded chapter visits.
+            $sql = "SELECT u.id, u.favourite, u.note, u.timecreated, u.timemodified,
+                           ch.title
+                      FROM {book_chapter_userdata} u
+                      JOIN {book_chapters} ch ON ch.id = u.chapterid AND ch.bookid = u.bookid
+                     WHERE u.bookid = :bookid AND u.userid = :userid
+                  ORDER BY u.chapterid ASC";
+            $personal = $DB->get_records_sql($sql, ['bookid' => $bookid, 'userid' => $userid]);
+            if ($personal) {
+                $entries = [];
+                foreach ($personal as $record) {
+                    $entries[] = (object) [
+                        'title' => $record->title,
+                        'favourite' => transform::yesno((bool) $record->favourite),
+                        'note' => $record->note,
+                        'timecreated' => transform::datetime((int) $record->timecreated),
+                        'timemodified' => transform::datetime((int) $record->timemodified),
+                    ];
+                }
+                writer::with_context($context)->export_data(
+                    [get_string('personalreadingtools', 'mod_book')],
+                    (object) ['chapters' => $entries]
+                );
             }
-            writer::with_context($context)->export_data(
-                [get_string('readingprogress', 'mod_book')],
-                (object) ['chapters' => $chapters]
-            );
         }
     }
 
@@ -136,6 +175,7 @@ class provider implements
         $bookid = self::get_bookid_for_context($context);
         if ($bookid) {
             $DB->delete_records('book_chapter_reads', ['bookid' => $bookid]);
+            $DB->delete_records('book_chapter_userdata', ['bookid' => $bookid]);
         }
     }
 
@@ -151,6 +191,7 @@ class provider implements
             $bookid = self::get_bookid_for_context($context);
             if ($bookid) {
                 $DB->delete_records('book_chapter_reads', ['bookid' => $bookid, 'userid' => $userid]);
+                $DB->delete_records('book_chapter_userdata', ['bookid' => $bookid, 'userid' => $userid]);
             }
         }
     }
@@ -168,6 +209,7 @@ class provider implements
         }
         foreach ($userlist->get_userids() as $userid) {
             $DB->delete_records('book_chapter_reads', ['bookid' => $bookid, 'userid' => $userid]);
+            $DB->delete_records('book_chapter_userdata', ['bookid' => $bookid, 'userid' => $userid]);
         }
     }
 
