@@ -847,3 +847,4 @@ $string['recentfeedmentionnotification'] = 'You were mentioned in a forum discus
 $string['recentfeedmentionnotificationbody'] = '{$a} mentioned you in a forum reply.';
 $string['recentfeedreplyloading'] = 'Preparing reply...';
 $string['recentfeedreplyrequired'] = 'Write a message before publishing.';
+$string['messageprovider:mentions'] = 'Forum mentions';

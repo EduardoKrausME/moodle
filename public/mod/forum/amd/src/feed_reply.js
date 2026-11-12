@@ -217,7 +217,14 @@ export const init = (root, published) => {
             if (card.isConnected) {
                 setPanel(card, false);
             }
-            await published(response);
+            // Publication already succeeded. Refresh failure is not a post
+            // failure, because asking the user to retry would duplicate it.
+            try {
+                await published(response);
+            } catch (refresherror) {
+                Notification.exception(refresherror);
+            }
+            return;
         } catch (error) {
             if (card.isConnected) {
                 feedback.textContent = await getString('recentfeedreplyfailed', 'mod_forum');

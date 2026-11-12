@@ -44,3 +44,4 @@ $string['recentfeedmentionnotification'] = 'Você foi mencionado em uma discuss�
 $string['recentfeedmentionnotificationbody'] = '{$a} mencionou você em uma resposta do fórum.';
 $string['recentfeedreplyloading'] = 'Preparando resposta...';
 $string['recentfeedreplyrequired'] = 'Escreva uma mensagem antes de publicar.';
+$string['messageprovider:mentions'] = 'Menções nos fóruns';

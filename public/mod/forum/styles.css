@@ -473,3 +473,44 @@ span.unread {
 .forum-recent-feed__favourite[aria-pressed="true"] {
     border-color: var(--bs-primary, #0d6efd);
 }
+
+/* Contextual replies in the course discussion feed (native post API). */
+.forum-recent-feed__reply-panel {
+    min-width: 0;
+    max-width: 100%;
+}
+.forum-recent-feed__reply-actions .btn,
+.forum-recent-feed__reply-panel .btn {
+    min-height: 44px;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.forum-recent-feed__reply-panel textarea {
+    max-width: 100%;
+    resize: vertical;
+}
+.forum-recent-feed__reply-quote {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.forum-recent-feed__mentions[hidden],
+.forum-recent-feed__reply-panel[hidden],
+.forum-recent-feed__reply-quote[hidden] {
+    display: none;
+}
+.forum-recent-feed__reply-panel textarea:focus-visible,
+.forum-recent-feed__reply-panel .btn:focus-visible {
+    outline: 3px solid var(--bs-primary, #0d6efd);
+    outline-offset: 2px;
+}
+@media (max-width: 575.98px) {
+    .forum-recent-feed__reply-actions,
+    .forum-recent-feed__reply-panel form > .d-flex {
+        flex-direction: column;
+    }
+    .forum-recent-feed__reply-actions .btn,
+    .forum-recent-feed__reply-panel form > .d-flex > .btn {
+        width: 100%;
+    }
+}

@@ -14,6 +14,7 @@ import Ajax from 'core/ajax';
 import * as Templates from 'core/templates';
 import * as Notification from 'core/notification';
 import {get_string as getString} from 'core/str';
+import * as FeedReply from 'mod_forum/feed_reply';
 
 /**
  * Read and validate the filter combination from a shareable URL.
@@ -318,6 +319,20 @@ export const init = (initialCourseId = 0, initialUnread = false, initialFollowin
         if (event.persisted) {
             restoreFilters();
         }
+    });
+
+    FeedReply.init(root, async(response) => {
+        // A successful native publication must not reset course or tab filters.
+        // The new direct link remains accessible even if the post is no
+        // longer present on the first page of the selected feed filter.
+        await load(true);
+        const message = await getString('recentfeedreplysent', 'mod_forum');
+        status.textContent = message + ' ';
+        const link = document.createElement('a');
+        link.href = response.url;
+        link.textContent = await getString('recentfeedviewreply', 'mod_forum');
+        status.append(link);
+        link.focus();
     });
 
     updateControls();
