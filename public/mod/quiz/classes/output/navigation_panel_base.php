@@ -92,6 +92,8 @@ abstract class navigation_panel_base {
             $button->statestring = $this->get_state_string($qa, $showcorrectness);
             $button->page        = $this->attemptobj->get_question_page($slot);
             $button->currentpage = $this->showall || $button->page == $this->page;
+            // Showing every question on one page must not mark every link as aria-current.
+            $button->aria_current_page = !$this->showall && $button->page == $this->page;
             $button->flagged     = $qa->is_flagged();
             $button->url         = $this->get_question_url($slot);
             if ($this->attemptobj->is_blocked_by_previous_question($slot)) {

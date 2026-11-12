@@ -362,12 +362,23 @@ class renderer extends plugin_renderer_base {
         }
         $output .= $panel->render_before_button_bits($this);
 
+        // Native details keeps the question map accessible even without JavaScript.
+        // Only the grid is collapsible: the finish action and autosave information stay visible.
+        $output .= html_writer::start_tag('details', [
+            'class' => 'mod-quiz-navigation-details',
+            'open' => 'open',
+        ]);
+        $output .= html_writer::tag('summary', get_string('questions', 'quiz'), [
+            'class' => 'mod-quiz-navigation-summary',
+        ]);
+
         $bcc = $panel->get_button_container_class();
         $output .= html_writer::start_tag('div', ['class' => "qn_buttons clearfix $bcc"]);
         foreach ($panel->get_question_buttons() as $button) {
             $output .= $this->render($button);
         }
         $output .= html_writer::end_tag('div');
+        $output .= html_writer::end_tag('details');
 
         $output .= html_writer::tag('div', $panel->render_end_bits($this),
                 ['class' => 'othernav']);
@@ -400,7 +411,13 @@ class renderer extends plugin_renderer_base {
         } else {
             $flaglabel = '';
         }
-        $extrainfo[] = html_writer::tag('span', $flaglabel, ['class' => 'flagstate']);
+        $extrainfo[] = html_writer::tag('span', $flaglabel, [
+            'class' => 'flagstate',
+            'aria-live' => 'polite',
+        ]);
+        // State text comes from the question engine with review permissions applied.
+        // Keep it visually hidden, but readable without relying on colour or the title tooltip.
+        $extrainfo[] = html_writer::tag('span', s($button->statestring), ['class' => 'questionstate']);
 
         if ($button->isrealquestion) {
             $qnostring = 'questionnonav';
@@ -420,8 +437,13 @@ class renderer extends plugin_renderer_base {
                 'title' => $tooltip, 'data-quiz-page' => $button->page];
 
         if ($button->url) {
+            if ($button->aria_current_page) {
+                $tagattributes['aria-current'] = 'page';
+            }
             return html_writer::link($button->url, $tagcontents, $tagattributes);
         } else {
+            // Disabled questions must never become links. This is enforced in the panel by the quiz engine.
+            $tagattributes['aria-disabled'] = 'true';
             return html_writer::tag('span', $tagcontents, $tagattributes);
         }
     }

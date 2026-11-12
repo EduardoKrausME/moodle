@@ -311,7 +311,7 @@ M.mod_quiz.nav.init = function(Y) {
             }
 
             nav_to_page(pageno);
-        }, document.body, '.qnbutton');
+        }, document.body, 'a.qnbutton');
     }
 
     if (Y.one('a.endtestlink')) {

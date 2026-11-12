@@ -42,6 +42,8 @@ class navigation_question_button implements renderable {
     public $page;
     /** @var bool true if this question is on the current page. */
     public $currentpage;
+    /** @var bool true only for an actual current page link, not the show-all review. */
+    public bool $aria_current_page = false;
     /** @var bool true if this question has been flagged. */
     public $flagged;
     /** @var moodle_url the link this button goes to, or null if there should not be a link. */
