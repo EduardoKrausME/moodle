@@ -148,6 +148,7 @@ final class reading_tools {
      * @return string
      */
     public static function csv_safe(string $value): string {
-        return preg_match('/^\s*[=+\-@]/u', $value) ? "'" . $value : $value;
+        // Reject formulas preceded by whitespace, zero-width or control characters.
+        return preg_match('/^[\s\p{Z}\p{C}]*[=+\-@]/u', $value) ? "'" . $value : $value;
     }
 }
