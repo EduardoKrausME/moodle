@@ -906,12 +906,98 @@ class renderer extends plugin_renderer_base {
     public function view_page($course, $quiz, $cm, $context, $viewobj) {
         $output = '';
 
-        $output .= $this->view_page_tertiary_nav($viewobj);
+        $output .= $this->view_page_overview($quiz, $viewobj);
         $output .= $this->view_information($quiz, $cm, $context, $viewobj->infomessages);
         $output .= $this->view_result_info($quiz, $context, $cm, $viewobj);
         $output .= $this->render($viewobj->attemptslist);
         $output .= $this->box($this->view_page_buttons($viewobj), 'quizattempt');
         return $output;
+    }
+
+
+    /**
+     * Render an at-a-glance summary without changing the underlying attempt actions or access checks.
+     *
+     * @param stdClass $quiz effective quiz settings, including user/group overrides.
+     * @param view_page $viewobj information already checked by the quiz view controller.
+     * @return string HTML for the quiz overview.
+     */
+    public function view_page_overview($quiz, view_page $viewobj): string {
+        $facts = [
+            [
+                'label' => get_string('attemptsallowed', 'quiz'),
+                'value' => $quiz->attempts ? (string) $quiz->attempts : get_string('attemptsunlimited', 'quiz'),
+            ],
+            [
+                'label' => get_string('quizoverviewattemptsmade', 'quiz'),
+                'value' => (string) $viewobj->numattempts,
+            ],
+        ];
+
+        if ($quiz->timelimit > 0) {
+            $facts[] = [
+                'label' => get_string('timelimit', 'quiz'),
+                'value' => format_time($quiz->timelimit),
+            ];
+        }
+        if ($quiz->timeopen > 0) {
+            $facts[] = [
+                'label' => get_string('quizopens', 'quiz'),
+                'value' => userdate($quiz->timeopen),
+            ];
+        }
+        if ($quiz->timeclose > 0) {
+            $facts[] = [
+                'label' => get_string('quizcloses', 'quiz'),
+                'value' => userdate($quiz->timeclose),
+            ];
+        }
+        if ($quiz->duedate > 0) {
+            $facts[] = [
+                'label' => get_string('duedate', 'quiz'),
+                'value' => userdate($quiz->duedate),
+            ];
+        }
+        if (quiz_has_grades($quiz)) {
+            $facts[] = [
+                'label' => get_string('quizoverviewmaximumgrade', 'quiz'),
+                'value' => quiz_format_grade($quiz, $quiz->grade),
+            ];
+        }
+
+        $navigationoptions = quiz_get_navigation_options();
+        if (isset($navigationoptions[$quiz->navmethod])) {
+            $facts[] = [
+                'label' => get_string('navmethod', 'quiz'),
+                'value' => $navigationoptions[$quiz->navmethod],
+            ];
+        }
+
+        // The existing access manager determines whether a button is offered, never this summary.
+        if (!$viewobj->quizhasquestions) {
+            $status = get_string('noquestions', 'quiz');
+        } else if (!empty($viewobj->buttontext)) {
+            $status = $viewobj->unfinished
+                ? get_string('stateinprogress', 'quiz')
+                : get_string('quizoverviewready', 'quiz');
+        } else if (!$viewobj->moreattempts && $viewobj->numattempts > 0) {
+            $status = get_string('quizoverviewexhausted', 'quiz');
+        } else if ($quiz->timeopen > $viewobj->timenow) {
+            $status = get_string('quizoverviewwaiting', 'quiz');
+        } else if ($quiz->timeclose > 0 && $quiz->timeclose <= $viewobj->timenow) {
+            $status = get_string('closed', 'quiz');
+        } else {
+            $status = get_string('quizoverviewunavailable', 'quiz');
+        }
+
+        // Retain the native POST, preflight checks, popup restrictions and teacher edit action.
+        $actions = $this->view_page_tertiary_nav($viewobj);
+        return $this->render_from_template('mod_quiz/quiz_overview', [
+            'status' => $status,
+            'facts' => $facts,
+            'hasactions' => $actions !== '',
+            'actions' => $actions,
+        ]);
     }
 
     /**

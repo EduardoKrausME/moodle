@@ -192,6 +192,8 @@ if ($attempts) {
 
 $viewobj->timenow = $timenow;
 $viewobj->numattempts = $numattempts;
+$viewobj->unfinished = $unfinished;
+$viewobj->buttontext = '';
 $viewobj->mygrade = $mygrade;
 $viewobj->moreattempts = $unfinished ||
         !$accessmanager->is_finished($numattempts, $lastfinishedattempt);

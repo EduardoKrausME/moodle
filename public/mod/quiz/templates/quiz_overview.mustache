@@ -1,0 +1,51 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle. If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_quiz/quiz_overview
+
+    Overview for the quiz entry page. Facts and status are escaped by Mustache.
+    Actions are rendered by the existing, permission-aware quiz renderer.
+
+    Example context (json):
+    {
+        "status": "Ready to start",
+        "facts": [{"label": "Attempts allowed", "value": "2"}],
+        "hasactions": false,
+        "actions": ""
+    }
+}}
+<section class="mod-quiz-overview" aria-labelledby="mod-quiz-overview-heading">
+    <div class="mod-quiz-overview__header">
+        <div class="mod-quiz-overview__introduction">
+            <h2 class="h4 mb-2" id="mod-quiz-overview-heading">{{#str}} quizoverviewtitle, quiz {{/str}}</h2>
+            <p class="mod-quiz-overview__status mb-0">{{status}}</p>
+        </div>
+        {{#hasactions}}
+            <div class="mod-quiz-overview__actions">
+                {{{actions}}}
+            </div>
+        {{/hasactions}}
+    </div>
+    <dl class="mod-quiz-overview__facts mb-0">
+        {{#facts}}
+            <div class="mod-quiz-overview__fact">
+                <dt>{{label}}</dt>
+                <dd>{{value}}</dd>
+            </div>
+        {{/facts}}
+    </dl>
+</section>
