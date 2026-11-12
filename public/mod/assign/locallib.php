@@ -6353,10 +6353,21 @@ class assign {
                 // marking-workflow visibility rules as the native feedback panel.
                 $workflowreleased = !$this->get_instance()->markingworkflow ||
                     $this->get_grading_status($user->id) === ASSIGN_MARKING_WORKFLOW_STATE_RELEASED;
-                $history->showgrades = $workflowreleased && $feedbackstatus !== null &&
-                    isset($feedbackstatus->gradefordisplay) &&
-                    $feedbackstatus->gradefordisplay !== null &&
-                    $feedbackstatus->gradefordisplay !== '';
+                // A newly reopened attempt may not have a grade yet, even when an
+                // earlier attempt's grade is visible. Check the gradebook visibility
+                // itself instead of requiring feedback on the current attempt.
+                $gradinginfo = grade_get_grades(
+                    $this->get_course()->id,
+                    'mod',
+                    'assign',
+                    $this->get_instance()->id,
+                    $user->id
+                );
+                $gradebookgrade = $gradinginfo->items[0]->grades[$user->id] ?? null;
+                $history->showgrades = $workflowreleased &&
+                    $this->get_instance()->grade != GRADE_TYPE_NONE &&
+                    (has_capability('mod/assign:grade', $this->get_context()) ||
+                        ($gradebookgrade !== null && !$gradebookgrade->hidden));
                 $flags = $this->get_user_flags($user->id, false);
                 $history->extensionduedate = $flags ? (int) ($flags->extensionduedate ?? 0) : 0;
             }
