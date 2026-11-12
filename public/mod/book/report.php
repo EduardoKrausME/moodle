@@ -33,8 +33,9 @@ require_capability('moodle/course:viewparticipants', $coursecontext);
 // Limit both the SQL query and generated CSV to the current page of enrolled users.
 $pagesize = 50;
 $totalusers = count_enrolled_users($coursecontext);
+$userfields = 'u.id, ' . get_all_user_name_fields(true, 'u');
 $users = get_enrolled_users($coursecontext, '', 0,
-    'u.id, u.firstname, u.lastname', 'u.lastname ASC, u.firstname ASC', $page * $pagesize, $pagesize);
+    $userfields, 'u.lastname ASC, u.firstname ASC, u.id ASC', $page * $pagesize, $pagesize);
 
 $chapters = book_preload_chapters($book);
 $stats = \mod_book\reading_metrics::summarize((int) $book->id, $chapters, array_keys($users));
