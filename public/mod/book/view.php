@@ -143,6 +143,7 @@ if (!$chapterid) {
         'toclabel' => get_string('toc', 'mod_book'),
         'expandlabel' => get_string('expand', 'core'),
         'collapselabel' => get_string('collapse', 'core'),
+        'hideoriginaltoc' => !$edit,
     ]]);
     book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapter->id, $chapters), $course, $cm, $context);
 
