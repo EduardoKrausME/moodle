@@ -82,7 +82,7 @@
 
 .block_myoverview .forum-course-summary__indicators [hidden],
 .block_myoverview .forum-course-summary__content[hidden] {
-    display: none !important;
+    display: none;
 }
 
 .block_myoverview .forum-course-summary__all,
