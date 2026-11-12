@@ -1665,3 +1665,132 @@ body.path-mod-assign [data-region="grade-panel"] .mform .fitem.has-popout .felem
         min-width: 0;
     }
 }
+
+/* Item 5: draft-to-final submission progress; no submission behaviour is changed. */
+.path-mod-assign .assign-submission-workflow {
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: var(--bs-border-radius-lg, 0.75rem);
+    background: var(--bs-secondary-bg, #f8f9fa);
+}
+
+.path-mod-assign .assign-submission-workflow-status {
+    color: var(--bs-body-color, #212529);
+    overflow-wrap: anywhere;
+}
+
+.path-mod-assign .assign-submission-workflow--draftready,
+.path-mod-assign .assign-submission-workflow--draftpending {
+    border-inline-start: 4px solid var(--bs-warning, #ffc107);
+}
+
+.path-mod-assign .assign-submission-workflow--sent {
+    border-inline-start: 4px solid var(--bs-success, #198754);
+}
+
+.path-mod-assign .assign-submission-workflow--locked {
+    border-inline-start: 4px solid var(--bs-danger, #dc3545);
+}
+
+.path-mod-assign .assign-submission-workflow-steps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    list-style: none;
+    gap: 0.75rem;
+    padding: 0;
+}
+
+.path-mod-assign .assign-submission-workflow-step {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    padding: 0.75rem;
+    border-radius: var(--bs-border-radius, 0.375rem);
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    background: var(--bs-body-bg, #fff);
+    overflow-wrap: anywhere;
+}
+
+.path-mod-assign .assign-submission-workflow-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--bs-tertiary-bg, #e9ecef);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.path-mod-assign .assign-submission-workflow-step.is-complete .assign-submission-workflow-number {
+    color: var(--bs-success-text-emphasis, #0a3622);
+    background: var(--bs-success-bg-subtle, #d1e7dd);
+}
+
+.path-mod-assign .assign-submission-savehint {
+    padding: 0.85rem 1rem;
+    margin-block: 1rem;
+    border-inline-start: 3px solid var(--bs-info, #0dcaf0);
+    background: var(--bs-secondary-bg, #f8f9fa);
+    border-radius: var(--bs-border-radius, 0.375rem);
+}
+
+.path-mod-assign .submitforgrading {
+    max-width: 58rem;
+    margin-inline: auto;
+}
+
+.path-mod-assign .assign-confirm-review-intro,
+.path-mod-assign .assign-confirm-review-fallback,
+.path-mod-assign .assign-confirm-groupnote,
+.path-mod-assign .assign-confirm-final-hint {
+    margin-block: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--bs-border-radius, 0.375rem);
+    background: var(--bs-secondary-bg, #f8f9fa);
+}
+
+.path-mod-assign .assign-confirm-review {
+    margin-block: 1.25rem;
+    padding: 1.25rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: var(--bs-border-radius-lg, 0.75rem);
+}
+
+.path-mod-assign .assign-confirm-review-item {
+    padding-block: 0.8rem;
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.path-mod-assign .assign-confirm-review-item:last-child {
+    border-bottom: 0;
+}
+
+.path-mod-assign .assign-confirm-review-item .plugincontentsummary {
+    max-width: 100%;
+}
+
+.path-mod-assign .assign-confirm-final-hint {
+    border-inline-start: 3px solid var(--bs-primary, #0d6efd);
+}
+
+@media (max-width: 575.98px) {
+    .path-mod-assign .assign-submission-workflow,
+    .path-mod-assign .assign-confirm-review {
+        padding: 0.85rem;
+    }
+
+    .path-mod-assign .assign-submission-workflow-steps {
+        grid-template-columns: 1fr;
+    }
+
+    .path-mod-assign .assign-confirm-review-item .plugincontentsummary {
+        overflow-wrap: anywhere;
+    }
+}
+
