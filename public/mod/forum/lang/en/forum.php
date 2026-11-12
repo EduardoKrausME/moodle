@@ -809,3 +809,16 @@ $string['re'] = 'Re:';
 // Deprecated since Moodle 5.3.
 $string['nonextdiscussion'] = 'No next discussion available';
 $string['noprevdiscussion'] = 'No previous discussion available';
+
+$string['recentfeedtitle'] = 'Recent discussions';
+$string['recentfeedsubtitle'] = 'Updates from your courses';
+$string['recentfeedall'] = 'All';
+$string['recentfeedunread'] = 'Unread';
+$string['recentfeedcourse'] = 'Course';
+$string['recentfeedallcourses'] = 'All courses';
+$string['recentfeedloadmore'] = 'Load more discussions';
+$string['recentfeedloading'] = 'Loading discussions...';
+$string['recentfeedempty'] = 'No discussions found for these filters.';
+$string['recentfeederror'] = 'Unable to load discussions. Try again.';
+$string['recentfeedstatus'] = 'Recent discussions, newest first';
+$string['recentfeedpostunread'] = 'Unread message';

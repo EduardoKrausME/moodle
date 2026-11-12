@@ -225,6 +225,13 @@ $functions = array(
         'services' => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
 
+    'mod_forum_get_recent_feed' => [
+        'classname' => 'mod_forum\\external\\get_recent_feed',
+        'methodname' => 'execute',
+        'description' => 'Return a paginated, permission-checked forum feed across accessible courses.',
+        'type' => 'read',
+        'ajax' => true,
+    ],
     'mod_forum_get_course_unread_counts' => [
         'classname' => 'mod_forum\\external\\get_course_unread_counts',
         'methodname' => 'execute',
