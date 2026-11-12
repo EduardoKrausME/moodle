@@ -437,7 +437,7 @@ span.unread {
     }
     .forum-recent-feed__filter-group {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .forum-recent-feed__filter-group .btn {
         min-width: 0;
@@ -461,4 +461,15 @@ span.unread {
     .forum-recent-feed__filter-course select {
         min-height: 44px;
     }
+}
+
+/* Native forum favourites shown in the cross-course feed. */
+.forum-recent-feed__favourite {
+    min-height: 44px;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.forum-recent-feed__favourite[aria-pressed="true"] {
+    border-color: var(--bs-primary, #0d6efd);
 }

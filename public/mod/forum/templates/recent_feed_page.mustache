@@ -17,6 +17,10 @@
                         data-action="feed-unread" aria-pressed="{{#unreadselected}}true{{/unreadselected}}{{^unreadselected}}false{{/unreadselected}}">
                     {{#str}}recentfeedunread, mod_forum{{/str}}
                 </button>
+                <button type="button" class="btn {{#followingselected}}btn-primary{{/followingselected}}{{^followingselected}}btn-outline-primary{{/followingselected}}"
+                        data-action="feed-following" aria-pressed="{{#followingselected}}true{{/followingselected}}{{^followingselected}}false{{/followingselected}}">
+                    {{#str}}recentfeedfollowing, mod_forum{{/str}}
+                </button>
             </div>
         </fieldset>
         <div class="forum-recent-feed__filter-course flex-grow-1">

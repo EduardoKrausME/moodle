@@ -14,6 +14,16 @@
                 </span>
             {{/unread}}
         </div>
+        {{#canfavourite}}
+            <button type="button" class="btn btn-outline-secondary forum-recent-feed__favourite mb-2"
+                    data-action="feed-favourite" data-discussion-id="{{discussionid}}"
+                    data-favourited="{{#favourited}}1{{/favourited}}{{^favourited}}0{{/favourited}}"
+                    aria-pressed="{{#favourited}}true{{/favourited}}{{^favourited}}false{{/favourited}}"
+                    aria-label="{{#favourited}}{{#str}}recentfeedunfollow, mod_forum{{/str}}{{/favourited}}{{^favourited}}{{#str}}recentfeedfollow, mod_forum{{/str}}{{/favourited}}">
+                <span data-region="favourite-symbol" aria-hidden="true">{{#favourited}}★{{/favourited}}{{^favourited}}☆{{/favourited}}</span>
+                <span data-region="favourite-label">{{#favourited}}{{#str}}recentfeedunfollow, mod_forum{{/str}}{{/favourited}}{{^favourited}}{{#str}}recentfeedfollow, mod_forum{{/str}}{{/favourited}}</span>
+            </button>
+        {{/canfavourite}}
         <div class="forum-recent-feed__meta small text-muted mb-2">
             <span>{{coursename}}</span>
             <span>{{forumname}}</span>
