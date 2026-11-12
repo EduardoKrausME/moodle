@@ -12,3 +12,141 @@
 .page-mycourses .block_myoverview .block-controls {
     display: none;
 }
+
+/* Compact forum summaries within My courses: card, list and summary modes. */
+.block_myoverview .forum-course-summary {
+    min-width: 0;
+    max-width: 100%;
+    container-type: inline-size;
+}
+
+.block_myoverview .forum-course-summary__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .25rem .75rem;
+    min-width: 0;
+}
+
+.block_myoverview .forum-course-summary__toggle {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .375rem;
+    min-height: 44px;
+    max-width: 100%;
+    padding: .35rem .25rem;
+    text-align: start;
+    text-decoration: none;
+    white-space: normal;
+}
+
+.block_myoverview .forum-course-summary__title,
+.block_myoverview .forum-course-summary__toggle-label,
+.block_myoverview .forum-course-summary__indicators,
+.block_myoverview .forum-course-summary__content,
+.block_myoverview .forum-course-summary__all,
+.block_myoverview .forum-course-discussion__link,
+.block_myoverview .forum-course-discussion__meta {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.block_myoverview .forum-course-summary__toggle-label {
+    font-size: .875rem;
+}
+
+.block_myoverview .forum-course-summary__chevron {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: .5rem;
+    height: .5rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform .15s ease;
+    margin-inline: .25rem;
+}
+
+.block_myoverview .forum-course-summary__toggle[aria-expanded="true"] .forum-course-summary__chevron {
+    transform: rotate(225deg);
+}
+
+.block_myoverview .forum-course-summary__indicators {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .25rem .5rem;
+}
+
+.block_myoverview .forum-course-summary__indicators [hidden],
+.block_myoverview .forum-course-summary__content[hidden] {
+    display: none !important;
+}
+
+.block_myoverview .forum-course-summary__all,
+.block_myoverview .forum-course-discussion__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-block: .3rem;
+    text-decoration: underline;
+    text-underline-offset: .15em;
+}
+
+.block_myoverview .forum-course-summary__all {
+    margin-top: .25rem;
+}
+
+.block_myoverview .forum-course-discussion__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .125rem .625rem;
+}
+
+.block_myoverview .forum-course-summary :is(a, button):focus-visible {
+    outline: 3px solid var(--bs-primary, #0d6efd);
+    outline-offset: 2px;
+    border-radius: .25rem;
+}
+
+@container (max-width: 380px) {
+    .block_myoverview .forum-course-summary__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+    }
+    .block_myoverview .forum-course-summary__toggle,
+    .block_myoverview .forum-course-summary__indicators,
+    .block_myoverview .forum-course-summary__all {
+        width: 100%;
+    }
+    .block_myoverview .forum-course-discussion__meta {
+        flex-direction: column;
+        gap: .125rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .block_myoverview .forum-course-summary__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+    }
+    .block_myoverview .forum-course-summary__toggle,
+    .block_myoverview .forum-course-summary__indicators,
+    .block_myoverview .forum-course-summary__all {
+        width: 100%;
+    }
+    .block_myoverview .forum-course-discussion__meta {
+        flex-direction: column;
+        gap: .125rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .block_myoverview .forum-course-summary__chevron {
+        transition: none;
+    }
+}

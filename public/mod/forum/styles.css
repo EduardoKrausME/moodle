@@ -352,3 +352,113 @@ span.unread {
         transition: none;
     }
 }
+
+/* Responsive cross-course forum feed; no horizontal scrolling for long content. */
+.forum-recent-feed,
+.forum-recent-feed__filters,
+.forum-recent-feed__items,
+.forum-recent-feed__item,
+.forum-recent-feed__item-heading,
+.forum-recent-feed__item-title,
+.forum-recent-feed__meta {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.forum-recent-feed__filter-choice {
+    min-inline-size: 0;
+}
+
+.forum-recent-feed__filter-course,
+.forum-recent-feed__filter-course select,
+.forum-recent-feed__filter-group {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.forum-recent-feed__filter-group .btn,
+.forum-recent-feed__actions .btn {
+    min-height: 44px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.forum-recent-feed__item-heading {
+    flex-wrap: wrap;
+}
+
+.forum-recent-feed__item-title {
+    flex: 1 1 12rem;
+    overflow-wrap: anywhere;
+}
+
+.forum-recent-feed__item-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-underline-offset: .15em;
+}
+
+.forum-recent-feed__unread {
+    white-space: normal;
+}
+
+.forum-recent-feed__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .125rem .75rem;
+    overflow-wrap: anywhere;
+}
+
+.forum-recent-feed__preview {
+    overflow-wrap: anywhere;
+}
+
+.forum-recent-feed :is(a, button, select):focus-visible {
+    outline: 3px solid var(--bs-primary, #0d6efd);
+    outline-offset: 2px;
+}
+
+.forum-recent-feed [hidden] {
+    display: none !important;
+}
+
+@media (max-width: 767.98px) {
+    .forum-recent-feed__filters {
+        width: 100%;
+        align-items: stretch;
+    }
+    .forum-recent-feed__filter-choice,
+    .forum-recent-feed__filter-course,
+    .forum-recent-feed__filter-group {
+        width: 100%;
+    }
+    .forum-recent-feed__filter-group {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .forum-recent-feed__filter-group .btn {
+        min-width: 0;
+        width: 100%;
+    }
+    .forum-recent-feed__meta {
+        flex-direction: column;
+        gap: .125rem;
+    }
+    .forum-recent-feed__item-heading {
+        flex-direction: column;
+        gap: .25rem;
+    }
+    .forum-recent-feed__item-title {
+        flex-basis: auto;
+        width: 100%;
+    }
+    .forum-recent-feed__actions .btn {
+        width: 100%;
+    }
+    .forum-recent-feed__filter-course select {
+        min-height: 44px;
+    }
+}
