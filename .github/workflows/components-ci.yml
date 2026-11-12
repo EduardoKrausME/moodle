@@ -1,0 +1,137 @@
+name: Moodle Components CI
+
+# This CI checks only the forum, book and Boost components.
+on:
+  push:
+    paths:
+      - 'public/mod/forum/**'
+      - 'public/mod/book/**'
+      - 'public/theme/boost/**'
+      - '.github/workflows/components-ci.yml'
+  pull_request:
+    paths:
+      - 'public/mod/forum/**'
+      - 'public/mod/book/**'
+      - 'public/theme/boost/**'
+      - '.github/workflows/components-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: components-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    name: Syntax and component linters
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out Moodle
+        uses: actions/checkout@v6
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: PHP syntax - only the three components
+        shell: bash
+        run: |
+          set -euo pipefail
+          for component in public/mod/forum public/mod/book public/theme/boost; do
+            echo "::group::PHP syntax: $component"
+            find "$component" -type f -name '*.php' -print0 | xargs -0 -r -n 1 php -l
+            echo '::endgroup::'
+          done
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install JS lint dependencies
+        run: npm ci
+
+      - name: Check forum JavaScript, CSS and Behat syntax
+        run: |
+          npx grunt eslint:amd --root=public/mod/forum
+          npx grunt stylelint:css --root=public/mod/forum
+          npx grunt gherkinlint --root=public/mod/forum
+
+      - name: Check book CSS and Behat syntax
+        run: |
+          npx grunt stylelint:css --root=public/mod/book
+          npx grunt gherkinlint --root=public/mod/book
+
+      - name: Check Boost JavaScript, SCSS and Behat syntax
+        run: |
+          npx grunt eslint:amd --root=public/theme/boost
+          npx grunt stylelint:scss --root=public/theme/boost
+          npx grunt gherkinlint --root=public/theme/boost
+
+  phpunit:
+    name: PHPUnit - forum, book and boost
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+      exttests:
+        image: moodlehq/moodle-exttests
+        ports:
+          - 8080:80
+    env:
+      dbtype: pgsql
+    steps:
+      - name: Check out Moodle
+        uses: actions/checkout@v6
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pgsql, pdo_pgsql, mbstring, intl, gd, zip, redis, soap
+          ini-values: max_input_vars=5000
+          coverage: none
+
+      - name: Install PHP dependencies
+        uses: ramsey/composer-install@v4
+
+      - name: Initialize Moodle PHPUnit environment
+        shell: bash
+        run: |
+          echo "pathtophp=$(command -v php)" >> "$GITHUB_ENV"
+          cp .github/workflows/config-template.php config.php
+          mkdir -p ../moodledata ../phpunitdata
+          sudo locale-gen en_AU.UTF-8
+          php public/admin/tool/phpunit/cli/init.php --disable-composer
+
+      - name: Test only the three component suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          for suite in mod_forum_testsuite mod_book_testsuite theme_boost_testsuite; do
+            echo "::group::PHPUnit: $suite"
+            vendor/bin/phpunit --testsuite "$suite" --fail-on-empty-test-suite
+            echo '::endgroup::'
+          done
