@@ -12,6 +12,8 @@
 
 require(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/locallib.php');
+require_once($CFG->libdir . '/enrollib.php');
+require_once($CFG->libdir . '/grouplib.php');
 
 $id = required_param('id', PARAM_INT);
 $page = max(0, optional_param('page', 0, PARAM_INT));
