@@ -34,6 +34,59 @@ const Selectors = {
 };
 
 /**
+ * Add a keyboard-accessible index using the native Moodle fieldset headers.
+ * No fields are moved and Moodle owns the collapse and validation behaviour.
+ *
+ * @param {HTMLFormElement} form Assignment edit form.
+ */
+const initSectionNavigation = (form) => {
+    const navigation = form.querySelector('[data-region="assign-settings-navigation"]');
+    const list = navigation?.querySelector('[data-region="assign-settings-section-list"]');
+    if (!list) {
+        return;
+    }
+
+    const sections = Array.from(form.querySelectorAll('fieldset[id]')).filter(fieldset =>
+        fieldset.querySelector(':scope > legend') && !fieldset.parentElement.closest('fieldset')
+    );
+    const fragment = document.createDocumentFragment();
+    sections.forEach(fieldset => {
+        const legend = fieldset.querySelector(':scope > legend');
+        const title = legend.textContent.replace(/\s+/g, ' ').trim();
+        if (!title) {
+            return;
+        }
+        const item = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = '#' + encodeURIComponent(fieldset.id);
+        link.className = 'assign-settings-section-link';
+        link.textContent = title;
+        link.addEventListener('click', event => {
+            if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                return;
+            }
+            event.preventDefault();
+            const toggle = legend.querySelector('a');
+            const collapsed = fieldset.classList.contains('collapsed') ||
+                toggle?.getAttribute('aria-expanded') === 'false';
+            if (collapsed && toggle) {
+                toggle.click();
+            }
+            fieldset.scrollIntoView({block: 'start'});
+            legend.setAttribute('tabindex', '-1');
+            legend.focus({preventScroll: true});
+        });
+        item.appendChild(link);
+        fragment.appendChild(item);
+    });
+
+    if (fragment.childNodes.length) {
+        list.appendChild(fragment);
+        navigation.hidden = false;
+    }
+};
+
+/**
  * Update derived hidden fields in real time.
  */
 export const init = () => {
@@ -41,6 +94,9 @@ export const init = () => {
     if (!form) {
         return;
     }
+
+    form.classList.add('mod-assign-settings-form');
+    initSectionNavigation(form);
 
     const updateDerivedFields = () => {
         const totalMarkerCount = form.querySelector(Selectors.derived.totalMarkerCount);

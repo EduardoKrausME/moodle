@@ -45,7 +45,22 @@ class mod_assign_mod_form extends moodleform_mod {
         global $CFG, $COURSE, $OUTPUT, $PAGE;
         $mform = $this->_form;
 
+        // Provide an optional section index without changing the native form fields.
+        $navcontent = \html_writer::tag('h2', get_string('settingssectionstitle', 'assign'), ['class' => 'h5 mb-2']);
+        $navcontent .= \html_writer::tag('p', get_string('settingssectionshelp', 'assign'), ['class' => 'mb-3']);
+        $navcontent .= \html_writer::tag('ol', '', [
+            'class' => 'assign-settings-section-list',
+            'data-region' => 'assign-settings-section-list',
+        ]);
+        $mform->addElement('html', \html_writer::tag('nav', $navcontent, [
+            'class' => 'assign-settings-navigation',
+            'data-region' => 'assign-settings-navigation',
+            'aria-label' => get_string('settingssectionstitle', 'assign'),
+            'hidden' => 'hidden',
+        ]));
+
         $mform->addElement('header', 'general', get_string('general', 'form'));
+        $this->add_settings_section_hint('settingsgeneralhint');
 
         $mform->addElement('text', 'name', get_string('assignmentname', 'assign'), array('size'=>'64'));
         if (!empty($CFG->formatstringstriptags)) {
@@ -77,6 +92,7 @@ class mod_assign_mod_form extends moodleform_mod {
 
         $mform->addElement('header', 'availability', get_string('availability', 'assign'));
         $mform->setExpanded('availability', true);
+        $this->add_settings_section_hint('settingsavailabilityhint');
 
         $name = get_string('allowsubmissionsfromdate', 'assign');
         $options = array('optional'=>true);
@@ -128,8 +144,13 @@ class mod_assign_mod_form extends moodleform_mod {
         $mform->disabledIf('alwaysshowdescription', 'allowsubmissionsfromdate[enabled]', 'notchecked');
 
         $assignment->add_all_plugin_settings($mform);
+        if (!$assignment->has_instance()) {
+            // Keep less frequently needed feedback controls folded on newly created tasks.
+            $mform->setExpanded('feedbacktypes', false);
+        }
 
         $mform->addElement('header', 'submissionsettings', get_string('submissionsettings', 'assign'));
+        $this->add_settings_section_hint('settingssubmissionshint');
 
         $name = get_string('submissiondrafts', 'assign');
         $mform->addElement('selectyesno', 'submissiondrafts', $name);
@@ -172,6 +193,10 @@ class mod_assign_mod_form extends moodleform_mod {
         $mform->hideIf('attemptreopenmethod', 'maxattempts', 'eq', 1);
 
         $mform->addElement('header', 'groupsubmissionsettings', get_string('groupsubmissionsettings', 'assign'));
+        $this->add_settings_section_hint('settingsgroupshint');
+        if (!$assignment->has_instance()) {
+            $mform->setExpanded('groupsubmissionsettings', false);
+        }
 
         $name = get_string('teamsubmission', 'assign');
         $mform->addElement('selectyesno', 'teamsubmission', $name);
@@ -210,6 +235,10 @@ class mod_assign_mod_form extends moodleform_mod {
         }
 
         $mform->addElement('header', 'notifications', get_string('notifications', 'assign'));
+        $this->add_settings_section_hint('settingsnotificationshint');
+        if (!$assignment->has_instance()) {
+            $mform->setExpanded('notifications', false);
+        }
 
         $name = get_string('sendnotifications', 'assign');
         $mform->addElement('selectyesno', 'sendnotifications', $name);
@@ -225,6 +254,7 @@ class mod_assign_mod_form extends moodleform_mod {
         $mform->addHelpButton('sendstudentnotifications', 'sendstudentnotificationsdefault', 'assign');
 
         $this->standard_grading_coursemodule_elements();
+        $this->add_settings_section_hint('settingsgradinghint');
         $name = get_string('blindmarking', 'assign');
         $mform->addElement('selectyesno', 'blindmarking', $name);
         $mform->addHelpButton('blindmarking', 'blindmarking', 'assign');
@@ -394,6 +424,18 @@ class mod_assign_mod_form extends moodleform_mod {
         $this->add_action_buttons();
 
         $PAGE->requires->js_call_amd('mod_assign/mod_form', 'init');
+    }
+
+    /**
+     * Render short guidance as HTML without adding any persisted form setting.
+     *
+     * @param string $stringkey Section description language key.
+     * @return void
+     */
+    private function add_settings_section_hint(string $stringkey): void {
+        $this->_form->addElement('html', \html_writer::tag('p', get_string($stringkey, 'assign'), [
+            'class' => 'assign-settings-section-hint text-body-secondary',
+        ]));
     }
 
     /**

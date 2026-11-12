@@ -22,6 +22,14 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['settingssectionstitle'] = 'Assignment settings sections';
+$string['settingssectionshelp'] = 'Go to a section to find its options. Expand collapsed sections to edit their settings.';
+$string['settingsgeneralhint'] = 'Give this assignment a clear name, instructions and any supporting files.';
+$string['settingsavailabilityhint'] = 'Set the submission dates and time limit. Changing an existing due date may require grade penalty recalculation.';
+$string['settingssubmissionshint'] = 'Choose how students save drafts, confirm submissions and make additional attempts.';
+$string['settingsgroupshint'] = 'Group submission options apply when group submissions are enabled. Existing work can restrict changes.';
+$string['settingsnotificationshint'] = 'Choose when notifications are sent to teachers and students.';
+$string['settingsgradinghint'] = 'Configure grading, anonymous submissions and marking workflow. Some options cannot be changed after work has been submitted.';
 $string['activityattachments'] = 'Assignment activity attachments';
 $string['activitydate:submissionsdue'] = 'Due:';
 $string['activitydate:submissionsopen'] = 'Opens:';
