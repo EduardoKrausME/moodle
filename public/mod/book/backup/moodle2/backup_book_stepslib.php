@@ -38,7 +38,7 @@ class backup_book_activity_structure_step extends backup_activity_structure_step
         $chapters = new backup_nested_element('chapters');
         $chapter = new backup_nested_element('chapter', array('id'), array(
             'pagenum', 'subchapter', 'title', 'content', 'contentformat',
-            'hidden', 'timemcreated', 'timemodified', 'importsrc'));
+            'hidden', 'timecreated', 'timemodified', 'importsrc'));
 
         $tags = new backup_nested_element('chaptertags');
         $tag = new backup_nested_element('tag', array('id'), array('itemid', 'rawname'));
