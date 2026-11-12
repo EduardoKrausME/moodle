@@ -23,9 +23,15 @@ import * as ForumUnreadCounts from 'block_myoverview/forum_unread_counts';
  * @param {HTMLElement|jQuery} root My courses block.
  */
 export const init = root => {
-    ForumUnreadCounts.init(root);
-
-    const container = root instanceof Element ? root : root[0];
+    // My courses passes a jQuery root, while a native course-page block
+    // initialises from its unique CSS selector.
+    const container = typeof root === 'string' ? document.querySelector(root) :
+        (root instanceof Element ? root : root[0]);
+    if (!container) {
+        return;
+    }
+    ForumUnreadCounts.init(container);
+    root = container;
     const inFlight = new Map();
     const cache = new Map();
     let generation = 0;

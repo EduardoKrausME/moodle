@@ -34,5 +34,9 @@ export const init = (root) => {
     ViewNav.init(root);
     // Initialise the courses view modules.
     View.init(root);
-    RecentForumDiscussions.init(root);
+    // Do not request unread counters or discussions when the summary is
+    // configured for course pages or explicitly hidden.
+    if (root.attr('data-forum-summary-enabled') === '1') {
+        RecentForumDiscussions.init(root);
+    }
 };

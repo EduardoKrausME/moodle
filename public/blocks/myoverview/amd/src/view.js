@@ -514,6 +514,7 @@ const renderCourses = (root, coursesData) => {
         // Whether the course category should be displayed in the course item.
         coursesData.courses = coursesData.courses.map(course => {
             course.showcoursecategory = filters.displaycategories === 'on';
+            course.showforumsummary = root.attr('data-forum-summary-enabled') === '1';
             return course;
         });
         if (coursesData.courses.length) {
