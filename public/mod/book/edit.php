@@ -91,59 +91,59 @@ if ($mform->is_cancelled()) {
         // The editor's submitted HTML and draft files are shown, but nothing is persisted.
         $previewdata = $data;
     } else {
-    if ($data->id) {
-        // store the files
-        $data->timemodified = time();
-        $data = file_postupdate_standard_editor($data, 'content', $options, $context, 'mod_book', 'chapter', $data->id);
-        $DB->update_record('book_chapters', $data);
-        $DB->set_field('book', 'revision', $book->revision+1, array('id'=>$book->id));
-        $chapter = $DB->get_record('book_chapters', array('id' => $data->id));
+        if ($data->id) {
+            // store the files
+            $data->timemodified = time();
+            $data = file_postupdate_standard_editor($data, 'content', $options, $context, 'mod_book', 'chapter', $data->id);
+            $DB->update_record('book_chapters', $data);
+            $DB->set_field('book', 'revision', $book->revision+1, array('id'=>$book->id));
+            $chapter = $DB->get_record('book_chapters', array('id' => $data->id));
 
-        core_tag_tag::set_item_tags('mod_book', 'book_chapters', $chapter->id, $context, $data->tags);
+            core_tag_tag::set_item_tags('mod_book', 'book_chapters', $chapter->id, $context, $data->tags);
 
-        \mod_book\event\chapter_updated::create_from_chapter($book, $context, $chapter)->trigger();
-    } else {
-        // adding new chapter
-        $data->bookid        = $book->id;
-        $data->hidden        = 0;
-        $data->timecreated   = time();
-        $data->timemodified  = time();
-        $data->importsrc     = '';
-        $data->content       = '';          // updated later
-        $data->contentformat = FORMAT_HTML; // updated later
+            \mod_book\event\chapter_updated::create_from_chapter($book, $context, $chapter)->trigger();
+        } else {
+            // adding new chapter
+            $data->bookid        = $book->id;
+            $data->hidden        = 0;
+            $data->timecreated   = time();
+            $data->timemodified  = time();
+            $data->importsrc     = '';
+            $data->content       = '';          // updated later
+            $data->contentformat = FORMAT_HTML; // updated later
 
-        // make room for new page
-        $sql = "UPDATE {book_chapters}
-                   SET pagenum = pagenum + 1
-                 WHERE bookid = ? AND pagenum >= ?";
-        $DB->execute($sql, array($book->id, $data->pagenum));
+            // make room for new page
+            $sql = "UPDATE {book_chapters}
+                       SET pagenum = pagenum + 1
+                     WHERE bookid = ? AND pagenum >= ?";
+            $DB->execute($sql, array($book->id, $data->pagenum));
 
-        $data->id = $DB->insert_record('book_chapters', $data);
+            $data->id = $DB->insert_record('book_chapters', $data);
 
-        // store the files
-        $data = file_postupdate_standard_editor($data, 'content', $options, $context, 'mod_book', 'chapter', $data->id);
-        $DB->update_record('book_chapters', $data);
-        $DB->set_field('book', 'revision', $book->revision+1, array('id'=>$book->id));
-        $chapter = $DB->get_record('book_chapters', array('id' => $data->id));
+            // store the files
+            $data = file_postupdate_standard_editor($data, 'content', $options, $context, 'mod_book', 'chapter', $data->id);
+            $DB->update_record('book_chapters', $data);
+            $DB->set_field('book', 'revision', $book->revision+1, array('id'=>$book->id));
+            $chapter = $DB->get_record('book_chapters', array('id' => $data->id));
 
-        core_tag_tag::set_item_tags('mod_book', 'book_chapters', $chapter->id, $context, $data->tags);
+            core_tag_tag::set_item_tags('mod_book', 'book_chapters', $chapter->id, $context, $data->tags);
 
-        \mod_book\event\chapter_created::create_from_chapter($book, $context, $chapter)->trigger();
-    }
+            \mod_book\event\chapter_created::create_from_chapter($book, $context, $chapter)->trigger();
+        }
 
-    book_preload_chapters($book); // fix structure
+        book_preload_chapters($book); // fix structure
 
-    if (optional_param('saveandnewchapter', null, PARAM_RAW) !== null) {
-        $saved = $DB->get_record('book_chapters', ['id' => $data->id, 'bookid' => $book->id],
-            '*', MUST_EXIST);
-        redirect(new moodle_url('/mod/book/edit.php', [
-            'cmid' => $cm->id,
-            'pagenum' => $saved->pagenum,
-            'subchapter' => $saved->subchapter,
-        ]), get_string('chaptercreatedsaved', 'mod_book'));
-    }
+        if (optional_param('saveandnewchapter', null, PARAM_RAW) !== null) {
+            $saved = $DB->get_record('book_chapters', ['id' => $data->id, 'bookid' => $book->id],
+                '*', MUST_EXIST);
+            redirect(new moodle_url('/mod/book/edit.php', [
+                'cmid' => $cm->id,
+                'pagenum' => $saved->pagenum,
+                'subchapter' => $saved->subchapter,
+            ]), get_string('chaptercreatedsaved', 'mod_book'));
+        }
 
-    redirect("view.php?id=$cm->id&chapterid=$data->id");
+        redirect("view.php?id=$cm->id&chapterid=$data->id");
     }
 }
 
