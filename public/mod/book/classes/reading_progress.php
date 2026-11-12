@@ -41,14 +41,19 @@ final class reading_progress {
             'userid' => $userid,
         ];
         $now = time();
-        // Use millisecond precision to preserve the last page opened on rapid navigation.
-        $lastviewed = (int) floor(microtime(true) * 1000);
+        // Use milliseconds and a monotonically increasing position within this reader's book.
+        // Page changes within the same millisecond must still preserve their actual order.
+        $previouslast = (int) $DB->get_field_sql(
+            'SELECT MAX(lastviewed) FROM {book_chapter_reads} WHERE bookid = :bookid AND userid = :userid',
+            ['bookid' => $bookid, 'userid' => $userid]
+        );
+        $lastviewed = max((int) floor(microtime(true) * 1000), $previouslast + 1);
         $record = $DB->get_record('book_chapter_reads', $conditions, 'id, lastviewed');
 
         if ($record) {
             $DB->update_record('book_chapter_reads', (object) [
                 'id' => $record->id,
-                'lastviewed' => max($lastviewed, $record->lastviewed + 1),
+                'lastviewed' => $lastviewed,
             ]);
             return;
         }
