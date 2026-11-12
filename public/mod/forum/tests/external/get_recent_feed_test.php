@@ -399,7 +399,8 @@ final class get_recent_feed_test extends \core_external\tests\externallib_testca
         $this->assertFalse($byid[$ordinary->id]['favourited']);
         $this->assertSame(
             has_capability('mod/forum:cantogglefavourite',
-                \context_module::instance($forum->cmid), $student),
+                \context_module::instance(
+                get_coursemodule_from_instance('forum', $forum->id, $course->id, false, MUST_EXIST)->id), $student),
             $byid[$selected->id]['canfavourite']);
 
         $following = $this->call_feed(0, false, '', true);
@@ -451,7 +452,8 @@ final class get_recent_feed_test extends \core_external\tests\externallib_testca
         $this->assertCount(1, $first['items']);
         $this->assertSame($a->id, $first['items'][0]['discussionid']);
 
-        $context = \context_module::instance($forum->cmid);
+        $context = \context_module::instance(
+                get_coursemodule_from_instance('forum', $forum->id, $course->id, false, MUST_EXIST)->id);
         $service = \core_favourites\service_factory::get_service_for_user_context(
             \context_user::instance($student->id));
         $service->delete_favourite('mod_forum', 'discussions', $a->id, $context);

@@ -286,7 +286,12 @@ export const init = (initialCourseId = 0, initialUnread = false, initialFollowin
                     followingButton.focus();
                 }
             }
-            status.textContent = await getString('recentfeedfavouriteupdated', 'mod_forum');
+            const feedbackkey = state.following && list.children.length === 0 && !state.hasMore ?
+                'recentfeedempty' : 'recentfeedfavouriteupdated';
+            const message = await getString(feedbackkey, 'mod_forum');
+            if (generation === state.generation) {
+                status.textContent = message;
+            }
         } catch (error) {
             if (generation === state.generation && button.isConnected) {
                 status.textContent = await getString('recentfeedfavouriteerror', 'mod_forum');
