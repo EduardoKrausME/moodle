@@ -106,7 +106,9 @@ class entity {
             $record->lockdiscussionafter,
             $record->duedate,
             $record->cutoffdate,
-            $record->showimmediately
+            $record->showimmediately,
+            (bool) ($record->showinmycourses ?? true),
+            (bool) ($record->allowsolutions ?? false)
         );
     }
 

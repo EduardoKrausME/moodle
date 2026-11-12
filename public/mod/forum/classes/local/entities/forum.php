@@ -109,6 +109,10 @@ class forum {
     private $cutoffdate;
     /** @var bool $showimmediately Whether to show replies in a qanda forum immediately */
     private bool $showimmediately;
+    /** @var bool $showinmycourses Whether the forum discussions appear in My courses */
+    private bool $showinmycourses;
+    /** @var bool $allowsolutions Whether accepted solutions are enabled */
+    private bool $allowsolutions;
 
     /**
      * Constructor
@@ -147,6 +151,8 @@ class forum {
      * @param int $duedate Timestamp that represents the due date for forum posts
      * @param int $cutoffdate Timestamp after which forum posts will no longer be accepted
      * @param bool $showimmediately Whether to show replies in a qanda forum immediately
+     * @param bool $showinmycourses Whether the forum discussions appear in My courses
+     * @param bool $allowsolutions Whether accepted solutions are enabled
      */
     public function __construct(
         context $context,
@@ -182,7 +188,9 @@ class forum {
         int $lockdiscussionafter,
         int $duedate,
         int $cutoffdate,
-        bool $showimmediately
+        bool $showimmediately,
+        bool $showinmycourses = true,
+        bool $allowsolutions = false
     ) {
         $this->context = $context;
         $this->coursemodule = $coursemodule;
@@ -218,6 +226,8 @@ class forum {
         $this->duedate = $duedate;
         $this->cutoffdate = $cutoffdate;
         $this->showimmediately = $showimmediately;
+        $this->showinmycourses = $showinmycourses;
+        $this->allowsolutions = $allowsolutions;
     }
 
     /**
@@ -682,5 +692,23 @@ class forum {
      */
     public function get_showimmediately(): bool {
         return $this->showimmediately;
+    }
+
+    /**
+     * Whether the forum discussions appear in My courses.
+     *
+     * @return bool
+     */
+    public function get_showinmycourses(): bool {
+        return $this->showinmycourses;
+    }
+
+    /**
+     * Whether accepted solutions are enabled for this forum.
+     *
+     * @return bool
+     */
+    public function get_allowsolutions(): bool {
+        return $this->allowsolutions;
     }
 }

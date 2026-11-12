@@ -574,6 +574,49 @@ final class events_test extends \advanced_testcase {
     }
 
     /**
+     * Forum view snapshots must include all columns and preserve custom forum settings.
+     */
+    public function test_course_module_viewed_snapshot_with_custom_fields(): void {
+        global $CFG, $DB;
+        require_once($CFG->dirroot . '/mod/forum/lib.php');
+
+        $course = $this->getDataGenerator()->create_course();
+        $vault = \\mod_forum\\local\\container::get_vault_factory()->get_forum_vault();
+        $mapper = \\mod_forum\\local\\container::get_legacy_data_mapper_factory()->get_forum_data_mapper();
+
+        foreach ([[0, 1], [1, 0]] as [$showinmycourses, $allowsolutions]) {
+            $forum = $this->getDataGenerator()->create_module('forum', [
+                'course' => $course->id,
+                'showinmycourses' => $showinmycourses,
+                'allowsolutions' => $allowsolutions,
+            ]);
+            $cm = get_coursemodule_from_instance('forum', $forum->id);
+            $context = \\context_module::instance($cm->id);
+            $stored = $DB->get_record('forum', ['id' => $forum->id], '*', MUST_EXIST);
+            $this->assertSame($showinmycourses, (int) $stored->showinmycourses);
+            $this->assertSame($allowsolutions, (int) $stored->allowsolutions);
+
+            $entity = $vault->get_from_course_module_id($cm->id);
+            $legacy = $mapper->to_legacy_object($entity);
+            $this->assertSame($showinmycourses, (int) $legacy->showinmycourses);
+            $this->assertSame($allowsolutions, (int) $legacy->allowsolutions);
+
+            $sink = $this->redirectEvents();
+            \\forum_view($legacy, $course, $cm, $context);
+            $events = $sink->get_events();
+            $sink->close();
+
+            $this->assertCount(1, $events);
+            $event = reset($events);
+            $this->assertInstanceOf(course_module_viewed::class, $event);
+            $snapshot = $event->get_record_snapshot('forum', $forum->id);
+            $this->assertEqualsCanonicalizing(array_keys((array) $stored), array_keys((array) $snapshot));
+            $this->assertSame($showinmycourses, (int) $snapshot->showinmycourses);
+            $this->assertSame($allowsolutions, (int) $snapshot->allowsolutions);
+        }
+    }
+
+    /**
      * Ensure subscription_created event validates that the forumid is set.
      */
     public function test_subscription_created_forumid_validation(): void {

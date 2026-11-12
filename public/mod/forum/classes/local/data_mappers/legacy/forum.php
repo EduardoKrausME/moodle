@@ -75,6 +75,8 @@ class forum {
                 'duedate' => $forum->get_due_date(),
                 'cutoffdate' => $forum->get_cutoff_date(),
                 'showimmediately' => $forum->get_showimmediately(),
+                'showinmycourses' => (int) $forum->get_showinmycourses(),
+                'allowsolutions' => (int) $forum->get_allowsolutions(),
             ];
         }, $forums);
     }
