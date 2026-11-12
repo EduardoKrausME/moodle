@@ -53,10 +53,12 @@ export const init = (initialCourseId = 0, initialUnread = false) => {
     const courseSelector = root.querySelector('[data-region="feed-course"]');
 
     const allowedCourses = new Set(Array.from(courseSelector.options, option => Number(option.value)));
+    const initialParams = new URL(window.location.href).searchParams;
     const initialFilters = parseFilters(window.location.href, allowedCourses);
     const state = {
-        courseId: allowedCourses.has(initialFilters.courseId) ? initialFilters.courseId : Number(initialCourseId),
-        unread: initialFilters.unread,
+        courseId: initialParams.has('courseid') ? initialFilters.courseId
+            : (allowedCourses.has(Number(initialCourseId)) ? Number(initialCourseId) : 0),
+        unread: initialParams.has('unread') ? initialFilters.unread : Boolean(initialUnread),
         cursor: '',
         hasMore: true,
         loading: false,
@@ -154,7 +156,9 @@ export const init = (initialCourseId = 0, initialUnread = false) => {
 
             const key = list.children.length === 0 && !state.hasMore
                 ? 'recentfeedempty' : 'recentfeedloaded';
-            const resultText = await getString(key, 'mod_forum', list.children.length);
+            const resultText = key === 'recentfeedempty'
+                ? await getString(key, 'mod_forum')
+                : await getString(key, 'mod_forum', list.children.length);
             if (generation !== state.generation) {
                 return;
             }

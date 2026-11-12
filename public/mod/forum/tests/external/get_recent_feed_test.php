@@ -190,6 +190,10 @@ final class get_recent_feed_test extends \core_external\tests\externallib_testca
         $this->assertCount(1, $page['items']);
         $this->assertSame($discussion->firstpost, $page['items'][0]['postid']);
         $this->assertStringNotContainsString('Hidden answer', $page['items'][0]['preview']);
+        // A hidden Q&A reply must never make a fully read discussion look unread.
+        forum_tp_add_read_record($student->id, $discussion->firstpost);
+        $this->assertFalse($this->call_feed()['items'][0]['unread']);
+        $this->assertEmpty($this->call_feed(0, true)['items']);
     }
 
     public function test_private_reply_is_not_leaked_to_other_students(): void {
@@ -213,6 +217,10 @@ final class get_recent_feed_test extends \core_external\tests\externallib_testca
         $this->assertCount(1, $page['items']);
         $this->assertSame($discussion->firstpost, $page['items'][0]['postid']);
         $this->assertStringNotContainsString('Private material', $page['items'][0]['preview']);
+        // Unread private replies to others must not affect the visible badge.
+        forum_tp_add_read_record($student->id, $discussion->firstpost);
+        $this->assertFalse($this->call_feed()['items'][0]['unread']);
+        $this->assertEmpty($this->call_feed(0, true)['items']);
     }
 
     public function test_separate_groups_are_enforced(): void {
