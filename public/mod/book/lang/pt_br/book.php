@@ -38,3 +38,4 @@ $string['previewchapter'] = 'Pré-visualizar sem salvar';
 $string['saveandnewchapter'] = 'Salvar e criar outro capítulo';
 $string['previewnotpublished'] = 'Prévia das alterações ainda não salvas. Nada foi publicado.';
 $string['chaptercreatedsaved'] = 'Capítulo salvo. Agora você pode criar o próximo.';
+$string['hiddenchapterlabel'] = 'Oculto';
