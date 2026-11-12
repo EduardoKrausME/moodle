@@ -658,15 +658,15 @@ class renderer extends \plugin_renderer_base {
      * rendered by their existing components, and grade visibility comes from
      * get_assign_feedback_status_renderable().
      *
-     * @param \\assign_submission_status $status Status already checked for the viewer.
-     * @param \\assign_feedback_status|null $feedback Feedback already checked for gradebook visibility.
+     * @param \assign_submission_status $status Status already checked for the viewer.
+     * @param \assign_feedback_status|null $feedback Feedback already checked for gradebook visibility.
      * @return string
      */
     public function render_submission_overview(
-        \\assign_submission_status $status,
-        ?\\assign_feedback_status $feedback = null
+        \assign_submission_status $status,
+        ?\assign_feedback_status $feedback = null
     ): string {
-        if ($status->view !== \\assign_submission_status::STUDENT_VIEW) {
+        if ($status->view !== \assign_submission_status::STUDENT_VIEW) {
             return '';
         }
 

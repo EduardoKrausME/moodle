@@ -6628,7 +6628,7 @@ class assign {
         }
 
         // Keep the native activity header and plugin headers outside the landing layout.
-        $o .= \\html_writer::start_tag('div', ['class' => 'assign-landing']);
+        $o .= \html_writer::start_tag('div', ['class' => 'assign-landing']);
 
         if ($this->can_view_grades()) {
             $markingworkflow =
@@ -6648,7 +6648,7 @@ class assign {
             $o .= $this->view_student_summary($USER, true, $actionbar);
         }
 
-        $o .= \\html_writer::end_tag('div');
+        $o .= \html_writer::end_tag('div');
 
         $o .= $this->view_footer();
 
