@@ -15,3 +15,5 @@ $string['forumunreadforumsone'] = 'em 1 fórum';
 $string['forumunreadforumsmany'] = 'em {$a} fóruns';
 $string['recentfeedalllink'] = 'Discussões recentes de todos os cursos';
 $string['recentfeedcourselink'] = 'Ver todas as discussões';
+$string['recentforumexpand'] = 'Expandir';
+$string['recentforumcollapse'] = 'Recolher';

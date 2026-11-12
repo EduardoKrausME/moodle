@@ -1,17 +1,29 @@
 {{!
     @template block_myoverview/recent-forum-discussions
-    Collapsible forum summary for My courses.
+    Compact, accessible discussion summary for My courses.
 }}
 <div class="forum-course-summary p-2 border-top" data-region="forum-course-summary" data-course-id="{{id}}">
-    <button class="btn btn-link btn-sm p-0 text-start" type="button" data-action="toggle-forum-discussions"
-            aria-controls="forum-course-discussions-{{id}}" aria-expanded="false">
-        {{#str}}recentforumdiscussions, block_myoverview{{/str}}
-    </button>
-    <span class="badge bg-primary ms-2" data-region="forum-unread-count" hidden></span>
-    <span class="small text-muted ms-2" data-region="forum-unread-status" hidden></span>
-    <a class="small ms-2" href="../mod/forum/recent.php?courseid={{id}}" data-action="open-recent-feed">
+    <div class="forum-course-summary__header">
+        <button class="btn btn-link forum-course-summary__toggle text-start" type="button"
+                data-action="toggle-forum-discussions"
+                aria-controls="forum-course-discussions-{{id}}" aria-expanded="false">
+            <span class="forum-course-summary__title">
+                {{#str}}recentforumdiscussions, block_myoverview{{/str}}
+            </span>
+            <span class="forum-course-summary__toggle-label" data-region="forum-summary-toggle-label">
+                {{#str}}recentforumexpand, block_myoverview{{/str}}
+            </span>
+            <span class="forum-course-summary__chevron" aria-hidden="true"></span>
+        </button>
+        <div class="forum-course-summary__indicators">
+            <span class="badge bg-primary" data-region="forum-unread-count" hidden></span>
+            <span class="small text-muted" data-region="forum-unread-status" hidden></span>
+        </div>
+    </div>
+    <div id="forum-course-discussions-{{id}}" data-region="forum-discussions-content"
+         class="forum-course-summary__content mt-2" aria-live="polite" aria-busy="false" hidden></div>
+    <a class="forum-course-summary__all small" href="../mod/forum/recent.php?courseid={{id}}"
+       data-action="open-recent-feed">
         {{#str}}recentfeedcourselink, block_myoverview{{/str}}
     </a>
-    <div id="forum-course-discussions-{{id}}" data-region="forum-discussions-content" hidden
-         class="mt-2" aria-live="polite"></div>
 </div>

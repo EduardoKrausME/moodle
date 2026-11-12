@@ -1,12 +1,16 @@
 {{!
     @template block_myoverview/recent-forum-discussions-list
-    User-entered strings are escaped by Mustache.
+    User-supplied discussion information is escaped by Mustache.
 }}
 {{#discussions}}
-<div class="py-2 border-top">
-    <a href="{{url}}" class="d-block fw-semibold">{{subject}}</a>
-    <div class="small text-muted">{{author}} · {{forumname}} · {{time}}</div>
-</div>
+<article class="forum-course-discussion py-2 border-top">
+    <a href="{{url}}" class="forum-course-discussion__link fw-semibold">{{subject}}</a>
+    <div class="forum-course-discussion__meta small text-muted">
+        <span>{{author}}</span>
+        <span>{{forumname}}</span>
+        <span>{{time}}</span>
+    </div>
+</article>
 {{/discussions}}
 {{^discussions}}
 <p class="small text-muted mb-0">{{#str}}recentforumempty, block_myoverview{{/str}}</p>
