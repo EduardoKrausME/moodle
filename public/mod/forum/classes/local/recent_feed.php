@@ -27,6 +27,8 @@ final class recent_feed {
     public const PAGE_SIZE = 20;
     private const BATCH_SIZE = 160;
     private const MAX_SCANNED = 2400;
+    /** Maximum unread candidates checked per displayed page. */
+    private const MAX_UNREAD_LOOKUP = 1800;
     private const MAX_SEEN = 5000;
     private const MAX_CURSOR_LENGTH = 60000;
     private const SNIPPET_LENGTH = 180;
@@ -184,6 +186,63 @@ final class recent_feed {
         return rtrim(strtr(base64_encode($json), '+/', '-_'), '=');
     }
 
+
+    /**
+     * Mark a topic as unread if any visible tracked post is unread, even when
+     * its most recent visible reply was read already.
+     *
+     * The candidate scan is bounded and never marks a topic as unread unless
+     * the underlying message passes the native forum visibility check.
+     *
+     * @param array $rawitems Page of discussion entries, updated in place.
+     * @param array $modulemap Accessible module metadata indexed by forum ID.
+     */
+    private static function annotate_unread_discussions(array &$rawitems, array $modulemap): void {
+        global $CFG, $DB, $USER;
+
+        $pending = [];
+        foreach ($rawitems as $index => $item) {
+            if (!$item['unread'] && forum_tp_is_tracked($item['forum'], $USER)) {
+                $pending[(int)$item['discussion']->id] = $index;
+            }
+        }
+        if (!$pending) {
+            return;
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal(array_keys($pending), SQL_PARAMS_NAMED, 'pendingtopic');
+        $params['readuser'] = $USER->id;
+        $params['cutoff'] = floor(time() / MINSECS) * MINSECS -
+            ($CFG->forum_oldpostdays * DAYSECS);
+
+        $sql = "SELECT p.id, p.discussion, p.userid, p.parent, p.created, p.modified,
+                       p.privatereplyto, p.deleted
+                  FROM {forum_posts} p
+             LEFT JOIN {forum_read} r ON r.postid = p.id AND r.userid = :readuser
+                 WHERE p.discussion {$insql} AND p.deleted = 0
+                       AND p.modified >= :cutoff AND r.id IS NULL
+              ORDER BY p.modified DESC, p.id DESC";
+
+        $recordset = $DB->get_recordset_sql($sql, $params, 0, self::MAX_UNREAD_LOOKUP);
+        foreach ($recordset as $post) {
+            $discussionid = (int)$post->discussion;
+            if (!isset($pending[$discussionid])) {
+                continue;
+            }
+            $index = $pending[$discussionid];
+            $item = $rawitems[$index];
+            $cm = $modulemap[(int)$item['forum']->id]['cm'];
+            if (forum_user_can_see_post($item['forum'], $item['discussion'], $post, $USER, $cm)) {
+                $rawitems[$index]['unread'] = true;
+                unset($pending[$discussionid]);
+                if (!$pending) {
+                    break;
+                }
+            }
+        }
+        $recordset->close();
+    }
+
     /**
      * Return a safe page of recent forum discussion activity.
      *
@@ -246,20 +305,12 @@ final class recent_feed {
             $filtersql .= ' AND r.id IS NULL AND p.modified >= :feedcutoff';
             $parameters['feedcutoff'] = $cutoff;
         }
-        if ($state['time'] > 0) {
-            $filtersql .= ' AND (p.created < :feedbefore OR (p.created = :feedequal AND p.id < :feedpost))';
-            $parameters['feedbefore'] = $state['time'];
-            $parameters['feedequal'] = $state['time'];
-            $parameters['feedpost'] = $state['post'];
-        }
-
         $sql = "SELECT p.id, p.discussion, p.userid, p.parent, p.created, p.modified,
                        p.privatereplyto, p.deleted, d.forum AS forumid, r.id AS readid
                   FROM {forum_posts} p
                   JOIN {forum_discussions} d ON d.id = p.discussion
              LEFT JOIN {forum_read} r ON r.postid = p.id AND r.userid = :readuser
-                 WHERE d.forum {$insql} AND p.deleted = 0 {$filtersql}
-              ORDER BY p.created DESC, p.id DESC";
+                 WHERE d.forum {$insql} AND p.deleted = 0 {$filtersql}";
 
         $seen = $state['seen'];
         $lastposition = ['time' => $state['time'], 'post' => $state['post']];
@@ -271,7 +322,17 @@ final class recent_feed {
         // Keyset pagination: no OFFSET scans or one request per course.
         while ($scanned < self::MAX_SCANNED) {
             $limit = min(self::BATCH_SIZE, self::MAX_SCANNED - $scanned);
-            $posts = $DB->get_records_sql($sql, $parameters, 0, $limit);
+            $seekparams = $parameters;
+            $seeksql = '';
+            if ($lastposition['time'] > 0) {
+                $seeksql = ' AND (p.created < :feedbefore OR (p.created = :feedequal AND p.id < :feedpost))';
+                $seekparams['feedbefore'] = $lastposition['time'];
+                $seekparams['feedequal'] = $lastposition['time'];
+                $seekparams['feedpost'] = $lastposition['post'];
+            }
+            $posts = $DB->get_records_sql(
+                $sql . $seeksql . ' ORDER BY p.created DESC, p.id DESC',
+                $seekparams, 0, $limit);
             if (!$posts) {
                 $exhausted = true;
                 break;
@@ -318,16 +379,7 @@ final class recent_feed {
                 break;
             }
 
-            // Move the scan window forward without an OFFSET.
-            $filtersqlnext = ' AND (p.created < :feedbefore OR (p.created = :feedequal AND p.id < :feedpost))';
-            if ($state['time'] === 0) {
-                $filtersql .= $filtersqlnext;
-                $sql = str_replace(' AND p.deleted = 0 ', ' AND p.deleted = 0 ' . $filtersqlnext . ' ', $sql);
-            }
-            $state['time'] = $lastposition['time'];
-            $parameters['feedbefore'] = $lastposition['time'];
-            $parameters['feedequal'] = $lastposition['time'];
-            $parameters['feedpost'] = $lastposition['post'];
+            // The next iteration uses the last processed (created, id) keyset.
         }
 
         if (!$hasmore && !$exhausted && $scanned >= self::MAX_SCANNED) {
@@ -340,6 +392,11 @@ final class recent_feed {
                 'nextcursor' => $hasmore ? self::encode_cursor($lastposition, $seen, $courseid, $unread) : '',
                 'hasmore' => $hasmore,
             ];
+        }
+
+        // A topic can have a read latest reply but an earlier unread message.
+        if (!$unread) {
+            self::annotate_unread_discussions($rawitems, $modulemap);
         }
 
         $postids = array_map(static function(array $item): int {

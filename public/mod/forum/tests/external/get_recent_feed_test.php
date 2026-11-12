@@ -279,4 +279,75 @@ final class get_recent_feed_test extends \core_external\tests\externallib_testca
         ]);
         $this->assertEmpty($this->call_feed()['items']);
     }
+
+    public function test_recent_filter_orders_topics_by_latest_visible_reply(): void {
+        $this->resetAfterTest();
+        [$student, $course, $generator] = $this->fixture();
+        $forum = $generator->create_module('forum', ['course' => $course->id]);
+        $fg = $generator->get_plugin_generator('mod_forum');
+        $older = $fg->create_discussion((object)[
+            'forum' => $forum->id, 'course' => $course->id, 'userid' => $student->id,
+            'timecreated' => time() - 600, 'name' => 'Older topic with a new reply',
+        ]);
+        $newer = $fg->create_discussion((object)[
+            'forum' => $forum->id, 'course' => $course->id, 'userid' => $student->id,
+            'timecreated' => time() - 300, 'name' => 'More recently created topic',
+        ]);
+        $reply = $fg->create_post((object)[
+            'discussion' => $older->id, 'parent' => $older->firstpost,
+            'userid' => $student->id, 'created' => time(), 'modified' => time(),
+        ]);
+
+        $page = $this->call_feed();
+        $this->assertSame($older->id, $page['items'][0]['discussionid']);
+        $this->assertSame($reply->id, $page['items'][0]['postid']);
+        $this->assertSame($newer->id, $page['items'][1]['discussionid']);
+    }
+
+    public function test_recent_filter_marks_topic_unread_when_earlier_visible_post_is_unread(): void {
+        $this->resetAfterTest();
+        [$student, $course, $generator] = $this->fixture();
+        $author = $generator->create_user();
+        $generator->enrol_user($author->id, $course->id);
+        $forum = $generator->create_module('forum', [
+            'course' => $course->id, 'trackingtype' => FORUM_TRACKING_FORCED,
+        ]);
+        $fg = $generator->get_plugin_generator('mod_forum');
+        $discussion = $fg->create_discussion((object)[
+            'forum' => $forum->id, 'course' => $course->id, 'userid' => $author->id,
+        ]);
+        $reply = $fg->create_post((object)[
+            'discussion' => $discussion->id, 'parent' => $discussion->firstpost,
+            'userid' => $student->id, 'created' => time() + 1, 'modified' => time() + 1,
+        ]);
+        forum_tp_add_read_record($student->id, $reply->id);
+
+        $recent = $this->call_feed();
+        $this->assertSame($reply->id, $recent['items'][0]['postid']);
+        $this->assertTrue($recent['items'][0]['unread']);
+
+        $unread = $this->call_feed(0, true);
+        $this->assertCount(1, $unread['items']);
+        $this->assertSame($discussion->firstpost, $unread['items'][0]['postid']);
+
+        forum_tp_add_read_record($student->id, $discussion->firstpost);
+        $this->assertFalse($this->call_feed()['items'][0]['unread']);
+        $this->assertEmpty($this->call_feed(0, true)['items']);
+    }
+
+    public function test_cursor_cannot_be_reused_for_another_course_filter(): void {
+        $this->resetAfterTest();
+        [$student, $course, $generator] = $this->fixture();
+        $forum = $generator->create_module('forum', ['course' => $course->id]);
+        $fg = $generator->get_plugin_generator('mod_forum');
+        for ($i = 0; $i < 21; $i++) {
+            $fg->create_discussion((object)[
+                'forum' => $forum->id, 'course' => $course->id, 'userid' => $student->id,
+            ]);
+        }
+        $page = $this->call_feed(0);
+        $this->assertNotEmpty($page['nextcursor']);
+        $this->expectException(\invalid_parameter_exception::class);
+        $this->call_feed($course->id, false, $page['nextcursor']);
+    }
 }
