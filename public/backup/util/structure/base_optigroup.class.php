@@ -141,7 +141,21 @@ abstract class base_optigroup extends base_nested_element {
                 $this->set_used(array_merge($this->get_used(), array($used))); // add to the optigroup used array
             } else { // it's an existing one, exception on multiple optigroups
                 if ($this->multiple) {
-                    throw new base_optigroup_exception('multiple_optigroup_duplicate_element', $used);
+                    // Keep the duplicated name as the exception's language-string parameter.
+                    // The third argument supplies context without printing anything to the page.
+                    $debuginfo = 'Duplicate element "' . $used . '" in multiple optigroup "' .
+                        $this->get_name() . '"';
+                    if ($this->get_parent()) {
+                        $debuginfo .= ' under "' . $this->get_parent()->get_name() . '"';
+                    }
+                    $debuginfo .= '; registering element "' . $element->get_name() . '"';
+                    foreach ($this->get_children() as $child) {
+                        if (in_array($used, $child->get_used())) {
+                            $debuginfo .= '; previously registered by branch "' . $child->get_name() . '"';
+                            break;
+                        }
+                    }
+                    throw new base_optigroup_exception('multiple_optigroup_duplicate_element', $used, $debuginfo);
                 }
             }
         }
