@@ -123,7 +123,7 @@ export const init = root => {
         content.dataset.renderToken = token;
         content.setAttribute('aria-busy', 'true');
         const isCurrent = () => version === generation && isAttached(wrapper) &&
-            content.dataset.renderToken === token;
+            wrapper.contains(content) && content.dataset.renderToken === token;
 
         try {
             const loading = await getString('recentforumloading', 'block_myoverview');
@@ -141,8 +141,12 @@ export const init = root => {
             if (!isCurrent()) {
                 return;
             }
-            await Templates.replaceNodeContents($(content), html, js);
+            // Stage the template away from the live card. A slow render from a
+            // previous page must never overwrite a newer card or a bfcache refresh.
+            const detached = document.createElement('div');
+            await Templates.appendNodeContents($(detached), html, js);
             if (isCurrent()) {
+                content.replaceChildren(...detached.childNodes);
                 content.dataset.loaded = 'true';
             }
         } catch (error) {
