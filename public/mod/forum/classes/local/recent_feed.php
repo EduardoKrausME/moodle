@@ -36,14 +36,29 @@ final class recent_feed {
      *
      * @return array Course records keyed by course ID.
      */
-    public static function get_accessible_courses(): array {
-        global $CFG, $USER;
+    public static function get_accessible_courses(int $filtercourseid = 0): array {
+        global $CFG, $DB, $USER;
 
         require_once($CFG->libdir . '/enrollib.php');
 
+        // A single-course request should never enumerate the entire catalogue.
+        if ($filtercourseid > 0) {
+            $course = $DB->get_record('course', ['id' => $filtercourseid]);
+            if (!$course) {
+                return [];
+            }
+            $context = \context_course::instance($course->id);
+            if ((!is_enrolled($context, $USER, '', true) && !is_viewing($context, $USER)) ||
+                    (!$course->visible &&
+                    !has_capability('moodle/course:viewhiddencourses', $context, $USER))) {
+                return [];
+            }
+            return [$course->id => $course];
+        }
+
         $courses = enrol_get_users_courses($USER->id, true);
         // Teachers with viewing roles may not have a conventional enrolment.
-        $viewingcourses = get_user_capability_course('moodle/course:view', $USER->id, false,
+        $viewingcourses = get_user_capability_course('moodle/course:view', $USER->id, true,
             'fullname,shortname,visible');
         foreach ($viewingcourses ?: [] as $candidate) {
             if (isset($courses[$candidate->id])) {
@@ -182,10 +197,7 @@ final class recent_feed {
         require_once($CFG->dirroot . '/mod/forum/lib.php');
 
         $state = self::parse_cursor($cursor, $courseid, $unread);
-        $courses = self::get_accessible_courses();
-        if ($courseid !== 0) {
-            $courses = isset($courses[$courseid]) ? [$courseid => $courses[$courseid]] : [];
-        }
+        $courses = self::get_accessible_courses($courseid);
         $empty = ['items' => [], 'nextcursor' => '', 'hasmore' => false];
         if (!$courses) {
             return $empty;

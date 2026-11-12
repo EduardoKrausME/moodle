@@ -23,6 +23,23 @@ import * as ForumUnreadCounts from 'block_myoverview/forum_unread_counts';
  */
 export const init = root => {
     ForumUnreadCounts.init(root);
+
+    // Course cards are rendered asynchronously. Resolve their links from the
+    // actual Moodle base URL, including installations inside a subdirectory.
+    const container = root[0] || root;
+    const updateFeedLinks = () => {
+        container.querySelectorAll('[data-action="open-recent-feed"]').forEach(link => {
+            const summary = link.closest('[data-region="forum-course-summary"]');
+            if (summary) {
+                link.href = M.cfg.wwwroot + '/mod/forum/recent.php?courseid=' +
+                    encodeURIComponent(summary.dataset.courseId);
+            }
+        });
+    };
+    const observer = new MutationObserver(updateFeedLinks);
+    observer.observe(container, {childList: true, subtree: true});
+    updateFeedLinks();
+
     $(root).on('click', '[data-action="toggle-forum-discussions"]', async event => {
         const button = event.currentTarget;
         const wrapper = button.closest('[data-region="forum-course-summary"]');
