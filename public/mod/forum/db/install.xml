@@ -121,7 +121,6 @@
         <KEY NAME="post" TYPE="foreign" FIELDS="postid" REFTABLE="forum_posts" REFFIELDS="id"/>
       </KEYS>
       <INDEXES>
-        <INDEX NAME="discussionunique" UNIQUE="true" FIELDS="discussionid"/>
         <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
       </INDEXES>
     </TABLE>
