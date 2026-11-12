@@ -35,6 +35,8 @@ const mount = (config) => {
     tree.className = 'book-courseindex-tree';
     tree.id = 'book-courseindex-tree-' + config.cmid;
     tree.setAttribute('aria-label', config.toclabel);
+    // Nested links have their own navigation; do not let the course index treat them as clicks on the Book itself.
+    tree.addEventListener('click', event => event.stopPropagation());
 
     const chapterslist = document.createElement('ul');
     chapterslist.className = 'book-courseindex-list';
@@ -91,9 +93,11 @@ const mount = (config) => {
     activity.appendChild(tree);
 
     // Keep the original right-hand TOC for themes without a course index or with JavaScript disabled.
-    document.querySelectorAll('.block_book_toc').forEach(block => {
-        block.hidden = true;
-    });
+    if (config.hideoriginaltoc) {
+        document.querySelectorAll('.block_book_toc').forEach(block => {
+            block.hidden = true;
+        });
+    }
     return true;
 };
 
