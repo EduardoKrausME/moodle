@@ -214,7 +214,7 @@ if (!$chapterid) {
         'html' => $courseindexhtml,
         'expandlabel' => get_string('expand', 'core'),
         'collapselabel' => get_string('collapse', 'core'),
-        'hideoriginaltoc' => true,
+        'hideoriginaltoc' => !$edit,
     ]]);
 
     // Search only accessible Book chapters; never include a hidden chapter in the result list.
