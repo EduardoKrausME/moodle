@@ -37,42 +37,118 @@ const TEMPLATES = {
 };
 
 /**
- * Register events for attempt submit button.
- * @param {int} unAnsweredQuestions Total number of un-answered questions
+ * Prepare a compact, read-only confirmation context. Accept a legacy numeric
+ * unanswered count for themes or integrations that call init directly.
+ *
+ * @param {Object|number} progress Server-side summary or historical count.
+ * @returns {Object} Mustache context.
  */
-const registerEventListeners = (unAnsweredQuestions) => {
-    const submitAction = document.querySelector(SELECTOR.attemptSubmitButton);
-    if (submitAction) {
-        submitAction.addEventListener('click', async(e) => {
-            e.preventDefault();
-            try {
-                await saveCancelPromise(
-                    getString('submission_confirmation', 'quiz'),
-                    Templates.render(TEMPLATES.submissionConfirmation, {
-                        hasunanswered: unAnsweredQuestions > 0,
-                        totalunanswered: unAnsweredQuestions
-                    }),
-                    getString('submitallandfinish', 'quiz')
-                );
-
-                // Save pressed.
-                submitAction.closest(SELECTOR.attemptSubmitForm).submit();
-            } catch {
-                // Cancel pressed.
-                return;
-            }
-        });
+export const buildContext = (progress) => {
+    if (Number.isSafeInteger(progress) && progress >= 0) {
+        return {
+            hasprogress: false,
+            hasunanswered: progress > 0,
+            totalunanswered: progress,
+            haspending: false,
+            issequential: false,
+        };
     }
+
+    if (!progress || typeof progress !== 'object' ||
+            !['total', 'answered', 'pending', 'flagged'].every(key =>
+                Number.isSafeInteger(progress[key]) && progress[key] >= 0) ||
+            progress.answered + progress.pending !== progress.total ||
+            progress.flagged > progress.total) {
+        // No trusted numbers: show the original irreversible-action message only.
+        return {hasprogress: false, hasunanswered: false, haspending: false, issequential: false};
+    }
+
+    const isfree = progress.navmethod === 'free';
+    return {
+        hasprogress: true,
+        total: progress.total,
+        answered: progress.answered,
+        pending: progress.pending,
+        flagged: progress.flagged,
+        haspending: progress.pending > 0,
+        // Preserve the native "Questions without a response" warning in free navigation.
+        // Sequential attempts must not receive a misleading suggestion to go back.
+        hasunanswered: isfree && progress.pending > 0,
+        totalunanswered: progress.pending,
+        issequential: progress.navmethod === 'sequential',
+    };
 };
 
 /**
- * Initialises.
- * @param {int} unAnsweredQuestions Total number of unanswered questions
+ * Register the confirmation once, before any attempt to submit the native form.
+ *
+ * Both the button and a keyboard-triggered form submit pass through the same
+ * state machine. form.submit() deliberately bypasses submit events after the
+ * learner confirms. Timer-driven timeup uses that same native direct submit and
+ * must never be blocked by this UX enhancement.
+ *
+ * @param {Object|number} progress Server-confirmed progress, or legacy count.
  */
-export const init = (unAnsweredQuestions) => {
+const registerEventListeners = (progress) => {
+    const submitAction = document.querySelector(SELECTOR.attemptSubmitButton);
+    const form = document.querySelector(SELECTOR.attemptSubmitForm);
+    if (!submitAction || !form || form.dataset.quizSubmissionConfirmationReady === '1') {
+        return;
+    }
+    form.dataset.quizSubmissionConfirmationReady = '1';
+    const context = buildContext(progress);
+    let phase = 'idle';
+
+    const confirmSubmission = async() => {
+        if (phase !== 'idle') {
+            return;
+        }
+
+        // Acquire the UI lock synchronously, before template rendering/modal I/O.
+        phase = 'confirming';
+        try {
+            await saveCancelPromise(
+                getString('submission_confirmation', 'quiz'),
+                Templates.render(TEMPLATES.submissionConfirmation, context),
+                getString('submitallandfinish', 'quiz')
+            );
+
+            // One confirmed user action -> one native submission.
+            phase = 'submitting';
+            submitAction.disabled = true;
+            form.setAttribute('aria-busy', 'true');
+            form.submit();
+        } catch {
+            // Cancel or a failed modal leaves the attempt editable, never submitted.
+            phase = 'idle';
+            submitAction.disabled = false;
+            form.removeAttribute('aria-busy');
+            submitAction.focus();
+        }
+    };
+
+    submitAction.addEventListener('click', (e) => {
+        e.preventDefault();
+        void confirmSubmission();
+    });
+
+    form.addEventListener('submit', (e) => {
+        // Enter/requestSubmit must not bypass confirmation; direct form.submit()
+        // from the timer or this confirmed path does not fire this event.
+        e.preventDefault();
+        void confirmSubmission();
+    });
+};
+
+/**
+ * Initialise the native final-submit confirmation.
+ *
+ * @param {Object|number} progress Server-confirmed question counts, or legacy number.
+ */
+export const init = (progress) => {
     Prefetch.prefetchStrings('core', ['submit']);
     Prefetch.prefetchStrings('core_admin', ['confirmation']);
     Prefetch.prefetchStrings('quiz', ['submitallandfinish', 'submission_confirmation']);
     Prefetch.prefetchTemplate(TEMPLATES.submissionConfirmation);
-    registerEventListeners(unAnsweredQuestions);
+    registerEventListeners(progress);
 };

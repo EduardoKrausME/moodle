@@ -1013,12 +1013,10 @@ class renderer extends plugin_renderer_base {
         $button->class = 'btn-finishattempt';
         $button->formid = 'frm-finishattempt';
         if ($attemptobj->get_state() == quiz_attempt::IN_PROGRESS) {
-            $totalunanswered = 0;
-            if ($attemptobj->get_quiz()->navmethod == 'free') {
-                // Only count the unanswered question if the navigation method is set to free.
-                $totalunanswered = $attemptobj->get_number_of_unanswered_questions();
-            }
-            $this->page->requires->js_call_amd('mod_quiz/submission_confirmation', 'init', [$totalunanswered]);
+            // Reuse the recorded question states from the summary of attempt.
+            // The JavaScript only presents the values; PHP remains authoritative.
+            $progress = attempt_progress::for_submission_confirmation($attemptobj);
+            $this->page->requires->js_call_amd('mod_quiz/submission_confirmation', 'init', [$progress]);
         }
         $button->type = \single_button::BUTTON_PRIMARY;
 

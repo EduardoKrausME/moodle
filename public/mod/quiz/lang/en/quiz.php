@@ -1221,3 +1221,6 @@ $string['summaryprogresspendingsequential'] = '{$a} questions are pending. Seque
 $string['summaryprogresspendingoverdue'] = '{$a} questions are pending. This attempt is overdue and answers can no longer be changed.';
 $string['summaryprogressallanswered'] = 'All questions have a recorded answer. Review the recorded question statuses before submitting.';
 $string['summaryprogressnoquestions'] = 'There are no questions to summarise.';
+$string['submission_confirmation_recorded'] = 'These counts reflect the recorded question states for this attempt.';
+$string['submission_confirmation_pendingdetail'] = 'Questions without a recorded answer will not be answered automatically when you submit.';
+$string['submission_confirmation_sequential'] = 'Sequential navigation does not permit returning to earlier questions.';

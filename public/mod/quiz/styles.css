@@ -1925,3 +1925,72 @@ table.quizreviewsummary td.cell {
         min-width: 28rem;
     }
 }
+
+/* Native quiz final submission modal: compact, accessible response summary. */
+.quiz-submission-confirmation-content {
+    display: grid;
+    gap: 0.875rem;
+    color: var(--bs-body-color);
+}
+
+.quiz-submission-confirmation-content p,
+.quiz-submission-confirmation-content .alert {
+    margin: 0;
+}
+
+.quiz-submission-confirmation-counts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.quiz-submission-confirmation-count {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+    min-width: 0;
+    padding: 0.75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius, 0.375rem);
+    background-color: var(--bs-tertiary-bg);
+    overflow-wrap: anywhere;
+}
+
+.quiz-submission-confirmation-count-number {
+    font-size: clamp(1.3rem, 3vw, 1.75rem);
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+}
+
+.quiz-submission-confirmation-count span,
+.quiz-submission-confirmation-recorded,
+.quiz-submission-confirmation-pending-detail,
+.quiz-submission-confirmation-sequential {
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.quiz-submission-confirmation-recorded {
+    color: var(--bs-secondary-color);
+}
+
+.quiz-submission-confirmation-sequential,
+.quiz-submission-confirmation-pending-detail {
+    padding-inline-start: 0.75rem;
+    border-inline-start: 3px solid var(--bs-warning);
+}
+
+@media (max-width: 375px) {
+    .quiz-submission-confirmation-counts {
+        gap: 0.375rem;
+    }
+
+    .quiz-submission-confirmation-count {
+        padding: 0.5rem;
+    }
+
+    .quiz-submission-confirmation-count span {
+        font-size: 0.75rem;
+    }
+}

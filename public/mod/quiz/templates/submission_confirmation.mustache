@@ -8,30 +8,67 @@
 
     Moodle is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+    along with Moodle. If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
     @template mod_quiz/submission_confirmation
 
-    Submission confirmation dialogue template
+    Native confirmation dialog for a final quiz submission.
 
     Example context (json):
     {
-        "hasunanswered": false,
-        "totalunanswered": 0
+        "hasprogress": true,
+        "total": 10,
+        "answered": 7,
+        "pending": 3,
+        "flagged": 2,
+        "haspending": true,
+        "hasunanswered": true,
+        "totalunanswered": 3,
+        "issequential": false
     }
 }}
 <div class="quiz-submission-confirmation-content">
-    <div class="mb-3">
+    <p class="quiz-submission-confirmation-warning">
         {{#str}} confirmclose, mod_quiz {{/str}}
-    </div>
+    </p>
+    {{#hasprogress}}
+        <div class="quiz-submission-confirmation-counts" role="group"
+                aria-label="{{#str}} progresslabel, mod_quiz {{/str}}">
+            <div class="quiz-submission-confirmation-count quiz-submission-confirmation-count-answered">
+                <strong class="quiz-submission-confirmation-count-number">{{answered}}</strong>
+                <span>{{#str}} progressanswered, mod_quiz {{/str}}</span>
+            </div>
+            <div class="quiz-submission-confirmation-count quiz-submission-confirmation-count-pending">
+                <strong class="quiz-submission-confirmation-count-number">{{pending}}</strong>
+                <span>{{#str}} progresspending, mod_quiz {{/str}}</span>
+            </div>
+            <div class="quiz-submission-confirmation-count quiz-submission-confirmation-count-flagged">
+                <strong class="quiz-submission-confirmation-count-number">{{flagged}}</strong>
+                <span>{{#str}} progressflagged, mod_quiz {{/str}}</span>
+            </div>
+        </div>
+        <p class="quiz-submission-confirmation-recorded">
+            {{#str}} submission_confirmation_recorded, mod_quiz {{/str}}
+        </p>
+    {{/hasprogress}}
     {{#hasunanswered}}
-        <div class="alert alert-warning">
+        <div class="alert alert-warning quiz-submission-confirmation-pending" role="note">
             {{#str}} submission_confirmation_unanswered, mod_quiz, {{totalunanswered}} {{/str}}
         </div>
     {{/hasunanswered}}
+    {{#haspending}}
+        <p class="quiz-submission-confirmation-pending-detail">
+            {{#str}} submission_confirmation_pendingdetail, mod_quiz {{/str}}
+        </p>
+    {{/haspending}}
+    {{#issequential}}
+        <p class="quiz-submission-confirmation-sequential">
+            {{#str}} submission_confirmation_sequential, mod_quiz {{/str}}
+        </p>
+    {{/issequential}}
 </div>

@@ -62,6 +62,18 @@ final class attempt_progress {
     }
 
     /**
+     * Build a safe context for the native submission dialogue.
+     *
+     * @param quiz_attempt $attemptobj Authenticated current attempt.
+     * @return array Counts and the native navigation method.
+     */
+    public static function for_submission_confirmation(quiz_attempt $attemptobj): array {
+        $progress = self::summarise($attemptobj);
+        $progress['navmethod'] = $attemptobj->get_navigation_method();
+        return $progress;
+    }
+
+    /**
      * Summarise the authorised, already-loaded attempt without further queries.
      *
      * Each real question slot counts once, even when it has several subparts.
