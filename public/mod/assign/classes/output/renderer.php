@@ -660,11 +660,13 @@ class renderer extends \plugin_renderer_base {
      *
      * @param \assign_submission_status $status Status already checked for the viewer.
      * @param \assign_feedback_status|null $feedback Feedback already checked for gradebook visibility.
+     * @param bool $submissionopen Native submission availability for the current viewer.
      * @return string
      */
     public function render_submission_overview(
         \assign_submission_status $status,
-        ?\assign_feedback_status $feedback = null
+        ?\assign_feedback_status $feedback = null,
+        bool $submissionopen = false
     ): string {
         if ($status->view !== \assign_submission_status::STUDENT_VIEW) {
             return '';
@@ -700,9 +702,68 @@ class renderer extends \plugin_renderer_base {
             $grade = trim(html_entity_decode(strip_tags($feedback->gradefordisplay), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
         }
 
+        // Use the viewer-specific dates and the native submission permission check.
+        $availability = \mod_assign\local\availability::describe(
+            \core\di::get(\core\clock::class)->time(),
+            (int) $status->allowsubmissionsfromdate,
+            (int) $status->duedate,
+            (int) $status->cutoffdate,
+            (int) $status->extensionduedate,
+            $submissionopen,
+            (bool) ($submission && $submission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED),
+            (bool) $status->locked,
+            (bool) $status->submissionsenabled
+        );
+
+        $dates = [];
+        foreach ([
+            ['allowsubmissionsfromdate', 'opens'],
+            ['duedate', 'due'],
+            ['cutoffdate', 'cutoff'],
+        ] as [$stringkey, $field]) {
+            if ($availability[$field] > 0) {
+                $timestamp = $availability[$field];
+                $dates[] = [
+                    'label' => get_string($stringkey, 'assign'),
+                    'value' => userdate($timestamp),
+                    'datetime' => gmdate('c', $timestamp),
+                ];
+            }
+        }
+        if ($availability['hasextension']) {
+            $timestamp = $availability['extension'];
+            $dates[] = [
+                'label' => get_string('extensionduedate', 'assign'),
+                'value' => userdate($timestamp),
+                'datetime' => gmdate('c', $timestamp),
+                'extension' => true,
+            ];
+        }
+        $now = \core\di::get(\core\clock::class)->time();
+        $availabilityview = [
+            'label' => get_string('availabilitystate' . $availability['state'], 'assign'),
+            'state' => $availability['state'],
+            'dates' => $dates,
+            'hasdates' => count($dates) > 0,
+            'latenotice' => $availability['state'] === 'late' ?
+                get_string('availabilitylatenotice', 'assign') : '',
+            'timeleft' => $availability['effectivedue'] > $now ?
+                format_time($availability['effectivedue'] - $now) : '',
+            'timelimit' => '',
+            'timerhint' => '',
+        ];
+        if (get_config('assign', 'enabletimelimit') && $status->timelimit > 0) {
+            $availabilityview['timelimit'] = format_time($status->timelimit);
+            $started = $submission && !empty($submission->timestarted);
+            $availabilityview['timerhint'] = get_string(
+                $started ? 'availabilitytimerstarted' : 'availabilitytimernotstarted', 'assign'
+            );
+        }
+
         return $this->render_from_template('mod_assign/submission_overview', [
             'submissionstatus' => $submissionlabel,
             'gradingstatus' => $gradinglabel,
+            'availability' => $availabilityview,
             'duedate' => $duedate > 0 ? userdate($duedate) : '',
             'grade' => $grade,
             'hasgrade' => $grade !== '',

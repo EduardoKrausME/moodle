@@ -6187,11 +6187,17 @@ class assign {
             // Reuse the same visibility checks for the overview and the existing summary.
             $feedbackstatus = $this->get_assign_feedback_status_renderable($user);
             if (has_capability('mod/assign:viewownsubmissionsummary', $this->get_context(), $user, false)) {
+                // Resolve effective dates from group and user overrides before rendering.
+                if ($actionbar !== '') {
+                    $this->update_effective_access($user->id);
+                }
                 $submissionstatus = $this->get_assign_submission_status_renderable($user, $showlinks);
 
                 // Only the activity landing page passes an action bar. Other consumers keep their original output.
                 if ($actionbar !== '') {
-                    $o .= $this->get_renderer()->render_submission_overview($submissionstatus, $feedbackstatus);
+                    $o .= $this->get_renderer()->render_submission_overview(
+                        $submissionstatus, $feedbackstatus, $this->submissions_open($user->id)
+                    );
                 }
 
                 $o .= $actionbar;
