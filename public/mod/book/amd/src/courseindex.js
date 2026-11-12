@@ -12,113 +12,92 @@
 // @module mod_book/courseindex
 
 /**
- * Build chapter links under the matching Book activity in the course index.
- * The normal Book TOC stays available as a fallback if the theme has no course index.
+ * Add the chapters to the Book activity in the course index, without moving the
+ * original TOC. The original remains available if the course index is absent.
  *
- * @param {Object} config Book chapter data prepared by view.php.
- * @returns {boolean} True when the course index is available.
+ * @param {Object} config Information supplied by mod/book/view.php.
+ * @returns {boolean} Whether an activity was found and mounted.
  */
-const mount = (config) => {
-    const activity = document.getElementById('course-index-cm-' + config.cmid);
+const mount = config => {
+    const index = document.getElementById('course-index');
+    const activity = index?.querySelector('#course-index-cm-' + config.cmid);
     if (!activity) {
         return false;
     }
-    if (activity.querySelector('.book-courseindex-tree')) {
+    if (activity.querySelector(':scope > .book-courseindex-tree')) {
         return true;
     }
+
     const activitylink = activity.querySelector(':scope > [data-for="cm_name"]');
     if (!activitylink) {
         return false;
     }
 
-    const tree = document.createElement('nav');
-    tree.className = 'book-courseindex-tree';
-    tree.id = 'book-courseindex-tree-' + config.cmid;
-    tree.setAttribute('aria-label', config.toclabel);
-    // Nested links have their own navigation; do not let the course index treat them as clicks on the Book itself.
-    tree.addEventListener('click', event => event.stopPropagation());
+    activity.insertAdjacentHTML('beforeend', config.html);
+    const tree = activity.querySelector(':scope > .book-courseindex-tree');
+    const toggle = activity.querySelector(':scope > .book-courseindex-toggle');
+    if (!tree || !toggle) {
+        return false;
+    }
 
-    const chapterslist = document.createElement('ul');
-    chapterslist.className = 'book-courseindex-list';
-    tree.appendChild(chapterslist);
-
-    let parentchapter = null;
-    config.chapters.forEach(chapter => {
-        const item = document.createElement('li');
-        item.className = 'book-courseindex-chapter';
-        if (chapter.hidden) {
-            item.classList.add('dimmed');
-        }
-
-        const link = document.createElement('a');
-        link.className = 'courseindex-link book-courseindex-link';
-        link.href = chapter.url;
-        link.textContent = chapter.title;
-        if (chapter.id === config.chapterid) {
-            link.setAttribute('aria-current', 'page');
-        }
-        item.appendChild(link);
-
-        if (chapter.subchapter && parentchapter) {
-            let subchapters = parentchapter.querySelector(':scope > .book-courseindex-subchapters');
-            if (!subchapters) {
-                subchapters = document.createElement('ul');
-                subchapters.className = 'book-courseindex-subchapters';
-                parentchapter.appendChild(subchapters);
-            }
-            subchapters.appendChild(item);
-        } else {
-            chapterslist.appendChild(item);
-            parentchapter = item;
-        }
-    });
-
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'book-courseindex-toggle';
-    toggle.setAttribute('aria-controls', tree.id);
-    toggle.setAttribute('aria-expanded', 'true');
-    toggle.setAttribute('aria-label', config.collapselabel + ': ' + activitylink.textContent.trim());
+    const activitytitle = activitylink.textContent.trim();
+    toggle.setAttribute('aria-label', config.collapselabel + ': ' + activitytitle);
     toggle.addEventListener('click', event => {
         event.stopPropagation();
-        const expanded = toggle.getAttribute('aria-expanded') === 'true';
-        tree.hidden = expanded;
-        toggle.setAttribute('aria-expanded', String(!expanded));
+        const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+        tree.hidden = isExpanded;
+        toggle.setAttribute('aria-expanded', String(!isExpanded));
         toggle.setAttribute('aria-label',
-            (expanded ? config.expandlabel : config.collapselabel) + ': ' + activitylink.textContent.trim());
+            (isExpanded ? config.expandlabel : config.collapselabel) + ': ' + activitytitle);
+    });
+    toggle.addEventListener('keydown', event => event.stopPropagation());
+
+    // Prevent the Moodle course tree from consuming the chapter links' keyboard and click events.
+    tree.addEventListener('click', event => event.stopPropagation());
+    tree.addEventListener('keydown', event => {
+        if (event.key !== 'Escape' && event.key !== 'Tab') {
+            event.stopPropagation();
+        }
     });
 
     activity.classList.add('book-courseindex-parent');
-    activity.appendChild(toggle);
-    activity.appendChild(tree);
-
-    // Keep the original right-hand TOC for themes without a course index or with JavaScript disabled.
     if (config.hideoriginaltoc) {
-        document.querySelectorAll('.block_book_toc').forEach(block => {
-            block.hidden = true;
-        });
+        document.body.classList.add('mod-book-courseindex-active');
     }
     return true;
 };
 
 /**
- * Inject a nested chapter list once the course index is present.
+ * Start integration when the course index is ready. Watch the course index for
+ * asynchronous re-renders, but avoid observing the entire document indefinitely.
  *
- * @param {Object} config Book chapter information and localized labels.
+ * @param {Object} config Chapter template HTML and localized labels.
  */
 export const init = config => {
-    if (!config.chapters || !config.chapters.length) {
+    if (!config?.html) {
         return;
     }
+
+    const observeIndex = () => {
+        const index = document.getElementById('course-index');
+        if (!index) {
+            return;
+        }
+        const observer = new MutationObserver(() => mount(config));
+        observer.observe(index, {childList: true, subtree: true});
+    };
+
     if (mount(config)) {
+        observeIndex();
         return;
     }
-    // Some themes render the course index after their page scripts have started.
+
     const observer = new MutationObserver(() => {
         if (mount(config)) {
             observer.disconnect();
+            observeIndex();
         }
     });
     observer.observe(document.body, {childList: true, subtree: true});
-    window.setTimeout(() => observer.disconnect(), 5000);
+    window.setTimeout(() => observer.disconnect(), 10000);
 };
