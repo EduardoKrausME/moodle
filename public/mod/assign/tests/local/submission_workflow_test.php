@@ -47,6 +47,14 @@ final class submission_workflow_test extends \basic_testcase {
         $this->assertFalse($state['canfinalise']);
     }
 
+    public function test_confirmed_team_member_can_be_waiting_for_others(): void {
+        $state = submission_workflow::describe('submitted', true, false, false, true);
+        $this->assertSame('groupwaiting', $state['state']);
+        $this->assertTrue($state['preparationcomplete']);
+        $this->assertTrue($state['finalcomplete']);
+        $this->assertFalse($state['canfinalise']);
+    }
+
     public function test_direct_submission_also_uses_submitted_state(): void {
         $state = submission_workflow::describe('submitted', false, false, false);
         $this->assertSame('sent', $state['state']);

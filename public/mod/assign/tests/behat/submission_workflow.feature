@@ -106,3 +106,13 @@ Feature: A learner can review and confirm their saved assignment draft
     When I press "Submit assignment"
     Then I should see "This group assignment may require other group members" in the ".assign-confirm-groupnote" "css_element"
     And I should see "Shared group work" in the ".assign-confirm-review" "css_element"
+    When I press "Continue"
+    Then I should see "Your confirmation recorded - waiting for the group" in the ".assign-submission-workflow" "css_element"
+    And "Submit assignment" "button" should not exist
+    When I am on the "Group review" Activity page logged in as student2
+    And I press "Submit assignment"
+    And I press "Continue"
+    Then I should see "Submitted for grading" in the ".assign-submission-workflow" "css_element"
+    When I am on the "Group review" Activity page logged in as student1
+    Then I should see "Submitted for grading" in the ".assign-submission-workflow" "css_element"
+
