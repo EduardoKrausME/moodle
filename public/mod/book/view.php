@@ -248,6 +248,7 @@ if (!$chapterid) {
             'groups' => $editorgroups,
             'cmid' => (int) $cm->id,
             'sesskey' => sesskey(),
+            'revision' => (int) $book->revision,
             'duplicateurl' => (new moodle_url('/mod/book/duplicate.php'))->out(false),
             'addurl' => (new moodle_url('/mod/book/edit.php',
                 ['cmid' => $cm->id, 'pagenum' => count($chapters)]))->out(false),
