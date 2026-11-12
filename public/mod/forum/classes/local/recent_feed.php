@@ -206,7 +206,7 @@ final class recent_feed {
 
         $modulemap = [];
         foreach ($courses as $course) {
-            $modinfo = get_fast_modinfo($course, $USER->id);
+            $modinfo = get_fast_modinfo((int)$course->id, $USER->id);
             foreach ($modinfo->get_instances_of('forum') as $cm) {
                 if (!$cm->uservisible) {
                     continue;
