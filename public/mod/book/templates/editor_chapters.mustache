@@ -36,6 +36,7 @@
                     <form method="post" action="{{duplicateurl}}">
                         <input type="hidden" name="id" value="{{cmid}}">
                         <input type="hidden" name="chapterid" value="{{id}}">
+                        <input type="hidden" name="revision" value="{{revision}}">
                         <input type="hidden" name="sesskey" value="{{sesskey}}">
                         <button type="submit" class="btn btn-sm btn-outline-secondary"
                             aria-label="{{duplicatelabel}}">{{#str}}duplicatechapter, mod_book{{/str}}</button>
@@ -59,6 +60,7 @@
                                 <form method="post" action="{{duplicateurl}}">
                                     <input type="hidden" name="id" value="{{cmid}}">
                                     <input type="hidden" name="chapterid" value="{{id}}">
+                        <input type="hidden" name="revision" value="{{revision}}">
                                     <input type="hidden" name="sesskey" value="{{sesskey}}">
                                     <button type="submit" class="btn btn-sm btn-outline-secondary"
                                         aria-label="{{duplicatelabel}}">{{#str}}duplicatechapter, mod_book{{/str}}</button>
