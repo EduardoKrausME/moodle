@@ -158,8 +158,8 @@ if (!$chapterid) {
             $readinguserid, $viewhidden);
     }
 
-    $trackreading = (bool) $readinguserid && ($requestedchapterid ||
-        empty($previousreading['lastchapterid']));
+    $trackreading = (bool) $readinguserid && \mod_book\reading_progress::should_track_view(
+        (int) $requestedchapterid, (int) ($previousreading['lastchapterid'] ?? 0));
     book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapter->id, $chapters),
         $course, $cm, $context, $trackreading);
 
