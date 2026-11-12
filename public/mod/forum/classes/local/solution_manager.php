@@ -137,8 +137,7 @@ final class solution_manager {
         }
         [$insql, $params] = $DB->get_in_or_equal(array_keys($items), SQL_PARAMS_NAMED, 'solutiondiscussion');
         $solutions = $DB->get_records_sql(
-            "SELECT s.discussionid, s.postid, p.discussion, p.deleted, p.privatereplyto,
-                    p.id, p.userid, p.parent, p.created, p.modified
+            "SELECT s.discussionid, s.postid, p.*
                FROM {forum_solutions} s
                JOIN {forum_posts} p ON p.id = s.postid
               WHERE s.discussionid {$insql}",
@@ -155,11 +154,11 @@ final class solution_manager {
                     !empty($record->deleted) || !empty($record->privatereplyto)) {
                 continue;
             }
-            // Use complete post records because Q&A visibility checks can
-            // depend on post fields not included in a partial SQL projection.
-            $post = $DB->get_record('forum_posts', ['id' => (int)$record->postid]);
-            if ($post && forum_user_can_see_post($data['forum'], $data['discussion'],
-                    $post, $USER, $data['cm'])) {
+            // SQL already provides the complete post; do not introduce
+            // an additional query per discussion when rendering a feed page.
+            if (forum_user_can_see_post($data['forum'], $data['discussion'],
+                    $record, $USER, $data['cm'])) {
+                $post = $record;
                 $result[$id] = [
                     'postid' => (int)$post->id,
                     'url' => self::post_url($id, (int)$post->id),

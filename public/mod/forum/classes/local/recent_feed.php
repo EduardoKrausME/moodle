@@ -457,6 +457,19 @@ final class recent_feed {
         }
         $records->close();
 
+        // One bounded lookup for solutions, with visibility checked against
+        // the corresponding native forum/context, never a per-card query.
+        $solutioncontexts = [];
+        foreach ($rawitems as $item) {
+            $discussion = $item['discussion'];
+            $solutioncontexts[(int)$discussion->id] = [
+                'discussion' => $discussion,
+                'forum' => $item['forum'],
+                'cm' => $modulemap[(int)$item['forum']->id]['cm'],
+            ];
+        }
+        $solutions = solution_manager::visible_for_page($solutioncontexts);
+
         $items = [];
         foreach ($rawitems as $item) {
             $post = $item['post'];
@@ -499,6 +512,15 @@ final class recent_feed {
                 'unread' => (bool)$item['unread'],
                 'favourited' => $favourited,
                 'canfavourite' => has_capability('mod/forum:cantogglefavourite', $context, $USER),
+                'solved' => isset($solutions[(int)$discussion->id]),
+                'solutionpostid' => $solutions[(int)$discussion->id]['postid'] ?? 0,
+                'solutionurl' => $solutions[(int)$discussion->id]['url'] ?? '',
+                'canmarksolution' => !empty($forum->allowsolutions) &&
+                    (has_capability('mod/forum:managesolutions', $context, $USER) ||
+                    ((int)$discussion->userid === (int)$USER->id &&
+                    has_capability('mod/forum:markownsolution', $context, $USER))) &&
+                    (int)$post->id !== (int)$discussion->firstpost &&
+                    empty($post->privatereplyto),
             ];
         }
 

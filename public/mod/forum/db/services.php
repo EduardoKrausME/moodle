@@ -250,6 +250,21 @@ $functions = array(
         'capabilities' => 'mod/forum:replypost',
     ],
 
+    'mod_forum_get_solution_state' => [
+        'classname' => 'mod_forum\external\get_solution_state',
+        'methodname' => 'execute',
+        'description' => 'Get a visible accepted reply for a discussion.',
+        'type' => 'read',
+        'ajax' => true,
+    ],
+    'mod_forum_set_accepted_solution' => [
+        'classname' => 'mod_forum\external\set_accepted_solution',
+        'methodname' => 'execute',
+        'description' => 'Accept, replace or remove the solution using native permissions.',
+        'type' => 'write',
+        'ajax' => true,
+    ],
+
     'mod_forum_get_recent_feed' => [
         'classname' => 'mod_forum\\external\\get_recent_feed',
         'methodname' => 'execute',
