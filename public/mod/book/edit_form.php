@@ -82,6 +82,12 @@ class book_chapter_edit_form extends moodleform {
         $mform->addElement('hidden', 'pagenum');
         $mform->setType('pagenum', PARAM_INT);
 
+        // Preview validates and renders the submitted editor content without saving it.
+        $mform->addElement('submit', 'previewchapter', get_string('previewchapter', 'mod_book'),
+            ['class' => 'btn btn-outline-secondary']);
+        $mform->addElement('submit', 'saveandnewchapter', get_string('saveandnewchapter', 'mod_book'),
+            ['class' => 'btn btn-outline-secondary']);
+
         $this->add_action_buttons(true);
 
         // set the defaults
