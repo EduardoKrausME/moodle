@@ -45,6 +45,7 @@ class mod_assign_mod_form extends moodleform_mod {
         global $CFG, $COURSE, $OUTPUT, $PAGE;
         $mform = $this->_form;
 
+        $mform->addElement('header', 'general', get_string('general', 'form'));
         // Provide an optional section index without changing the native form fields.
         $navcontent = \html_writer::tag('h2', get_string('settingssectionstitle', 'assign'), ['class' => 'h5 mb-2']);
         $navcontent .= \html_writer::tag('p', get_string('settingssectionshelp', 'assign'), ['class' => 'mb-3']);
@@ -59,7 +60,6 @@ class mod_assign_mod_form extends moodleform_mod {
             'hidden' => 'hidden',
         ]));
 
-        $mform->addElement('header', 'general', get_string('general', 'form'));
         $this->add_settings_section_hint('settingsgeneralhint');
 
         $mform->addElement('text', 'name', get_string('assignmentname', 'assign'), array('size'=>'64'));
