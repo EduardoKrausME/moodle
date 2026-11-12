@@ -52,34 +52,35 @@ M.mod_quiz.init_comment_popup = function(Y) {
 
 // Code for updating the countdown timer that is used on timed quizzes.
 M.mod_quiz.timer = {
-    // YUI object.
     Y: null,
-
-    // Timestamp at which time runs out, according to the student's computer's clock.
+    // Client display deadline is initialised with the time left supplied by Moodle.
     endtime: 0,
-
-    // Is this a quiz preview?
     preview: 0,
-
-    // This records the id of the timeout that updates the clock periodically,
-    // so we can cancel.
     timeoutid: null,
-
-    // Threshold for updating time remaining, in milliseconds.
     threshold: 3000,
+    warningThreshold: 300,
+    criticalThreshold: 100,
+    state: null,
+    visible: true,
+    stopped: false,
+    lastDisplayedSeconds: null,
 
     /**
-     * @param Y the YUI object
-     * @param start, the timer starting time, in seconds.
-     * @param preview, is this a quiz preview?
+     * Initialise the native timer and preference handling.
+     * @param {Object} Y YUI instance.
+     * @param {Number} start Time remaining in seconds from Moodle.
+     * @param {Boolean} preview Whether this attempt is a preview.
      */
     init: function(Y, start, preview) {
-        M.mod_quiz.timer.Y = Y;
-        M.mod_quiz.timer.endtime = M.pageloadstarttime.getTime() + start*1000;
-        M.mod_quiz.timer.preview = preview;
-        M.mod_quiz.timer.update();
-
+        this.Y = Y;
+        this.endtime = M.pageloadstarttime.getTime() + start * 1000;
+        this.preview = preview;
+        this.stopped = false;
+        this.state = null;
+        this.visible = true;
+        this.lastDisplayedSeconds = null;
         Y.one('#quiz-timer-wrapper').setStyle('display', 'flex');
+
         require(['core_form/changechecker'], function(FormChangeChecker) {
             M.mod_quiz.timer.FormChangeChecker = FormChangeChecker;
         });
@@ -87,93 +88,124 @@ M.mod_quiz.timer = {
             M.mod_quiz.timer.toggleVisibility();
         });
 
-        // We store the visibility as a user preference. If the value is not '1',
-        // i. e. it is '0' or the item does not exist, the timer must be shown.
+        // The native preference is not a way to hide the final 100 seconds.
         require(['core_user/repository'], function(UserRepository) {
             UserRepository.getUserPreference('quiz_timerhidden')
                 .then((response) => {
                     M.mod_quiz.timer.setVisibility(response !== '1', false);
                     return;
-                })
-                // If there is an error, we catch and ignore it, because (i) no matter what we do,
-                // we do not have the stored value, so we will need to take a reasonable default
-                // and (ii) the student who is currently taking the quiz is probably not interested
-                // in the technical details why the fetch failed, even less, because they can hardly
-                // do anything to solve the problem. However, we still log that there was an error
-                // to leave a trace, e. g. for debugging.
-                .catch((error) => {
+                }).catch((error) => {
                     M.mod_quiz.timer.setVisibility(true, false);
                     Y.log(error, 'error', 'moodle-mod_quiz');
                 });
         });
+
+        // Browser throttling cannot extend a deadline: compare actual timestamps
+        // again when a background tab becomes visible.
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && !M.mod_quiz.timer.stopped) {
+                M.mod_quiz.timer.update();
+            }
+        });
+        this.update();
     },
 
-    /**
-     * Toggle the timer's visibility.
-     */
     toggleVisibility: function() {
-        var Y = M.mod_quiz.timer.Y;
-        var timer = Y.one('#quiz-time-left');
-
-        // If the timer is currently hidden, the visibility should be set to true and vice versa.
-        this.setVisibility(timer.getAttribute('hidden') === 'hidden');
+        this.setVisibility(!this.visible);
     },
 
     /**
-     * Set visibility of the timer.
-     * @param visible whether the timer should be visible
-     * @param updatePref whether the new status should be stored as a preference
+     * Only the display and the existing preference can be changed here.
+     * @param {Boolean} visible Whether to show the remaining time.
+     * @param {Boolean} updatePref Whether to store the user preference.
      */
     setVisibility: function(visible, updatePref = true) {
-        var Y = M.mod_quiz.timer.Y;
-        var timer = Y.one('#quiz-time-left');
-        var button = Y.one('#toggle-timer');
-
+        var timer = this.Y.one('#quiz-time-left');
+        var button = this.Y.one('#toggle-timer');
+        if (this.state === 'critical' || this.state === 'expired') {
+            visible = true;
+            updatePref = false;
+        }
+        this.visible = visible;
         if (visible) {
             button.setContent(M.util.get_string('hide', 'moodle'));
+            button.setAttribute('aria-label', M.util.get_string('timerhide', 'quiz'));
             timer.show();
         } else {
             button.setContent(M.util.get_string('show', 'moodle'));
+            button.setAttribute('aria-label', M.util.get_string('timershow', 'quiz'));
             timer.hide();
         }
+        button.setAttribute('aria-expanded', visible ? 'true' : 'false');
 
-        // Only update the user preference if this has been requested.
         if (updatePref) {
             require(['core_user/repository'], function(UserRepository) {
-                UserRepository.setUserPreference('quiz_timerhidden', (visible ? '0' : '1'));
+                UserRepository.setUserPreference('quiz_timerhidden', visible ? '0' : '1');
             });
         }
-
     },
 
     /**
-     * Stop the timer, if it is running.
+     * Announce a time milestone once instead of every second.
+     * @param {String} state normal, warning, critical, expired.
      */
-    stop: function(e) {
+    setState: function(state) {
+        if (this.state === state) {
+            return;
+        }
+        this.state = state;
+        this.Y.one('#quiz-timer').setAttribute('data-time-state', state);
+        var key = '';
+        if (state === 'warning') {
+            key = 'timerwarning';
+        } else if (state === 'critical') {
+            key = 'timercritical';
+        } else if (state === 'expired') {
+            key = 'timesup';
+        }
+        var message = key ? M.util.get_string(key, 'quiz') : '';
+        this.Y.one('#quiz-timer-phase').set('text', message);
+        this.Y.one('#quiz-timer-announcement').set('text', message);
+
+        var button = this.Y.one('#toggle-timer');
+        if (state === 'critical' || state === 'expired') {
+            // An asynchronously loaded "hidden" preference cannot undo this.
+            this.setVisibility(true, false);
+            button.setAttribute('disabled', true);
+        } else {
+            button.removeAttribute('disabled');
+        }
+    },
+
+    stop: function() {
+        this.stopped = true;
+        if (this.timeoutid) {
+            clearTimeout(this.timeoutid);
+            this.timeoutid = null;
+        }
+    },
+
+    two_digit: function(num) {
+        return num < 10 ? '0' + num : String(num);
+    },
+
+    // Use the native expiry form submission; visual states do not change any limit.
+    update: function() {
+        if (M.mod_quiz.timer.stopped || !M.mod_quiz.timer.Y) {
+            return;
+        }
+        // An autosave deadline correction or visibility event may call update
+        // before the previous callback executes. Keep one scheduled loop only.
         if (M.mod_quiz.timer.timeoutid) {
             clearTimeout(M.mod_quiz.timer.timeoutid);
+            M.mod_quiz.timer.timeoutid = null;
         }
-    },
-
-    /**
-     * Function to convert a number between 0 and 99 to a two-digit string.
-     */
-    two_digit: function(num) {
-        if (num < 10) {
-            return '0' + num;
-        } else {
-            return num;
-        }
-    },
-
-    // Function to update the clock with the current time left, and submit the quiz if necessary.
-    update: function() {
-        var Y = M.mod_quiz.timer.Y;
-        var secondsleft = Math.floor((M.mod_quiz.timer.endtime - new Date().getTime())/1000);
-
-        // If time has expired, set the hidden form field that says time has expired and submit
+        var timer = M.mod_quiz.timer;
+        var Y = timer.Y;
+        var secondsleft = Math.floor((timer.endtime - new Date().getTime()) / 1000);
         if (secondsleft < 0) {
-            M.mod_quiz.timer.stop(null);
+            timer.setState('expired');
+            timer.stop();
             Y.one('#quiz-time-left').setContent(M.util.get_string('timesup', 'quiz'));
             var input = Y.one('input[name=timeup]');
             input.set('value', 1);
@@ -181,51 +213,43 @@ M.mod_quiz.timer = {
             if (form.one('input[name=finishattempt]')) {
                 form.one('input[name=finishattempt]').set('value', 0);
             }
-            M.mod_quiz.timer.FormChangeChecker.markFormSubmitted(input.getDOMNode());
+            // An exceptionally short attempt can expire before async loading ends.
+            if (timer.FormChangeChecker) {
+                timer.FormChangeChecker.markFormSubmitted(input.getDOMNode());
+            }
             form.submit();
             return;
         }
 
-        // If time has nearly expired, change the colour.
-        if (secondsleft < 100) {
-            Y.one('#quiz-timer').removeClass('timeleft' + (secondsleft + 2))
-                    .removeClass('timeleft' + (secondsleft + 1))
-                    .addClass('timeleft' + secondsleft);
-
-            // From now on, the timer should be visible and should not be hideable anymore.
-            // We use the second (optional) parameter in order to leave the user preference
-            // unchanged.
-            M.mod_quiz.timer.setVisibility(true, false);
-            Y.one('#toggle-timer').setAttribute('disabled', true);
+        if (secondsleft < timer.criticalThreshold) {
+            timer.setState('critical');
+        } else if (secondsleft <= timer.warningThreshold) {
+            timer.setState('warning');
+        } else {
+            timer.setState('normal');
         }
 
-        // Update the time display.
-        var hours = Math.floor(secondsleft/3600);
-        secondsleft -= hours*3600;
-        var minutes = Math.floor(secondsleft/60);
-        secondsleft -= minutes*60;
-        var seconds = secondsleft;
-        Y.one('#quiz-time-left').setContent(hours + ':' +
-                M.mod_quiz.timer.two_digit(minutes) + ':' +
-                M.mod_quiz.timer.two_digit(seconds));
-
-        // Arrange for this method to be called again soon.
-        M.mod_quiz.timer.timeoutid = setTimeout(M.mod_quiz.timer.update, 100);
+        // Update once per visible second; a 100ms timeout still detects expiry promptly.
+        if (secondsleft !== timer.lastDisplayedSeconds) {
+            timer.lastDisplayedSeconds = secondsleft;
+            var hours = Math.floor(secondsleft / 3600);
+            var minutes = Math.floor((secondsleft % 3600) / 60);
+            var seconds = secondsleft % 60;
+            Y.one('#quiz-time-left').setContent(hours + ':' + timer.two_digit(minutes) +
+                    ':' + timer.two_digit(seconds));
+        }
+        timer.timeoutid = setTimeout(timer.update, 100);
     },
 
-    // Allow the end time of the quiz to be updated.
+    // Keep the server-derived autosave correction and native three-second tolerance.
     updateEndTime: function(timeleft) {
+        if (M.mod_quiz.timer.stopped) {
+            return;
+        }
         var newtimeleft = new Date().getTime() + timeleft * 1000;
-
-        // Timer might not have been initialized yet. We initialize it with
-        // preview = 0, because it's better to take a preview for a real quiz
-        // than to take a real quiz for a preview.
         if (M.mod_quiz.timer.Y === null) {
             M.mod_quiz.timer.init(window.Y, timeleft, 0);
         }
-
-        // Only update if change is greater than the threshold, so the
-        // time doesn't bounce around unnecessarily.
         if (Math.abs(newtimeleft - M.mod_quiz.timer.endtime) > M.mod_quiz.timer.threshold) {
             M.mod_quiz.timer.endtime = newtimeleft;
             M.mod_quiz.timer.update();

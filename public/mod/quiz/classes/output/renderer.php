@@ -729,6 +729,9 @@ class renderer extends plugin_renderer_base {
      * @param bool $ispreview true if this is a preview attempt.
      */
     public function initialise_timer($timerstartvalue, $ispreview) {
+        foreach (['timerwarning', 'timercritical', 'timershow', 'timerhide', 'timesup'] as $stringkey) {
+            $this->page->requires->string_for_js($stringkey, 'quiz');
+        }
         $options = [$timerstartvalue, (bool) $ispreview];
         $this->page->requires->js_init_call('M.mod_quiz.timer.init', $options, false, quiz_get_js_module());
     }

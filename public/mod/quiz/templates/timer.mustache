@@ -17,18 +17,23 @@
 {{!
     @template mod_quiz/timer
 
-    Login page template
+    Quiz countdown timer. The legacy IDs are retained for the native YUI timer and autosave.
 
     Example context (json):
     {
     }
 }}
-<div id="quiz-timer-wrapper" class="mb-2">
-    <div id="quiz-timer" class="quiz-timer-inner py-1 px-2 ms-auto" role="timer" aria-atomic="true" aria-relevant="text">
-        {{#str}} timeleft, quiz {{/str}}
-        <span id="quiz-time-left"></span>
+<div id="quiz-timer-wrapper" class="mod-quiz-timer-wrapper mb-2">
+    <div id="quiz-timer" class="quiz-timer-inner mod-quiz-timer py-2 px-3"
+            role="timer" aria-live="off" aria-atomic="true" data-time-state="normal">
+        <span class="mod-quiz-timer-label">{{#str}} timeleft, quiz {{/str}}</span>
+        <span id="quiz-time-left" class="mod-quiz-timer-value"></span>
+        <span id="quiz-timer-phase" class="mod-quiz-timer-phase" aria-hidden="true"></span>
     </div>
-    <button type="button" class="btn btn-secondary btn-small ms-1" id="toggle-timer" aria-controls="quiz-timer" aria-describedby="quiz-timer">
+    <button type="button" class="btn btn-secondary mod-quiz-timer-toggle" id="toggle-timer"
+            aria-controls="quiz-time-left" aria-expanded="true">
         {{#str}} hide, core {{/str}}
     </button>
+    <span id="quiz-timer-announcement" class="visually-hidden" role="status"
+            aria-live="polite" aria-atomic="true"></span>
 </div>

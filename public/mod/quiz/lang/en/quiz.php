@@ -1205,3 +1205,7 @@ $string['autosavestatussaved'] = 'Answers saved.';
 $string['autosavestatuserror'] = 'Could not save answers. Retrying automatically.';
 $string['autosavestatusunavailable'] = 'Auto-save stopped near the time limit. Use the quiz buttons to submit your answers.';
 $string['autosavestatusoff'] = 'Automatic saving is disabled. Use the quiz navigation buttons to save answers.';
+$string['timerwarning'] = 'Less than five minutes remain.';
+$string['timercritical'] = 'Less than 100 seconds remain.';
+$string['timershow'] = 'Show time remaining';
+$string['timerhide'] = 'Hide time remaining';
