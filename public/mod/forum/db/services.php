@@ -225,6 +225,31 @@ $functions = array(
         'services' => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
 
+    'mod_forum_get_feed_reply_context' => [
+        'classname' => 'mod_forum\external\get_feed_reply_context',
+        'methodname' => 'execute',
+        'description' => 'Return permission-checked post context for a feed reply or citation.',
+        'type' => 'read',
+        'ajax' => true,
+        'capabilities' => 'mod/forum:replypost',
+    ],
+    'mod_forum_search_feed_mentions' => [
+        'classname' => 'mod_forum\external\search_feed_mentions',
+        'methodname' => 'execute',
+        'description' => 'Find visible discussion participants eligible for a mention.',
+        'type' => 'read',
+        'ajax' => true,
+        'capabilities' => 'mod/forum:replypost',
+    ],
+    'mod_forum_reply_from_feed' => [
+        'classname' => 'mod_forum\external\reply_from_feed',
+        'methodname' => 'execute',
+        'description' => 'Create a native forum reply and notify validated mentioned participants.',
+        'type' => 'write',
+        'ajax' => true,
+        'capabilities' => 'mod/forum:replypost',
+    ],
+
     'mod_forum_get_recent_feed' => [
         'classname' => 'mod_forum\\external\\get_recent_feed',
         'methodname' => 'execute',
