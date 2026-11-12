@@ -168,7 +168,7 @@ export const init = (initialCourseId = 0, initialUnread = false) => {
                 const firstNew = list.children[previousCount];
                 const link = firstNew && firstNew.querySelector('a');
                 if (link) {
-                    link.focus({preventScroll: true});
+                    link.focus();
                 }
             }
         } catch (error) {
