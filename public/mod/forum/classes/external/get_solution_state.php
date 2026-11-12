@@ -45,7 +45,7 @@ final class get_solution_state extends external_api {
             'enabled' => new external_value(PARAM_BOOL, 'Is accepted solution enabled'),
             'canmanage' => new external_value(PARAM_BOOL, 'Can change accepted reply'),
             'postid' => new external_value(PARAM_INT, 'Visible accepted post or 0'),
-            'url' => new external_value(PARAM_URL, 'Direct link when visible', VALUE_DEFAULT, ''),
+            'url' => new external_value(PARAM_RAW, 'Direct link when visible, or empty string'),
         ]);
     }
 }

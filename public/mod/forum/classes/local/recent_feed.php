@@ -515,6 +515,7 @@ final class recent_feed {
                 'solved' => isset($solutions[(int)$discussion->id]),
                 'solutionpostid' => $solutions[(int)$discussion->id]['postid'] ?? 0,
                 'solutionurl' => $solutions[(int)$discussion->id]['url'] ?? '',
+                'iscurrentaccepted' => (int)($solutions[(int)$discussion->id]['postid'] ?? 0) === (int)$post->id,
                 'canmarksolution' => !empty($forum->allowsolutions) &&
                     (has_capability('mod/forum:managesolutions', $context, $USER) ||
                     ((int)$discussion->userid === (int)$USER->id &&

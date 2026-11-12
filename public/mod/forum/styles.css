@@ -515,3 +515,18 @@ span.unread {
         width: 100%;
     }
 }
+
+/* Accepted replies reuse native forum posts and read state. */
+.forum-solution-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+}
+.forum-solution-actions .btn,
+.forum-recent-feed [data-action="solution-set"] {
+    min-height: 44px;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}

@@ -15,6 +15,7 @@ import * as Templates from 'core/templates';
 import * as Notification from 'core/notification';
 import {get_string as getString} from 'core/str';
 import * as FeedReply from 'mod_forum/feed_reply';
+import * as Solutions from 'mod_forum/solutions';
 
 /**
  * Read and validate the filter combination from a shareable URL.
@@ -320,6 +321,8 @@ export const init = (initialCourseId = 0, initialUnread = false, initialFollowin
             restoreFilters();
         }
     });
+
+    Solutions.initFeed(root, () => load(true));
 
     FeedReply.init(root, async(response) => {
         // A successful native publication must not reset course or tab filters.

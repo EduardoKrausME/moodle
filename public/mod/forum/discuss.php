@@ -339,6 +339,7 @@ if ($node && $post->get_id() != $discussion->get_first_post_id()) {
 
 // The AMD module also supports older links that contain only a #pID fragment.
 // An invalid or inaccessible target is never passed to the browser as approved.
+$PAGE->requires->js_call_amd('mod_forum/solutions', 'initDiscussion', [$discussion->get_id()]);
 $PAGE->requires->js_call_amd('mod_forum/post_navigation', 'init', [
     $validatedtargetpost,
     $targetpost > 0,

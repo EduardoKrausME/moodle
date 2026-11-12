@@ -31,6 +31,19 @@
             <span>{{time}}</span>
         </div>
         {{#preview}}<p class="forum-recent-feed__preview mb-2">{{preview}}</p>{{/preview}}
+        {{#solved}}
+            <p class="mb-2"><span class="badge bg-success">{{#str}}acceptedsolution, mod_forum{{/str}}</span>
+            <a href="{{solutionurl}}" class="ms-2">{{#str}}viewsolution, mod_forum{{/str}}</a></p>
+        {{/solved}}
+        {{#canmarksolution}}
+            <button class="btn btn-sm btn-outline-primary mb-2" type="button" data-action="solution-set"
+                    data-discussion-id="{{discussionid}}"
+                    data-target-post-id="{{#iscurrentaccepted}}0{{/iscurrentaccepted}}{{^iscurrentaccepted}}{{postid}}{{/iscurrentaccepted}}"
+                    aria-pressed="{{#iscurrentaccepted}}true{{/iscurrentaccepted}}{{^iscurrentaccepted}}false{{/iscurrentaccepted}}">
+                {{#iscurrentaccepted}}{{#str}}removesolution, mod_forum{{/str}}{{/iscurrentaccepted}}
+                {{^iscurrentaccepted}}{{#solved}}{{#str}}replacesolution, mod_forum{{/str}}{{/solved}}{{^solved}}{{#str}}marksolution, mod_forum{{/str}}{{/solved}}{{/iscurrentaccepted}}
+            </button>
+        {{/canmarksolution}}
         {{#canreply}}
             <div class="forum-recent-feed__reply-actions d-flex flex-wrap gap-2">
                 <button type="button" class="btn btn-outline-primary" data-action="feed-reply-open"
