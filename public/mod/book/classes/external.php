@@ -133,7 +133,8 @@ class mod_book_external extends external_api {
             if ($trackreading && !$requestedchapterid) {
                 $previousreading = \mod_book\reading_progress::get_progress(
                     (int) $book->id, $chapters, (int) $USER->id, $viewhidden);
-                $trackreading = empty($previousreading['lastchapterid']);
+                $trackreading = \mod_book\reading_progress::should_track_view(
+                    (int) $requestedchapterid, (int) ($previousreading['lastchapterid'] ?? 0));
             }
             book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapterid, $chapters),
                 $course, $cm, $context, $trackreading);
