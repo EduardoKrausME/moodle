@@ -101,7 +101,7 @@ final class get_recent_feed_test extends \core_external\tests\externallib_testca
 
         $filtered = $this->call_feed($course->id);
         $this->assertCount(1, $filtered['items']);
-        $this->assertSame($course->id, $filtered['items'][0]['courseid']);
+        $this->assertSame((int)$course->id, $filtered['items'][0]['courseid']);
     }
 
     public function test_does_not_return_posts_from_courses_outside_enrolment_or_viewing_role(): void {
