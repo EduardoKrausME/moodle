@@ -67,10 +67,9 @@ class restore_book_activity_structure_step extends restore_activity_structure_st
     protected function process_book_chapter($data) {
         global $DB;
 
-        $data = (object)$data;
+        $data = (object) $data;
         $oldid = $data->id;
-        $data->course = $this->get_courseid();
-
+        // book_chapters has no course column; only the parent Book holds course.
         $data->bookid = $this->get_new_parentid('book');
 
         $newitemid = $DB->insert_record('book_chapters', $data);
