@@ -77,6 +77,7 @@ final class get_recent_feed extends external_api {
                 'solutionpostid' => new external_value(PARAM_INT, 'Visible accepted reply ID, or 0'),
                 'solutionurl' => new external_value(PARAM_RAW, 'Visible accepted reply permalink, or empty'),
                 'canmarksolution' => new external_value(PARAM_BOOL, 'Can accept this visible reply'),
+                'iscurrentaccepted' => new external_value(PARAM_BOOL, 'The visible post is the accepted reply'),
             ])),
             'nextcursor' => new external_value(PARAM_RAW_TRIMMED, 'Next page token'),
             'hasmore' => new external_value(PARAM_BOOL, 'Whether more items may be available'),
