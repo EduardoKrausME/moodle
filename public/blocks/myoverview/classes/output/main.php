@@ -502,6 +502,7 @@ class main implements renderable, templatable {
 
         $defaultvariables = [
             'totalcoursecount' => count(enrol_get_all_users_courses($USER->id, true)),
+            'recentfeedurl' => (new \moodle_url('/mod/forum/recent.php'))->out(false),
             'nocoursesimg' => $nocoursesurl,
             'newcourseurl' => $newcourseurl,
             'courseactionurls' => $courseactionurls,

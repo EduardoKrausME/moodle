@@ -1,0 +1,20 @@
+{{!
+    @template mod_forum/recent_feed_items
+    Names and message excerpts are escaped; do not render user input as HTML.
+}}
+{{#items}}
+    <article class="border rounded-3 p-3 mb-3" role="listitem" data-post-id="{{postid}}">
+        <div class="d-flex align-items-start justify-content-between gap-2">
+            <h3 class="h5 mb-1">
+                <a href="{{url}}" class="fw-semibold">{{subject}}</a>
+            </h3>
+            {{#unread}}
+                <span class="badge bg-primary flex-shrink-0">
+                    {{#str}}recentfeedpostunread, mod_forum{{/str}}
+                </span>
+            {{/unread}}
+        </div>
+        <p class="small text-muted mb-2">{{coursename}} · {{forumname}} · {{author}} · {{time}}</p>
+        {{#preview}}<p class="mb-0">{{preview}}</p>{{/preview}}
+    </article>
+{{/items}}

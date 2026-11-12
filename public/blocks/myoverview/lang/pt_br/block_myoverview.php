@@ -13,3 +13,5 @@ $string['forumunreadpartialmany'] = '{$a} não lidas em fóruns rastreados';
 $string['forumunreadactivity'] = 'Atividade recente';
 $string['forumunreadforumsone'] = 'em 1 fórum';
 $string['forumunreadforumsmany'] = 'em {$a} fóruns';
+$string['recentfeedalllink'] = 'Discussões recentes de todos os cursos';
+$string['recentfeedcourselink'] = 'Ver todas as discussões';

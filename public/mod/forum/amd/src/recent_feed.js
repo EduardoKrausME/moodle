@@ -1,0 +1,163 @@
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+import $ from 'jquery';
+import Ajax from 'core/ajax';
+import * as Templates from 'core/templates';
+import * as Notification from 'core/notification';
+import {get_string as getString} from 'core/str';
+
+/**
+ * Initialise the cross-course forum feed.
+ *
+ * @param {number} initialCourseId Course ID or zero.
+ * @param {boolean} initialUnread Unread-only filter.
+ */
+export const init = (initialCourseId = 0, initialUnread = false) => {
+    const root = document.querySelector('[data-region="forum-recent-feed"]');
+    if (!root) {
+        return;
+    }
+
+    const list = root.querySelector('[data-region="feed-items"]');
+    const status = root.querySelector('[data-region="feed-status"]');
+    const loadMore = root.querySelector('[data-action="feed-more"]');
+    const allButton = root.querySelector('[data-action="feed-all"]');
+    const unreadButton = root.querySelector('[data-action="feed-unread"]');
+    const courseSelector = root.querySelector('[data-region="feed-course"]');
+
+    let courseId = Number(initialCourseId);
+    let unread = Boolean(initialUnread);
+    let cursor = '';
+    let requestNumber = 0;
+    let loading = false;
+
+    const updateButtons = () => {
+        for (const [button, active] of [[allButton, !unread], [unreadButton, unread]]) {
+            button.setAttribute('aria-pressed', String(active));
+            button.classList.toggle('btn-primary', active);
+            button.classList.toggle('btn-outline-primary', !active);
+        }
+    };
+
+    const updateAddress = () => {
+        const url = new URL(window.location.href);
+        if (courseId) {
+            url.searchParams.set('courseid', String(courseId));
+        } else {
+            url.searchParams.delete('courseid');
+        }
+        if (unread) {
+            url.searchParams.set('unread', '1');
+        } else {
+            url.searchParams.delete('unread');
+        }
+        window.history.replaceState(null, '', url.toString());
+    };
+
+    /**
+     * Load the next cursor page or reset the feed after a filter change.
+     *
+     * @param {boolean} reset Whether to replace previous entries.
+     */
+    const load = async(reset = false) => {
+        if (loading && !reset) {
+            return;
+        }
+        if (reset) {
+            requestNumber++;
+            cursor = '';
+            list.replaceChildren();
+            loadMore.hidden = true;
+            updateButtons();
+            updateAddress();
+        }
+
+        const ticket = requestNumber;
+        const currentCursor = cursor;
+        loading = true;
+        root.setAttribute('aria-busy', 'true');
+        loadMore.disabled = true;
+        status.textContent = await getString('recentfeedloading', 'mod_forum');
+
+        try {
+            const response = await Ajax.call([{
+                methodname: 'mod_forum_get_recent_feed',
+                args: {courseid: courseId, unread: unread, cursor: currentCursor},
+            }])[0];
+            if (ticket !== requestNumber) {
+                return;
+            }
+            const [html, js] = await Templates.render('mod_forum/recent_feed_items', response);
+            if (ticket !== requestNumber) {
+                return;
+            }
+            const previousCount = list.children.length;
+            await Templates.appendNodeContents($(list), html, js);
+            if (ticket !== requestNumber) {
+                return;
+            }
+
+            cursor = response.nextcursor || '';
+            loadMore.hidden = !response.hasmore || !cursor;
+            if (response.items.length === 0 && !response.hasmore && previousCount === 0) {
+                status.textContent = await getString('recentfeedempty', 'mod_forum');
+            } else {
+                status.textContent = '';
+            }
+
+            // Keyboard users can continue from the first newly appended entry.
+            if (!reset && previousCount > 0) {
+                const newItem = list.children[previousCount];
+                const link = newItem && newItem.querySelector('a');
+                if (link) {
+                    link.focus({preventScroll: true});
+                }
+            }
+        } catch (error) {
+            if (ticket === requestNumber) {
+                status.textContent = await getString('recentfeederror', 'mod_forum');
+                Notification.exception(error);
+            }
+        } finally {
+            if (ticket === requestNumber) {
+                loading = false;
+                root.removeAttribute('aria-busy');
+                loadMore.disabled = false;
+            }
+        }
+    };
+
+    allButton.addEventListener('click', () => {
+        if (unread) {
+            unread = false;
+            load(true);
+        }
+    });
+    unreadButton.addEventListener('click', () => {
+        if (!unread) {
+            unread = true;
+            load(true);
+        }
+    });
+    courseSelector.addEventListener('change', () => {
+        courseId = Number(courseSelector.value);
+        load(true);
+    });
+    loadMore.addEventListener('click', () => load());
+    window.addEventListener('pageshow', event => {
+        if (event.persisted) {
+            load(true);
+        }
+    });
+
+    load(true);
+};

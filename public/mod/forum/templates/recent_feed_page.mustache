@@ -1,0 +1,40 @@
+{{!
+    @template mod_forum/recent_feed_page
+    Cross-course forum activity, loaded from an access-checked AJAX service.
+}}
+<div class="forum-recent-feed" data-region="forum-recent-feed">
+    <p class="text-muted mb-4">{{#str}}recentfeedsubtitle, mod_forum{{/str}}</p>
+    <div class="d-flex flex-column flex-md-row gap-3 align-items-md-end mb-4">
+        <fieldset class="flex-grow-1">
+            <legend class="form-label fs-6 mb-2">{{#str}}recentfeedstatus, mod_forum{{/str}}</legend>
+            <div class="btn-group" role="group" aria-label="{{#str}}recentfeedstatus, mod_forum{{/str}}">
+                <button type="button" class="btn {{#allselected}}btn-primary{{/allselected}}{{^allselected}}btn-outline-primary{{/allselected}}"
+                        data-action="feed-all" aria-pressed="{{#allselected}}true{{/allselected}}{{^allselected}}false{{/allselected}}">
+                    {{#str}}recentfeedall, mod_forum{{/str}}
+                </button>
+                <button type="button" class="btn {{#unreadselected}}btn-primary{{/unreadselected}}{{^unreadselected}}btn-outline-primary{{/unreadselected}}"
+                        data-action="feed-unread" aria-pressed="{{#unreadselected}}true{{/unreadselected}}{{^unreadselected}}false{{/unreadselected}}">
+                    {{#str}}recentfeedunread, mod_forum{{/str}}
+                </button>
+            </div>
+        </fieldset>
+        <div class="flex-grow-1">
+            <label for="forum-recent-feed-course" class="form-label">
+                {{#str}}recentfeedcourse, mod_forum{{/str}}
+            </label>
+            <select class="form-select" id="forum-recent-feed-course" data-region="feed-course">
+                <option value="0">{{#str}}recentfeedallcourses, mod_forum{{/str}}</option>
+                {{#courses}}
+                    <option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>
+                {{/courses}}
+            </select>
+        </div>
+    </div>
+    <div data-region="feed-items" role="list" aria-label="{{#str}}recentfeedtitle, mod_forum{{/str}}"></div>
+    <p data-region="feed-status" class="text-muted mt-3" role="status" aria-live="polite">
+        {{#str}}recentfeedloading, mod_forum{{/str}}
+    </p>
+    <button type="button" class="btn btn-outline-primary mt-3" data-action="feed-more" hidden>
+        {{#str}}recentfeedloadmore, mod_forum{{/str}}
+    </button>
+</div>
