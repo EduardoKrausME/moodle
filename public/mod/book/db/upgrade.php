@@ -68,5 +68,24 @@ function xmldb_book_upgrade($oldversion) {
     // Automatically generated Moodle v5.3.0 release upgrade line.
     // Put any upgrade step following this.
 
+    if ($oldversion < 2026111200) {
+        $table = new xmldb_table('book_chapter_reads');
+
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('bookid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('chapterid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('firstviewed', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('lastviewed', XMLDB_TYPE_INTEGER, '20', null, XMLDB_NOTNULL, null, '0');
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_index('bookuserchapter', XMLDB_INDEX_UNIQUE, ['bookid', 'userid', 'chapterid']);
+            $table->add_index('bookuserlast', XMLDB_INDEX_NOTUNIQUE, ['bookid', 'userid', 'lastviewed']);
+            $dbman->create_table($table);
+        }
+
+        upgrade_mod_savepoint(true, 2026111200, 'book');
+    }
+
     return true;
 }
