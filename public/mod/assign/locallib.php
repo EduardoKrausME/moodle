@@ -5836,6 +5836,16 @@ class assign {
             $submission = $this->get_group_submission($USER->id, 0, false);
         }
 
+        // Even when the group submission remains a draft, an individual who
+        // already confirmed this attempt must not be invited to submit again.
+        if ($this->get_instance()->teamsubmission &&
+                $this->get_instance()->requireallteammemberssubmit && is_object($submission)) {
+            $membersubmission = $this->get_user_submission($USER->id, false, $submission->attemptnumber);
+            if ($membersubmission && $membersubmission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+                $notifications[] = get_string('submissionworkflowalreadyconfirmed', 'assign');
+            }
+        }
+
         $plugins = $this->get_submission_plugins();
         $hassubmission = false;
         foreach ($plugins as $plugin) {
@@ -7574,6 +7584,15 @@ class assign {
 
         if (!$this->submissions_open($userid)) {
             return false;
+        }
+
+        // A team may still be in draft state after one member confirms.
+        // Do not let that member confirm twice and duplicate receipt/events.
+        if ($instance->teamsubmission && $instance->requireallteammemberssubmit) {
+            $membersubmission = $this->get_user_submission($userid, false, $submission->attemptnumber);
+            if ($membersubmission && $membersubmission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+                return false;
+            }
         }
 
         $adminconfig = $this->get_admin_config();
