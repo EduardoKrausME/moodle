@@ -157,22 +157,29 @@ final class chapter_management {
      * @param stdClass $book
      * @param int $chapterid
      * @param context_module $context
+     * @param int|null $expectedrevision Expected chapter revision for an editor request.
      * @return int ID of the new chapter.
      */
-    public static function duplicate(stdClass $book, int $chapterid, context_module $context): int {
+    public static function duplicate(stdClass $book, int $chapterid, context_module $context,
+            ?int $expectedrevision = null): int {
         global $DB;
 
-        $chapters = $DB->get_records('book_chapters', ['bookid' => $book->id],
-            'pagenum ASC, id ASC');
-        $source = self::chapters_to_duplicate($chapters, $chapterid);
-        $end = end($source);
-        $insertat = (int) $end->pagenum + 1;
-        $copycount = count($source);
         $transaction = $DB->start_delegated_transaction();
         $createdids = [];
         $fs = get_file_storage();
 
         try {
+            $book = $DB->get_record('book', ['id' => $book->id], '*', MUST_EXIST);
+            if ($expectedrevision !== null && (int) $book->revision !== $expectedrevision) {
+                throw new moodle_exception('chapterorderchanged', 'mod_book');
+            }
+            $chapters = $DB->get_records('book_chapters', ['bookid' => $book->id],
+                'pagenum ASC, id ASC');
+            $source = self::chapters_to_duplicate($chapters, $chapterid);
+            $end = end($source);
+            $insertat = (int) $end->pagenum + 1;
+            $copycount = count($source);
+
             $DB->execute('UPDATE {book_chapters}
                              SET pagenum = pagenum + ?
                            WHERE bookid = ? AND pagenum >= ?',
