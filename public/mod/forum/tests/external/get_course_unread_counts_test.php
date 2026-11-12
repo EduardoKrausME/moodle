@@ -84,13 +84,13 @@ final class get_course_unread_counts_test extends \core_external\tests\externall
 
         $before = $this->get_result($course->id);
         $this->assertSame('unread', $before['state']);
-        $this->assertSame(2, $before['count']);
+        $this->assertSame(1, $before['count']);
         $this->assertSame(1, $before['forumcount']);
 
         forum_tp_add_read_record($user->id, $reply->id);
         $after = $this->get_result($course->id);
-        $this->assertSame('unread', $after['state']);
-        $this->assertSame(1, $after['count']);
+        $this->assertSame('none', $after['state']);
+        $this->assertSame(0, $after['count']);
     }
 
     public function test_partial_count_when_another_forum_is_untracked(): void {
@@ -107,9 +107,16 @@ final class get_course_unread_counts_test extends \core_external\tests\externall
             'showinmycourses' => 1,
             'trackingtype' => FORUM_TRACKING_OFF,
         ]);
-        $generator->get_plugin_generator('mod_forum')->create_discussion((object)[
+        $forumgenerator = $generator->get_plugin_generator('mod_forum');
+        $discussion = $forumgenerator->create_discussion((object)[
             'course' => $course->id,
             'forum' => $tracked->id,
+            'userid' => $user->id,
+        ]);
+        // Moodle automatically marks the author's first post as read.
+        $forumgenerator->create_post((object)[
+            'discussion' => $discussion->id,
+            'parent' => $discussion->firstpost,
             'userid' => $user->id,
         ]);
 
@@ -158,5 +165,87 @@ final class get_course_unread_counts_test extends \core_external\tests\externall
         $output = external_api::clean_returnvalue(get_course_unread_counts::execute_returns(), $output);
         $this->assertCount(1, $output['courses']);
         $this->assertSame($course->id, $output['courses'][0]['courseid']);
+    }
+
+    public function test_qanda_hidden_replies_are_not_counted(): void {
+        $this->resetAfterTest();
+        [$user, $course] = $this->fixture();
+        $generator = self::getDataGenerator();
+        $author = $generator->create_user();
+        $generator->enrol_user($author->id, $course->id);
+        $forum = $generator->create_module('forum', [
+            'course' => $course->id,
+            'type' => 'qanda',
+            'showinmycourses' => 1,
+            'trackingtype' => FORUM_TRACKING_FORCED,
+        ]);
+        $fg = $generator->get_plugin_generator('mod_forum');
+        $discussion = $fg->create_discussion((object)[
+            'course' => $course->id,
+            'forum' => $forum->id,
+            'userid' => $author->id,
+        ]);
+        $fg->create_post((object)[
+            'discussion' => $discussion->id,
+            'parent' => $discussion->firstpost,
+            'userid' => $author->id,
+        ]);
+        // Students can see the question, but cannot read other replies before participating.
+        $result = $this->get_result($course->id);
+        $this->assertSame(1, $result['count']);
+        $this->assertSame('unread', $result['state']);
+    }
+
+    public function test_private_replies_to_other_users_are_not_counted(): void {
+        $this->resetAfterTest();
+        [$user, $course] = $this->fixture();
+        $generator = self::getDataGenerator();
+        $author = $generator->create_user();
+        $recipient = $generator->create_user();
+        $generator->enrol_user($author->id, $course->id);
+        $generator->enrol_user($recipient->id, $course->id);
+        $forum = $generator->create_module('forum', [
+            'course' => $course->id,
+            'showinmycourses' => 1,
+            'trackingtype' => FORUM_TRACKING_FORCED,
+        ]);
+        $fg = $generator->get_plugin_generator('mod_forum');
+        $discussion = $fg->create_discussion((object)[
+            'course' => $course->id,
+            'forum' => $forum->id,
+            'userid' => $author->id,
+        ]);
+        $fg->create_post((object)[
+            'discussion' => $discussion->id,
+            'parent' => $discussion->firstpost,
+            'userid' => $author->id,
+            'privatereplyto' => $recipient->id,
+        ]);
+        $result = $this->get_result($course->id);
+        $this->assertSame(1, $result['count']);
+    }
+
+    public function test_separate_group_posts_outside_membership_are_not_counted(): void {
+        $this->resetAfterTest();
+        [$user, $course] = $this->fixture();
+        $generator = self::getDataGenerator();
+        $author = $generator->create_user();
+        $generator->enrol_user($author->id, $course->id);
+        $group = $generator->create_group(['courseid' => $course->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $author->id]);
+        $forum = $generator->create_module('forum', [
+            'course' => $course->id,
+            'showinmycourses' => 1,
+            'trackingtype' => FORUM_TRACKING_FORCED,
+            'groupmode' => SEPARATEGROUPS,
+        ]);
+        $generator->get_plugin_generator('mod_forum')->create_discussion((object)[
+            'course' => $course->id,
+            'forum' => $forum->id,
+            'userid' => $author->id,
+            'groupid' => $group->id,
+        ]);
+        $result = $this->get_result($course->id);
+        $this->assertSame(0, $result['count']);
     }
 }
