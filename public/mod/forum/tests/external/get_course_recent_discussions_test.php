@@ -86,4 +86,38 @@ final class get_course_recent_discussions_test extends \core_external\tests\exte
         $this->setUser($user);
         $this->assertEmpty(get_course_recent_discussions::execute($course->id)['discussions']);
     }
+
+    public function test_recent_summary_uses_bounded_keyset_across_busy_discussions(): void {
+        $this->resetAfterTest();
+
+        $generator = self::getDataGenerator();
+        $student = $generator->create_user();
+        $course = $generator->create_course();
+        $generator->enrol_user($student->id, $course->id);
+        $forum = $generator->create_module('forum', [
+            'course' => $course->id, 'showinmycourses' => 1,
+        ]);
+        $fg = $generator->get_plugin_generator('mod_forum');
+        $earlier = $fg->create_discussion((object)[
+            'forum' => $forum->id, 'course' => $course->id, 'userid' => $student->id,
+            'name' => 'Earlier discussion', 'timecreated' => time() - 900,
+        ]);
+        $busy = $fg->create_discussion((object)[
+            'forum' => $forum->id, 'course' => $course->id, 'userid' => $student->id,
+            'name' => 'Busy discussion', 'timecreated' => time() - 600,
+        ]);
+        for ($index = 0; $index < 105; $index++) {
+            $fg->create_post((object)[
+                'discussion' => $busy->id, 'parent' => $busy->firstpost,
+                'userid' => $student->id, 'created' => time() - 500 + $index,
+            ]);
+        }
+
+        $this->setUser($student);
+        $result = get_course_recent_discussions::execute($course->id);
+        $ids = array_column($result['discussions'], 'subject');
+        $this->assertCount(2, $ids);
+        $this->assertContains('Busy discussion', $ids);
+        $this->assertContains('Earlier discussion', $ids);
+    }
 }

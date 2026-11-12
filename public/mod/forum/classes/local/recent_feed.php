@@ -313,6 +313,9 @@ final class recent_feed {
                  WHERE d.forum {$insql} AND p.deleted = 0 {$filtersql}";
 
         $seen = $state['seen'];
+        // Reuse discussion records across query batches when a busy topic has
+        // many replies. Each record is still checked against post visibility.
+        $discussioncache = [];
         $lastposition = ['time' => $state['time'], 'post' => $state['post']];
         $rawitems = [];
         $hasmore = false;
@@ -338,16 +341,19 @@ final class recent_feed {
                 break;
             }
 
-            $ids = array_unique(array_column(array_values($posts), 'discussion'));
-            $discussions = $DB->get_records_list('forum_discussions', 'id', $ids);
+            $ids = array_unique(array_map('intval', array_column(array_values($posts), 'discussion')));
+            $missing = array_values(array_diff($ids, array_keys($discussioncache)));
+            if ($missing) {
+                $discussioncache += $DB->get_records_list('forum_discussions', 'id', $missing);
+            }
             foreach ($posts as $post) {
                 $discussionid = (int)$post->discussion;
                 $allowed = false;
-                if (!isset($seen[$discussionid]) && isset($discussions[$discussionid], $forums[$post->forumid])) {
+                if (!isset($seen[$discussionid]) && isset($discussioncache[$discussionid], $forums[$post->forumid])) {
                     $forum = $forums[$post->forumid];
                     $context = $modulemap[$post->forumid];
                     $allowed = forum_user_can_see_post(
-                        $forum, $discussions[$discussionid], $post, $USER, $context['cm']);
+                        $forum, $discussioncache[$discussionid], $post, $USER, $context['cm']);
                 }
 
                 if ($allowed && count($rawitems) === self::PAGE_SIZE) {
@@ -365,7 +371,7 @@ final class recent_feed {
                 $seen[$discussionid] = true;
                 $rawitems[] = [
                     'post' => $post,
-                    'discussion' => $discussions[$discussionid],
+                    'discussion' => $discussioncache[$discussionid],
                     'forum' => $forum,
                     'course' => $context['course'],
                     'context' => $context['context'],

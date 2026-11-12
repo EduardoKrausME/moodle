@@ -70,14 +70,26 @@ final class recent_discussions {
                        p.privatereplyto, p.deleted, d.forum AS forumid
                   FROM {forum_posts} p
                   JOIN {forum_discussions} d ON d.id = p.discussion
-                 WHERE d.forum {$insql}
-              ORDER BY p.created DESC, p.id DESC";
+                 WHERE d.forum {$insql} AND p.deleted = 0";
 
         $visible = [];
         $seen = [];
-        // At most four batched queries, not a query per forum or per course activity.
-        for ($offset = 0; $offset < self::MAX_CANDIDATES; $offset += self::BATCH_SIZE) {
-            $posts = $DB->get_records_sql($sql, $params, $offset, self::BATCH_SIZE);
+        $lastcreated = 0;
+        $lastpostid = 0;
+        // Use a bounded keyset rather than increasingly costly OFFSET scans.
+        // Only three visible discussions are returned, regardless of forum count.
+        for ($scanned = 0; $scanned < self::MAX_CANDIDATES; $scanned += self::BATCH_SIZE) {
+            $seek = '';
+            $seekparams = $params;
+            if ($lastpostid > 0) {
+                $seek = ' AND (p.created < :recentbefore OR ' .
+                    '(p.created = :recentequal AND p.id < :recentpost))';
+                $seekparams['recentbefore'] = $lastcreated;
+                $seekparams['recentequal'] = $lastcreated;
+                $seekparams['recentpost'] = $lastpostid;
+            }
+            $posts = $DB->get_records_sql(
+                $sql . $seek . ' ORDER BY p.created DESC, p.id DESC', $seekparams, 0, self::BATCH_SIZE);
             if (!$posts) {
                 break;
             }
@@ -120,6 +132,9 @@ final class recent_discussions {
             if (count($posts) < self::BATCH_SIZE) {
                 break;
             }
+            $lastpost = end($posts);
+            $lastcreated = (int)$lastpost->created;
+            $lastpostid = (int)$lastpost->id;
         }
 
         if (!$visible) {
