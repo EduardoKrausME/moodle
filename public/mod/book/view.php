@@ -31,6 +31,7 @@ $id        = optional_param('id', 0, PARAM_INT);        // Course Module ID
 $bid       = optional_param('b', 0, PARAM_INT);         // Book id
 $chapterid = optional_param('chapterid', 0, PARAM_INT); // Chapter ID
 $edit      = optional_param('edit', -1, PARAM_BOOL);    // Edit mode
+$requestedchapterid = $chapterid; // Preserve whether a specific chapter was requested.
 
 // =========================================================================
 // security checks START - teachers edit; students view
@@ -135,6 +136,7 @@ if (!$chapterid) {
                 'chapterid' => $ch->id,
             ]))->out(false),
             'current' => (int) $ch->id === (int) $chapter->id,
+            'visited' => false,
             'hidden' => (bool) $ch->hidden,
             'subchapters' => [],
             'hassubchapters' => false,
@@ -147,6 +149,58 @@ if (!$chapterid) {
             $courseindexchapters[] = $entry;
         }
     }
+    // Opening a Book without a chapter ID must not reset the last chapter read.
+    // Fetch the previous position before optionally marking the landing chapter as visited.
+    $readinguserid = (isloggedin() && !isguestuser()) ? (int) $USER->id : 0;
+    $previousreading = null;
+    if ($readinguserid && !$requestedchapterid) {
+        $previousreading = \mod_book\reading_progress::get_progress((int) $book->id, $chapters,
+            $readinguserid, $viewhidden);
+    }
+
+    $trackreading = (bool) $readinguserid && ($requestedchapterid ||
+        empty($previousreading['lastchapterid']));
+    book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapter->id, $chapters),
+        $course, $cm, $context, $trackreading);
+
+    $readinghtml = '';
+    if ($readinguserid) {
+        $reading = \mod_book\reading_progress::get_progress((int) $book->id, $chapters,
+            $readinguserid, $viewhidden);
+        $resume = null;
+        if (!$requestedchapterid && !empty($previousreading['lastchapterid']) &&
+                $previousreading['lastchapterid'] != $chapter->id) {
+            $lastid = $previousreading['lastchapterid'];
+            $lasttitle = book_get_chapter_title($lastid, $chapters, $book, $context);
+            $resume = [
+                'url' => (new moodle_url('/mod/book/view.php', [
+                    'id' => $cm->id,
+                    'chapterid' => $lastid,
+                ]))->out(false),
+                'title' => trim(html_entity_decode(strip_tags($lasttitle), ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+                'label' => get_string('continuereading', 'mod_book'),
+            ];
+        }
+
+        // Annotate the already-rendered course index links with visited state.
+        foreach ($courseindexchapters as &$parententry) {
+            $parententry['visited'] = isset($reading['visitedids'][$parententry['id']]);
+            foreach ($parententry['subchapters'] as &$subentry) {
+                $subentry['visited'] = isset($reading['visitedids'][$subentry['id']]);
+            }
+            unset($subentry);
+        }
+        unset($parententry);
+
+        $readinghtml = $OUTPUT->render_from_template('mod_book/reading_progress', [
+            'label' => get_string('readingprogress', 'mod_book'),
+            'visitedcount' => $reading['visitedcount'],
+            'totalcount' => $reading['totalcount'],
+            'percent' => $reading['percent'],
+            'resume' => $resume,
+        ]);
+    }
+
     $courseindexhtml = $OUTPUT->render_from_template('mod_book/courseindex_chapters', [
         'cmid' => (int) $cm->id,
         'toclabel' => get_string('toc', 'mod_book'),
@@ -160,9 +214,9 @@ if (!$chapterid) {
         'collapselabel' => get_string('collapse', 'core'),
         'hideoriginaltoc' => !$edit,
     ]]);
-    book_view($book, $chapter, \mod_book\helper::is_last_visible_chapter($chapter->id, $chapters), $course, $cm, $context);
 
     echo $OUTPUT->header();
+    echo $readinghtml;
 
     // The chapter itself.
     $hidden = $chapter->hidden ? ' dimmed_text' : null;
