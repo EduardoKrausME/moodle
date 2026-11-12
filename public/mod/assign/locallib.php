@@ -6248,18 +6248,22 @@ class assign {
             $total = count($memberids);
 
             if ($total > 0 && is_object($teamsubmission)) {
-                [$insql, $params] = $DB->get_in_or_equal($memberids, SQL_PARAMS_NAMED, 'groupmember');
-                $params['assignmentid'] = $settings->id;
-                $params['attemptnumber'] = $teamsubmission->attemptnumber;
-                $params['submitted'] = ASSIGN_SUBMISSION_STATUS_SUBMITTED;
-                $sql = "SELECT COUNT(DISTINCT userid)
-                          FROM {assign_submission}
-                         WHERE assignment = :assignmentid
-                           AND groupid = 0
-                           AND attemptnumber = :attemptnumber
-                           AND status = :submitted
-                           AND userid $insql";
-                $confirmed = (int) $DB->count_records_sql($sql, $params);
+                // Chunk large default groups to stay within database parameter limits.
+                // Each participant occurs once, so the partial counts can be summed.
+                foreach (array_chunk($memberids, 500) as $batch) {
+                    [$insql, $params] = $DB->get_in_or_equal($batch, SQL_PARAMS_NAMED, 'groupmember');
+                    $params['assignmentid'] = $settings->id;
+                    $params['attemptnumber'] = $teamsubmission->attemptnumber;
+                    $params['submitted'] = ASSIGN_SUBMISSION_STATUS_SUBMITTED;
+                    $sql = "SELECT COUNT(DISTINCT userid)
+                              FROM {assign_submission}
+                             WHERE assignment = :assignmentid
+                               AND groupid = 0
+                               AND attemptnumber = :attemptnumber
+                               AND status = :submitted
+                               AND userid $insql";
+                    $confirmed += (int) $DB->count_records_sql($sql, $params);
+                }
             }
             // Previous attempts must not count as the current learner's confirmation.
             $myconfirmed = is_object($teamsubmission) &&
