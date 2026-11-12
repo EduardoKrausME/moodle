@@ -233,6 +233,13 @@ final class solution_manager {
                 }
             }
             $transaction->allow_commit();
+        } catch (\Throwable $e) {
+            // A delegated transaction must be explicitly rolled back if any
+            // write fails; leaving it open causes Moodle transaction errors.
+            if (isset($transaction)) {
+                $transaction->rollback($e);
+            }
+            throw $e;
         } finally {
             $lock->release();
         }

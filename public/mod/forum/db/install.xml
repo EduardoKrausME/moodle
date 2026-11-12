@@ -122,7 +122,6 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="discussionunique" UNIQUE="true" FIELDS="discussionid"/>
-        <INDEX NAME="post" UNIQUE="false" FIELDS="postid"/>
         <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
       </INDEXES>
     </TABLE>

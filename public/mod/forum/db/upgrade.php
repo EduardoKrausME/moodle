@@ -121,7 +121,6 @@ function xmldb_forum_upgrade($oldversion) {
             $table->add_key('discussion', XMLDB_KEY_FOREIGN, ['discussionid'], 'forum_discussions', ['id']);
             $table->add_key('post', XMLDB_KEY_FOREIGN, ['postid'], 'forum_posts', ['id']);
             $table->add_index('discussionunique', XMLDB_INDEX_UNIQUE, ['discussionid']);
-            $table->add_index('post', XMLDB_INDEX_NOTUNIQUE, ['postid']);
             $table->add_index('userid', XMLDB_INDEX_NOTUNIQUE, ['userid']);
             $dbman->create_table($table);
         }
