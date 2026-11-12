@@ -103,7 +103,7 @@ final class chapter_management_test extends \advanced_testcase {
         try {
             chapter_management::duplicate($book, $first->id, $context, $revision - 1);
             $this->fail('Stale editor revision was accepted.');
-        } catch (\\moodle_exception $e) {
+        } catch (\moodle_exception $e) {
             $this->assertSame('chapterorderchanged', $e->errorcode);
         }
         $this->assertSame(3, $DB->count_records('book_chapters', ['bookid' => $book->id]));
