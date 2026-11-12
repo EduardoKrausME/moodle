@@ -50,6 +50,38 @@
             </dl>
         {{/hasgrade}}
     </div>
+    {{#availability}}
+        <section class="assign-availability mt-3" aria-labelledby="assign-availability-title">
+            <div class="assign-availability-heading">
+                <h3 id="assign-availability-title" class="h5 mb-0">{{#str}}availabilityheading, mod_assign{{/str}}</h3>
+                <span class="assign-availability-state assign-availability-state--{{state}}">{{label}}</span>
+            </div>
+            {{#hasdates}}
+                <ol class="assign-availability-timeline">
+                    {{#dates}}
+                        <li class="assign-availability-event{{#extension}} assign-availability-event--extension{{/extension}}">
+                            <span class="assign-availability-event-label">{{label}}</span>
+                            <time datetime="{{datetime}}">{{value}}</time>
+                        </li>
+                    {{/dates}}
+                </ol>
+            {{/hasdates}}
+            {{#timeleft}}
+                <p class="assign-availability-timeleft">
+                    {{#str}}availabilitytimeremaining, mod_assign{{/str}}: <strong>{{timeleft}}</strong>
+                </p>
+            {{/timeleft}}
+            {{#latenotice}}
+                <p class="assign-availability-notice">{{latenotice}}</p>
+            {{/latenotice}}
+            {{#timelimit}}
+                <div class="assign-availability-limit">
+                    <strong>{{#str}}timelimit, mod_assign{{/str}}: {{timelimit}}</strong>
+                    <p class="mb-0">{{timerhint}}</p>
+                </div>
+            {{/timelimit}}
+        </section>
+    {{/availability}}
     {{#locked}}
         <p class="alert alert-warning mt-3 mb-0">{{#str}}submissionslocked, mod_assign{{/str}}</p>
     {{/locked}}
