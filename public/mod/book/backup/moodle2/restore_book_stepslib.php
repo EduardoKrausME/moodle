@@ -36,6 +36,7 @@ class restore_book_activity_structure_step extends restore_activity_structure_st
         $paths[] = new restore_path_element('book_chapter', '/activity/book/chapters/chapter');
         $paths[] = new restore_path_element('book_chapter_tag', '/activity/book/chaptertags/tag');
         $paths[] = new restore_path_element('book_reading', '/activity/book/readings/reading');
+        $paths[] = new restore_path_element('book_personalrecord', '/activity/book/personalrecords/personalrecord');
 
         // Return the paths wrapped into standard activity structure
         return $this->prepare_activity_structure($paths);
@@ -107,6 +108,36 @@ class restore_book_activity_structure_step extends restore_activity_structure_st
             ])) {
             $DB->insert_record('book_chapter_reads', $record);
         }
+    }
+
+    /**
+     * Restore private notes and bookmarks only when the user and chapter are mapped.
+     *
+     * @param array $data Serialized user record.
+     */
+    protected function process_book_personalrecord($data) {
+        global $DB;
+
+        $data = (object) $data;
+        $userid = $this->get_mappingid('user', $data->userid);
+        $chapterid = $this->get_mappingid('book_chapter', $data->chapterid);
+        if (!$userid || !$chapterid) {
+            return;
+        }
+
+        $bookid = $this->get_new_parentid('book');
+        $conditions = [
+            'bookid' => $bookid, 'chapterid' => $chapterid, 'userid' => $userid,
+        ];
+        if ($DB->record_exists('book_chapter_userdata', $conditions)) {
+            return;
+        }
+        $DB->insert_record('book_chapter_userdata', (object) ($conditions + [
+            'favourite' => (int) $data->favourite,
+            'note' => (string) $data->note,
+            'timecreated' => (int) $data->timecreated,
+            'timemodified' => (int) $data->timemodified,
+        ]));
     }
 
     protected function process_book_chapter_tag($data) {
