@@ -123,3 +123,13 @@ $string['tagsdeleted'] = 'Book tags have been deleted';
 // Deprecated since Moodle 5.3.
 $string['navnext'] = 'Next';
 $string['navprev'] = 'Previous';
+$string['readingprogress'] = 'Reading progress';
+$string['continuereading'] = 'Continue reading';
+$string['chaptervisited'] = 'Visited chapter';
+$string['resetbookreading'] = 'Delete book reading history';
+$string['privacy:metadata:book_chapter_reads'] = 'The chapters opened by a reader, including their first and most recent view times.';
+$string['privacy:metadata:book_chapter_reads:bookid'] = 'The book containing the visited chapter.';
+$string['privacy:metadata:book_chapter_reads:chapterid'] = 'The chapter that was visited.';
+$string['privacy:metadata:book_chapter_reads:userid'] = 'The reader\'s user ID.';
+$string['privacy:metadata:book_chapter_reads:firstviewed'] = 'The first time this chapter was visited.';
+$string['privacy:metadata:book_chapter_reads:lastviewed'] = 'The most recent time this chapter was visited.';
