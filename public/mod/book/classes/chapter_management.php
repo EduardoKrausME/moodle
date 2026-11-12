@@ -79,37 +79,42 @@ final class chapter_management {
         global $DB;
 
         $transaction = $DB->start_delegated_transaction();
-        $book = $DB->get_record('book', ['id' => $book->id], '*', MUST_EXIST);
-        if ((int) $book->revision !== $expectedrevision) {
-            throw new moodle_exception('chapterorderchanged', 'mod_book');
-        }
-
-        $chapters = $DB->get_records('book_chapters', ['bookid' => $book->id],
-            'pagenum ASC, id ASC');
-        $order = self::validate_order($chapters, $groups);
-        $changed = [];
-        $pagenum = 1;
-
-        foreach ($order as $id => $subchapter) {
-            $chapter = $chapters[$id];
-            if ((int) $chapter->pagenum !== $pagenum || (int) $chapter->subchapter !== $subchapter) {
-                $chapter->pagenum = $pagenum;
-                $chapter->subchapter = $subchapter;
-                $DB->update_record('book_chapters', $chapter);
-                $changed[] = $chapter;
+        try {
+            $book = $DB->get_record('book', ['id' => $book->id], '*', MUST_EXIST);
+            if ((int) $book->revision !== $expectedrevision) {
+                throw new moodle_exception('chapterorderchanged', 'mod_book');
             }
-            $pagenum++;
-        }
 
-        if ($changed) {
-            $DB->set_field('book', 'revision', (int) $book->revision + 1, ['id' => $book->id]);
-            foreach ($changed as $chapter) {
-                \mod_book\event\chapter_updated::create_from_chapter($book, $context, $chapter)->trigger();
+            $chapters = $DB->get_records('book_chapters', ['bookid' => $book->id],
+                'pagenum ASC, id ASC');
+            $order = self::validate_order($chapters, $groups);
+            $changed = [];
+            $pagenum = 1;
+
+            foreach ($order as $id => $subchapter) {
+                $chapter = $chapters[$id];
+                if ((int) $chapter->pagenum !== $pagenum || (int) $chapter->subchapter !== $subchapter) {
+                    $chapter->pagenum = $pagenum;
+                    $chapter->subchapter = $subchapter;
+                    $DB->update_record('book_chapters', $chapter);
+                    $changed[] = $chapter;
+                }
+                $pagenum++;
             }
-        }
 
-        $transaction->allow_commit();
-        return (int) $book->revision + ($changed ? 1 : 0);
+            if ($changed) {
+                $DB->set_field('book', 'revision', (int) $book->revision + 1, ['id' => $book->id]);
+                foreach ($changed as $chapter) {
+                    \mod_book\event\chapter_updated::create_from_chapter($book, $context, $chapter)->trigger();
+                }
+            }
+
+            $transaction->allow_commit();
+            return (int) $book->revision + ($changed ? 1 : 0);
+        } catch (\Throwable $e) {
+            $transaction->rollback($e);
+            throw $e;
+        }
     }
 
     /**
