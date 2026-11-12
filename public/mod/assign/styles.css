@@ -1304,3 +1304,89 @@ body.path-mod-assign [data-region="grade-panel"] .mform .fitem.has-popout .felem
 .path-mod-assign .initialsdropdown::after {
     content: '';
 }
+
+/* Assignment landing page: leave the grading workspace and native submission controls unchanged. */
+.path-mod-assign .assign-landing {
+    display: grid;
+    gap: 1.25rem;
+    margin-block: 1rem 2rem;
+}
+
+.path-mod-assign .assign-landing > .gradingsummary,
+.path-mod-assign .assign-landing > .submissionstatustable,
+.path-mod-assign .assign-landing > .feedback {
+    margin: 0;
+    padding: 1.25rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: var(--bs-border-radius-lg, 0.75rem);
+    background-color: var(--bs-body-bg, #fff);
+}
+
+.path-mod-assign .assign-landing .gradingsummarytable,
+.path-mod-assign .assign-landing .submissionsummarytable,
+.path-mod-assign .assign-landing .feedbacktable {
+    margin-top: 0.75rem;
+}
+
+.path-mod-assign .assign-landing .gradingsummarytable .generaltable,
+.path-mod-assign .assign-landing .submissionsummarytable .generaltable,
+.path-mod-assign .assign-landing .feedbacktable .generaltable {
+    margin-bottom: 0;
+}
+
+.path-mod-assign .assign-landing-overview {
+    padding: 1.5rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: var(--bs-border-radius-lg, 0.75rem);
+    background: var(--bs-body-bg, #fff);
+}
+
+.path-mod-assign .assign-landing-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: 1rem;
+}
+
+.path-mod-assign .assign-landing-overview-item {
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: var(--bs-border-radius, 0.375rem);
+    background: var(--bs-secondary-bg, #f8f9fa);
+}
+
+.path-mod-assign .assign-landing-overview-item dt {
+    margin-bottom: 0.5rem;
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.path-mod-assign .assign-landing-overview-item dd {
+    margin-bottom: 0;
+    overflow-wrap: anywhere;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.path-mod-assign .assign-landing-overview-item .assign-landing-submitted {
+    color: var(--bs-success-text-emphasis, #0a3622);
+}
+
+.path-mod-assign .assign-landing-actions .container-fluid {
+    padding-inline: 0;
+    margin-bottom: 0 !important;
+}
+
+.path-mod-assign .assign-landing-actions .d-flex {
+    align-items: center;
+}
+
+@media (max-width: 575.98px) {
+    .path-mod-assign .assign-landing-overview,
+    .path-mod-assign .assign-landing > .gradingsummary,
+    .path-mod-assign .assign-landing > .submissionstatustable,
+    .path-mod-assign .assign-landing > .feedback {
+        padding: 1rem;
+    }
+}

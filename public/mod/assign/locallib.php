@@ -6180,24 +6180,33 @@ class assign {
      * @param bool $showlinks - Return plain text or links to the profile
      * @return string - the html summary
      */
-    public function view_student_summary($user, $showlinks) {
-
+    public function view_student_summary($user, $showlinks, string $actionbar = '') {
         $o = '';
 
         if ($this->can_view_submission($user->id)) {
+            // Reuse the same visibility checks for the overview and the existing summary.
+            $feedbackstatus = $this->get_assign_feedback_status_renderable($user);
             if (has_capability('mod/assign:viewownsubmissionsummary', $this->get_context(), $user, false)) {
-                // The user can view the submission summary.
                 $submissionstatus = $this->get_assign_submission_status_renderable($user, $showlinks);
+
+                // Only the activity landing page passes an action bar. Other consumers keep their original output.
+                if ($actionbar !== '') {
+                    $o .= $this->get_renderer()->render_submission_overview($submissionstatus, $feedbackstatus);
+                }
+
+                $o .= $actionbar;
                 $o .= $this->get_renderer()->render($submissionstatus);
+            } else {
+                // Do not hide permitted submission actions when the summary itself is restricted.
+                $o .= $actionbar;
             }
 
-            // If there is a visible grade, show the feedback.
-            $feedbackstatus = $this->get_assign_feedback_status_renderable($user);
+            // Retain the native gradebook visibility rules and feedback plugin renderers.
             if ($feedbackstatus) {
                 $o .= $this->get_renderer()->render($feedbackstatus);
             }
 
-            // If there is more than one submission, show the history.
+            // Preserve the existing attempt history, including plugin summaries.
             $history = $this->get_assign_attempt_history_renderable($user);
             if (count($history->submissions) > 1) {
                 $o .= $this->get_renderer()->render($history);
@@ -6618,6 +6627,9 @@ class assign {
             }
         }
 
+        // Keep the native activity header and plugin headers outside the landing layout.
+        $o .= \\html_writer::start_tag('div', ['class' => 'assign-landing']);
+
         if ($this->can_view_grades()) {
             $markingworkflow =
                 property_exists($this->get_instance(), 'markingworkflow') &&
@@ -6631,9 +6643,12 @@ class assign {
         }
 
         if ($this->can_view_submission($USER->id)) {
-            $o .= $this->view_submission_action_bar($instance, $USER);
-            $o .= $this->view_student_summary($USER, true);
+            // Pass the existing action menu unchanged so timed assignments and submission plugins retain their behaviour.
+            $actionbar = $this->view_submission_action_bar($instance, $USER);
+            $o .= $this->view_student_summary($USER, true, $actionbar);
         }
+
+        $o .= \\html_writer::end_tag('div');
 
         $o .= $this->view_footer();
 

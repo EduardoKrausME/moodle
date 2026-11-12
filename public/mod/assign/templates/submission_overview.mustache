@@ -1,0 +1,56 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+}}
+{{!
+    @template mod_assign/submission_overview
+
+    Student-facing status, deadline and visible grade summary on the assignment landing page.
+    Native submission controls, feedback and plugin output are rendered separately.
+
+    Example context (json):
+    {
+        "submissionstatus": "Submitted for grading",
+        "gradingstatus": "Not graded",
+        "duedate": "Friday, 20 November 2026, 11:59 PM",
+        "grade": "",
+        "hasgrade": false,
+        "locked": false,
+        "submitted": true
+    }
+}}
+<section class="assign-landing-overview" aria-labelledby="assign-landing-overview-heading">
+    <h2 id="assign-landing-overview-heading" class="h4 mb-3">{{#str}}submissionstatusheading, mod_assign{{/str}}</h2>
+    <div class="assign-landing-overview-grid">
+        <dl class="assign-landing-overview-item mb-0">
+            <dt>{{#str}}submissionstatus, mod_assign{{/str}}</dt>
+            <dd{{#submitted}} class="assign-landing-submitted"{{/submitted}}>{{submissionstatus}}</dd>
+        </dl>
+        {{#duedate}}
+            <dl class="assign-landing-overview-item mb-0">
+                <dt>{{#str}}duedate, mod_assign{{/str}}</dt>
+                <dd>{{duedate}}</dd>
+            </dl>
+        {{/duedate}}
+        <dl class="assign-landing-overview-item mb-0">
+            <dt>{{#str}}gradingstatus, mod_assign{{/str}}</dt>
+            <dd>{{gradingstatus}}</dd>
+        </dl>
+        {{#hasgrade}}
+            <dl class="assign-landing-overview-item mb-0 assign-landing-overview-grade">
+                <dt>{{#str}}gradenoun{{/str}}</dt>
+                <dd>{{grade}}</dd>
+            </dl>
+        {{/hasgrade}}
+    </div>
+    {{#locked}}
+        <p class="alert alert-warning mt-3 mb-0">{{#str}}submissionslocked, mod_assign{{/str}}</p>
+    {{/locked}}
+</section>

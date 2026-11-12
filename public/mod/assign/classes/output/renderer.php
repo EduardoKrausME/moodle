@@ -652,6 +652,66 @@ class renderer extends \plugin_renderer_base {
     }
 
     /**
+     * Render the at-a-glance student overview on the assignment landing page.
+     *
+     * This is presentation only: submission buttons and plugin details are still
+     * rendered by their existing components, and grade visibility comes from
+     * get_assign_feedback_status_renderable().
+     *
+     * @param \\assign_submission_status $status Status already checked for the viewer.
+     * @param \\assign_feedback_status|null $feedback Feedback already checked for gradebook visibility.
+     * @return string
+     */
+    public function render_submission_overview(
+        \\assign_submission_status $status,
+        ?\\assign_feedback_status $feedback = null
+    ): string {
+        if ($status->view !== \\assign_submission_status::STUDENT_VIEW) {
+            return '';
+        }
+
+        $submission = $status->teamsubmissionenabled ? $status->teamsubmission : $status->submission;
+        if ($status->teamsubmissionenabled && !$status->submissiongroup && $status->preventsubmissionnotingroup) {
+            $submissionlabel = get_string('nosubmission', 'assign');
+        } else if ($submission && $submission->status !== ASSIGN_SUBMISSION_STATUS_NEW) {
+            $submissionlabel = get_string('submissionstatus_' . $submission->status, 'assign');
+        } else if (!$status->submissionsenabled) {
+            $submissionlabel = get_string('noonlinesubmissions', 'assign');
+        } else {
+            $submissionlabel = get_string('nosubmissionyet', 'assign');
+        }
+
+        if ($status->gradingstatus === ASSIGN_GRADING_STATUS_GRADED ||
+                $status->gradingstatus === ASSIGN_GRADING_STATUS_NOT_GRADED) {
+            $gradinglabel = get_string($status->gradingstatus, 'assign');
+        } else {
+            $gradinglabel = get_string('markingworkflowstate' . $status->gradingstatus, 'assign');
+        }
+
+        $duedate = $status->duedate;
+        if ($duedate > 0 && $status->extensionduedate) {
+            $duedate = $status->extensionduedate;
+        }
+
+        // The feedback renderable is created only if the gradebook permits the viewer to see the grade.
+        // Display plain text in the overview; the full formatted grade and penalty indicators remain below.
+        $grade = '';
+        if ($feedback && isset($feedback->gradefordisplay)) {
+            $grade = trim(html_entity_decode(strip_tags($feedback->gradefordisplay), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        }
+
+        return $this->render_from_template('mod_assign/submission_overview', [
+            'submissionstatus' => $submissionlabel,
+            'gradingstatus' => $gradinglabel,
+            'duedate' => $duedate > 0 ? userdate($duedate) : '',
+            'grade' => $grade,
+            'hasgrade' => $grade !== '',
+            'locked' => $status->locked,
+            'submitted' => $submission && $submission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED,
+        ]);
+    }
+
+    /**
      * Render a table containing the current status of the submission.
      *
      * @param assign_submission_status $status
