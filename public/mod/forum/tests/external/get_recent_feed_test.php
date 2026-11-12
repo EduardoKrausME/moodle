@@ -96,8 +96,8 @@ final class get_recent_feed_test extends \core_external\tests\externallib_testca
         $all = $this->call_feed();
         $this->assertCount(2, $all['items']);
         $ids = array_column($all['items'], 'courseid');
-        $this->assertContains($course->id, $ids);
-        $this->assertContains($othercourse->id, $ids);
+        $this->assertContains((int)$course->id, $ids);
+        $this->assertContains((int)$othercourse->id, $ids);
 
         $filtered = $this->call_feed($course->id);
         $this->assertCount(1, $filtered['items']);

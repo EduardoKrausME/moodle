@@ -164,7 +164,7 @@ final class get_course_unread_counts_test extends \core_external\tests\externall
         $output = get_course_unread_counts::execute([$course->id, $othercourse->id]);
         $output = external_api::clean_returnvalue(get_course_unread_counts::execute_returns(), $output);
         $this->assertCount(1, $output['courses']);
-        $this->assertSame($course->id, $output['courses'][0]['courseid']);
+        $this->assertSame((int)$course->id, $output['courses'][0]['courseid']);
     }
 
     public function test_qanda_hidden_replies_are_not_counted(): void {
