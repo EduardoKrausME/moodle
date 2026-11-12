@@ -22,6 +22,17 @@ namespace mod_book;
  */
 final class reading_progress {
     /**
+     * Opening the Book without an explicit chapter must keep an existing resume position.
+     *
+     * @param int $requestedchapterid Explicit chapter ID, or zero for the Book landing page.
+     * @param int $lastchapterid Last accessible chapter visited, or zero for a new reader.
+     * @return bool Whether to update the visit history for the displayed chapter.
+     */
+    public static function should_track_view(int $requestedchapterid, int $lastchapterid): bool {
+        return $requestedchapterid !== 0 || $lastchapterid === 0;
+    }
+
+    /**
      * Record a deliberate chapter view.
      *
      * @param int $bookid Book instance.
