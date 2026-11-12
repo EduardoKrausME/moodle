@@ -1,0 +1,47 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    @template mod_book/reading_report
+    Participant chapter-visit statistics visible to authorized teachers.
+}}
+<section class="book-reading-report">
+    <p>{{#str}}metricsdisclaimer, mod_book{{/str}}</p>
+    <div class="book-reading-report__actions">
+        <a class="btn btn-outline-primary" href="{{csvurl}}">{{#str}}exportreportcsv, mod_book{{/str}}</a>
+        <a class="btn btn-link" href="{{returnurl}}">{{#str}}returntobook, mod_book{{/str}}</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <caption>{{#str}}readingsummary, mod_book{{/str}} ({{totalusers}})</caption>
+            <thead><tr>
+                <th scope="col">{{#str}}fullname, core{{/str}}</th>
+                <th scope="col">{{#str}}chaptersvisited, mod_book{{/str}}</th>
+                <th scope="col">{{#str}}readingpercent, mod_book{{/str}}</th>
+                <th scope="col">{{#str}}lastreadchapter, mod_book{{/str}}</th>
+                <th scope="col">{{#str}}lastaccessed, mod_book{{/str}}</th>
+            </tr></thead>
+            <tbody>
+                {{#users}}
+                    <tr><th scope="row">{{name}}</th>
+                        <td>{{visited}}/{{total}}</td>
+                        <td>{{percent}}%</td>
+                        <td>{{lastchapter}}</td>
+                        <td>{{lastviewed}}</td>
+                    </tr>
+                {{/users}}
+                {{^users}}
+                    <tr><td colspan="5">{{#str}}noreadingdata, mod_book{{/str}}</td></tr>
+                {{/users}}
+            </tbody>
+        </table>
+    </div>
+    <nav class="book-reading-report__pages">
+        {{#previousurl}}<a class="btn btn-outline-secondary" href="{{previousurl}}">{{#str}}previous, core{{/str}}</a>{{/previousurl}}
+        {{#nexturl}}<a class="btn btn-outline-secondary" href="{{nexturl}}">{{#str}}next, core{{/str}}</a>{{/nexturl}}
+    </nav>
+</section>
