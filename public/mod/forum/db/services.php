@@ -225,6 +225,13 @@ $functions = array(
         'services' => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
 
+    'mod_forum_get_course_unread_counts' => [
+        'classname' => 'mod_forum\\external\\get_course_unread_counts',
+        'methodname' => 'execute',
+        'description' => 'Return visible unread forum post totals for the given accessible courses.',
+        'type' => 'read',
+        'ajax' => true,
+    ],
     'mod_forum_get_course_recent_discussions' => [
         'classname' => 'mod_forum\\external\\get_course_recent_discussions',
         'methodname' => 'execute',

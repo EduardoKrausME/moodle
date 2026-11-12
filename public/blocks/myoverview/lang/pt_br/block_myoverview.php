@@ -6,3 +6,10 @@
 $string['recentforumdiscussions'] = 'Conversas recentes';
 $string['recentforumloading'] = 'Carregando conversas...';
 $string['recentforumempty'] = 'Nenhuma conversa recente disponível';
+$string['forumunreadone'] = '1 não lida';
+$string['forumunreadmany'] = '{$a} não lidas';
+$string['forumunreadpartialone'] = '1 não lida em fóruns rastreados';
+$string['forumunreadpartialmany'] = '{$a} não lidas em fóruns rastreados';
+$string['forumunreadactivity'] = 'Atividade recente';
+$string['forumunreadforumsone'] = 'em 1 fórum';
+$string['forumunreadforumsmany'] = 'em {$a} fóruns';

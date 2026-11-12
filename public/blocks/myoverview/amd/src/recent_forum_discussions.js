@@ -14,6 +14,7 @@ import Ajax from 'core/ajax';
 import * as Templates from 'core/templates';
 import * as Notification from 'core/notification';
 import {get_string as getString} from 'core/str';
+import * as ForumUnreadCounts from 'block_myoverview/forum_unread_counts';
 
 /**
  * Handle lazy loading, including after course pagination or display changes.
@@ -21,6 +22,7 @@ import {get_string as getString} from 'core/str';
  * @param {HTMLElement} root My courses block.
  */
 export const init = root => {
+    ForumUnreadCounts.init(root);
     $(root).on('click', '[data-action="toggle-forum-discussions"]', async event => {
         const button = event.currentTarget;
         const wrapper = button.closest('[data-region="forum-course-summary"]');

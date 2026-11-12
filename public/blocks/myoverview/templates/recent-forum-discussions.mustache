@@ -7,6 +7,8 @@
             aria-controls="forum-course-discussions-{{id}}" aria-expanded="false">
         {{#str}}recentforumdiscussions, block_myoverview{{/str}}
     </button>
+    <span class="badge bg-primary ms-2" data-region="forum-unread-count" hidden></span>
+    <span class="small text-muted ms-2" data-region="forum-unread-status" hidden></span>
     <div id="forum-course-discussions-{{id}}" data-region="forum-discussions-content" hidden
          class="mt-2" aria-live="polite"></div>
 </div>
