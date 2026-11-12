@@ -1,0 +1,212 @@
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+import {get_string as getString} from 'core/str';
+import * as Notification from 'core/notification';
+
+const POST_SELECTOR = '[data-region="post"]';
+const REPLIES_SELECTOR = '[data-region="replies-container"]';
+const ANIMATION_DELAY = 220;
+const HIGHLIGHT_DURATION = 5000;
+
+let highlightedPost = null;
+let highlightTimer = null;
+
+/**
+ * Parse a native forum permalink fragment, ignoring other anchors like #unread.
+ *
+ * @param {string} hash A URL hash.
+ * @returns {number} Post ID or zero.
+ */
+export const getPostIdFromHash = hash => {
+    const match = /^#p([1-9][0-9]*)$/.exec(hash);
+    const id = match ? Number(match[1]) : 0;
+    return Number.isSafeInteger(id) ? id : 0;
+};
+
+/**
+ * Open only the reply branches hiding the requested post. Nested V2 uses
+ * this existing control to keep its show/hide state and animation in sync.
+ *
+ * @param {HTMLElement} post The authorised and rendered target post.
+ * @returns {Promise<boolean>} Whether the target is visible.
+ */
+export const revealPost = async post => {
+    const branches = [];
+    let current = post.parentElement;
+    while (current && current !== document.body) {
+        if (current.matches(REPLIES_SELECTOR)) {
+            branches.unshift(current);
+        }
+        current = current.parentElement;
+    }
+
+    for (const branch of branches) {
+        if (window.getComputedStyle(branch).display !== 'none') {
+            continue;
+        }
+
+        const parent = branch.closest(POST_SELECTOR);
+        const toggle = parent && Array.from(parent.children).find(child =>
+            child.matches('[data-region="replies-visibility-toggle-container"]')
+        );
+        const showButton = toggle && toggle.querySelector('[data-action="show-replies"]');
+        if (!showButton) {
+            // Do not force open arbitrary hidden content without a native control.
+            return false;
+        }
+        showButton.click();
+        // Native Nested V2 animates replies for 150 ms.
+        await new Promise(resolve => window.setTimeout(resolve, ANIMATION_DELAY));
+        if (window.getComputedStyle(branch).display === 'none') {
+            return false;
+        }
+    }
+
+    return post.getClientRects().length > 0;
+};
+
+/**
+ * Present an accessible, non-identifying explanation when a target is absent.
+ */
+const showUnavailable = async() => {
+    const root = document.querySelector('[data-content="forum-discussion"]');
+    if (!root) {
+        return;
+    }
+    let notice = document.getElementById('forum-post-navigation-unavailable');
+    if (notice) {
+        return;
+    }
+    notice = document.createElement('div');
+    notice.id = 'forum-post-navigation-unavailable';
+    notice.className = 'alert alert-info';
+    notice.setAttribute('role', 'status');
+    root.prepend(notice);
+    try {
+        notice.textContent = await getString('postnavigationunavailable', 'mod_forum');
+    } catch (error) {
+        Notification.exception(error);
+    }
+};
+
+/**
+ * For old #pID links in threaded mode, switch temporarily to a complete post
+ * view. The server validates the target before using it.
+ *
+ * @param {number} id Requested post ID.
+ */
+const openFullPost = id => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('targetpost', String(id));
+    url.hash = 'p' + id;
+    window.location.replace(url.href);
+};
+
+/**
+ * Move visual and keyboard focus to an actual rendered post.
+ *
+ * @param {HTMLElement} post Target post.
+ */
+export const focusPost = post => {
+    if (highlightTimer) {
+        window.clearTimeout(highlightTimer);
+    }
+    if (highlightedPost) {
+        highlightedPost.classList.remove('forum-direct-post-target');
+    }
+    highlightedPost = post;
+    post.classList.add('forum-direct-post-target');
+    if (!post.hasAttribute('tabindex')) {
+        post.setAttribute('tabindex', '-1');
+    }
+    post.focus({preventScroll: true});
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    post.scrollIntoView({behavior: reducedMotion ? 'instant' : 'smooth', block: 'center'});
+    highlightTimer = window.setTimeout(() => {
+        post.classList.remove('forum-direct-post-target');
+        if (highlightedPost === post) {
+            highlightedPost = null;
+        }
+    }, HIGHLIGHT_DURATION);
+};
+
+/**
+ * Initialise navigation in all discussion layouts without changing forum view
+ * preferences or marking additional posts read.
+ *
+ * @param {number} validatedPostId Server-approved target from ?targetpost=.
+ * @param {boolean} hasExplicitTarget Whether the URL requested that parameter.
+ */
+export const init = (validatedPostId = 0, hasExplicitTarget = false) => {
+    let navigating = false;
+
+    const navigate = async() => {
+        if (navigating) {
+            return;
+        }
+        const fragmentId = getPostIdFromHash(window.location.hash);
+        if (!fragmentId && !hasExplicitTarget) {
+            return;
+        }
+
+        // Never trust the URL's numeric query value: only PHP's validated ID.
+        if (hasExplicitTarget && !validatedPostId) {
+            await showUnavailable();
+            return;
+        }
+
+        const id = fragmentId || validatedPostId;
+        const post = document.getElementById('p' + id) ||
+            document.querySelector(`${POST_SELECTOR}[data-post-id="${id}"]`);
+        if (!post || !post.matches(POST_SELECTOR)) {
+            await showUnavailable();
+            return;
+        }
+
+        // Threaded replies only render a subject/link, not the actual post.
+        if (post.hasAttribute('data-post-navigation-summary')) {
+            openFullPost(id);
+            return;
+        }
+
+        navigating = true;
+        try {
+            if (await revealPost(post)) {
+                const oldNotice = document.getElementById('forum-post-navigation-unavailable');
+                if (oldNotice) {
+                    oldNotice.remove();
+                }
+                focusPost(post);
+            } else {
+                await showUnavailable();
+            }
+        } finally {
+            navigating = false;
+        }
+    };
+
+    const scheduleNavigation = () => window.requestAnimationFrame(() => {
+        navigate().catch(Notification.exception);
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', scheduleNavigation, {once: true});
+    } else {
+        scheduleNavigation();
+    }
+    window.addEventListener('hashchange', scheduleNavigation);
+    window.addEventListener('pageshow', event => {
+        if (event.persisted) {
+            scheduleNavigation();
+        }
+    });
+};

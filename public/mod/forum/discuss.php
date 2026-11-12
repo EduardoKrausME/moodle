@@ -32,6 +32,7 @@ $mode   = optional_param('mode', 0, PARAM_INT);          // If set, changes the 
 $move   = optional_param('move', 0, PARAM_INT);          // If set, moves this discussion to another forum
 $mark   = optional_param('mark', '', PARAM_ALPHA);       // Used for tracking read posts if user initiated.
 $postid = optional_param('postid', 0, PARAM_INT);        // Used for tracking read posts if user initiated.
+$targetpost = optional_param('targetpost', 0, PARAM_INT); // Post to navigate to from a deep link.
 $pin    = optional_param('pin', -1, PARAM_INT);          // If set, pin or unpin this discussion.
 
 $url = new moodle_url('/mod/forum/discuss.php', array('d'=>$d));
@@ -251,6 +252,19 @@ forum_discussion_view($modcontext, $forumrecord, $discussionrecord);
 
 unset($SESSION->fromdiscussion);
 
+// A fragment such as #p42 never reaches PHP. A dedicated query parameter lets us
+// validate the requested post and render its complete content in threaded mode.
+$postvault = $vaultfactory->get_post_vault();
+$validatedtargetpost = 0;
+if ($targetpost > 0) {
+    $requestedpost = $postvault->get_from_id($targetpost);
+    if ($requestedpost && $requestedpost->get_discussion_id() === $discussion->get_id() &&
+            !$requestedpost->is_deleted() &&
+            $capabilitymanager->can_view_post($USER, $discussion, $requestedpost)) {
+        $validatedtargetpost = $targetpost;
+    }
+}
+
 $saveddisplaymode = get_user_preferences('forum_displaymode', $CFG->forum_displaymode);
 
 if ($mode) {
@@ -269,8 +283,15 @@ if (get_user_preferences('forum_useexperimentalui', false)) {
     }
 }
 
-if ($displaymode != $saveddisplaymode) {
+// Direct links must not change the user's saved display preference.
+if ($displaymode != $saveddisplaymode && !$targetpost) {
     set_user_preference('forum_displaymode', $displaymode);
+}
+
+// In threaded mode replies are rendered as subject-only links. Temporarily use
+// a full-post view so a direct link reaches the actual message in its context.
+if ($validatedtargetpost && $displaymode == FORUM_MODE_THREADED && !$parent) {
+    $displaymode = FORUM_MODE_FLATOLDEST;
 }
 
 if ($parent) {
@@ -282,7 +303,6 @@ if ($parent) {
     $parent = $discussion->get_first_post_id();
 }
 
-$postvault = $vaultfactory->get_post_vault();
 if (!$post = $postvault->get_from_id($parent)) {
     throw new \moodle_exception("notexists", 'forum', "$CFG->wwwroot/mod/forum/view.php?f={$forum->get_id()}");
 }
@@ -316,6 +336,13 @@ $node->display = false;
 if ($node && $post->get_id() != $discussion->get_first_post_id()) {
     $node->add(format_string($post->get_subject()), $PAGE->url);
 }
+
+// The AMD module also supports older links that contain only a #pID fragment.
+// An invalid or inaccessible target is never passed to the browser as approved.
+$PAGE->requires->js_call_amd('mod_forum/post_navigation', 'init', [
+    $validatedtargetpost,
+    $targetpost > 0,
+]);
 
 $isnestedv2displaymode = $displaymode == FORUM_MODE_NESTED_V2;
 $PAGE->set_title("$course->shortname: " . format_string($discussion->get_name()));

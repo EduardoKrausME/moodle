@@ -25,6 +25,7 @@
 
 $string['activitydate:due'] = 'Due:';
 $string['activityoverview'] = 'There are new forum posts';
+$string['postnavigationunavailable'] = 'The requested message is not available to view here. You can still browse the discussion.';
 $string['showinmycourses'] = 'Show discussions in My courses';
 $string['showinmycourses_help'] = 'When enabled, recent conversations from this forum may appear in the expandable summary on My courses. This does not change access rules or email notifications.';
 $string['actionsforgraderinterface'] = 'Actions for the grader interface';

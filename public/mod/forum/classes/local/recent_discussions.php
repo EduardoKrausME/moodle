@@ -36,6 +36,8 @@ final class recent_discussions {
 
         require_once($CFG->dirroot . '/mod/forum/lib.php');
 
+        $urlfactory = \mod_forum\local\container::get_url_factory();
+
         // Use modinfo so activity visibility and access restrictions are applied.
         $modinfo = get_fast_modinfo($course, $USER->id);
         $modulemap = [];
@@ -99,14 +101,17 @@ final class recent_discussions {
 
                 $context = \context_module::instance($cm->id);
                 $seen[$discussionid] = true;
+                // Reuse the native forum permalink and add a server-visible target.
+                // The #pID fragment is kept for compatibility with existing links.
+                $posturl = $urlfactory->get_view_post_url_from_post_id($discussionid, (int)$post->id);
+                $posturl->param('targetpost', (int)$post->id);
                 $visible[] = [
                     'postid' => (int)$post->id,
                     'subject' => format_string($discussion->name, true, ['context' => $context]),
                     'forumname' => format_string($forum->name, true, ['context' => $context]),
                     'userid' => (int)$post->userid,
                     'created' => (int)$post->created,
-                    'url' => (new \moodle_url('/mod/forum/discuss.php', ['d' => $discussionid],
-                        'p' . $post->id))->out(false),
+                    'url' => $posturl->out(false),
                 ];
                 if (count($visible) >= self::MAX_DISCUSSIONS) {
                     break 2;

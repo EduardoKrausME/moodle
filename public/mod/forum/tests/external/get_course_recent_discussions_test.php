@@ -62,6 +62,7 @@ final class get_course_recent_discussions_test extends \core_external\tests\exte
         $this->assertCount(1, $result['discussions']);
         $this->assertSame($reply->id, $result['discussions'][0]['postid']);
         $this->assertStringContainsString('#p' . $reply->id, $result['discussions'][0]['url']);
+        $this->assertStringContainsString('targetpost=' . $reply->id, $result['discussions'][0]['url']);
     }
 
     public function test_hidden_forum_is_not_returned_to_student(): void {

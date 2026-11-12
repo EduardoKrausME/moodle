@@ -332,3 +332,23 @@ span.unread {
 .hr-sect::after {
     margin-left: 15px;
 }
+
+/* Focus a post reached by a permalink, including the Nested V2 layout. */
+#page-mod-forum-discuss .forum-post-container.forum-direct-post-target,
+#page-mod-forum-discuss [data-region="post"].forum-direct-post-target {
+    scroll-margin-top: 6rem;
+}
+
+#page-mod-forum-discuss .forum-direct-post-target > .focus-target,
+#page-mod-forum-discuss .forum-direct-post-target[data-post-navigation-summary] {
+    outline: 3px solid var(--bs-primary, #0d6efd);
+    outline-offset: 3px;
+    border-radius: .5rem;
+    background-color: var(--bs-primary-bg-subtle, #e7f1ff);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-mod-forum-discuss .forum-direct-post-target > .focus-target {
+        transition: none;
+    }
+}
