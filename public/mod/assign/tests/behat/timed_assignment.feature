@@ -52,6 +52,7 @@ Feature: In a timed assignment, students should confirm before starting the time
     And I click on "Begin assignment" "link"
     And I click on "Begin assignment" "button" in the ".modal-footer" "css_element"
     And "#mod_assign_timelimit_block" "css_element" should exist
+    And "#mod_assign_timelimit_block .assign-timer-panel [role='timer'][aria-live='off']" "css_element" should exist
 
   @javascript
   Scenario: Access a timed group assignment from the Dashboard
@@ -81,6 +82,7 @@ Feature: In a timed assignment, students should confirm before starting the time
     And I click on "Begin assignment" "link"
     And I click on "Begin assignment" "button" in the ".modal-footer" "css_element"
     And "#mod_assign_timelimit_block" "css_element" should exist
+    And "#mod_assign_timelimit_block .assign-timer-panel [role='timer'][aria-live='off']" "css_element" should exist
     And I log out
     # Now check the submission has started for the other group member too.
     And I am on the "Group assignment 2" "assign activity" page logged in as student2
