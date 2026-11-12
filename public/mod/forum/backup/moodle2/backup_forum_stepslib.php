@@ -67,6 +67,7 @@ class backup_forum_activity_structure_step extends backup_activity_structure_ste
             'grade_forum',
             'showimmediately',
             'showinmycourses',
+            'allowsolutions',
         ]);
 
         $discussions = new backup_nested_element('discussions');
@@ -75,6 +76,10 @@ class backup_forum_activity_structure_step extends backup_activity_structure_ste
             'name', 'firstpost', 'userid', 'groupid',
             'assessed', 'timemodified', 'usermodified', 'timestart',
             'timeend', 'pinned', 'timelocked'));
+
+        $solutions = new backup_nested_element('solutions');
+        $solution = new backup_nested_element('solution', ['id'],
+            ['postid', 'userid', 'timecreated', 'timemodified']);
 
         $posts = new backup_nested_element('posts');
 
@@ -155,6 +160,9 @@ class backup_forum_activity_structure_step extends backup_activity_structure_ste
 
         $discussion->add_child($posts);
         $posts->add_child($post);
+        // Solutions are restored after post mappings become available.
+        $discussion->add_child($solutions);
+        $solutions->add_child($solution);
 
         $post->add_child($ratings);
         $ratings->add_child($rating);
@@ -176,6 +184,7 @@ class backup_forum_activity_structure_step extends backup_activity_structure_ste
 
             // Need posts ordered by id so parents are always before childs on restore
             $post->set_source_table('forum_posts', array('discussion' => backup::VAR_PARENTID), 'id ASC');
+            $solution->set_source_table('forum_solutions', ['discussionid' => backup::VAR_PARENTID]);
             $discussionsub->set_source_table('forum_discussion_subs', array('discussion' => backup::VAR_PARENTID));
 
             $subscription->set_source_table('forum_subscriptions', array('forum' => backup::VAR_PARENTID));
@@ -214,6 +223,7 @@ class backup_forum_activity_structure_step extends backup_activity_structure_ste
         $discussion->annotate_ids('group', 'groupid');
 
         $post->annotate_ids('user', 'userid');
+        $solution->annotate_ids('user', 'userid');
 
         $discussionsub->annotate_ids('user', 'userid');
 

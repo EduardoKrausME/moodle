@@ -40,6 +40,8 @@ class restore_forum_activity_structure_step extends restore_activity_structure_s
         if ($userinfo) {
             $paths[] = new restore_path_element('forum_discussion', '/activity/forum/discussions/discussion');
             $paths[] = new restore_path_element('forum_post', '/activity/forum/discussions/discussion/posts/post');
+            $paths[] = new restore_path_element('forum_solution',
+                '/activity/forum/discussions/discussion/solutions/solution');
             $paths[] = new restore_path_element('forum_tag', '/activity/forum/poststags/tag');
             $paths[] = new restore_path_element('forum_discussion_sub', '/activity/forum/discussions/discussion/discussion_subs/discussion_sub');
             $paths[] = new restore_path_element('forum_rating', '/activity/forum/discussions/discussion/posts/post/ratings/rating');
@@ -63,6 +65,9 @@ class restore_forum_activity_structure_step extends restore_activity_structure_s
         if (!isset($data->showinmycourses)) {
             // Old backups should keep the new default.
             $data->showinmycourses = 1;
+        }
+        if (!isset($data->allowsolutions)) {
+            $data->allowsolutions = 0;
         }
 
         // Any changes to the list of dates that needs to be rolled should be same during course restore and course reset.
@@ -128,6 +133,35 @@ class restore_forum_activity_structure_step extends restore_activity_structure_s
         // If !post->parent, it's the 1st post. Set it in discussion
         if (empty($data->parent)) {
             $DB->set_field('forum_discussions', 'firstpost', $newitemid, array('id' => $data->discussion));
+        }
+    }
+
+    /**
+     * Restore accepted answers after their native post IDs have been mapped.
+     *
+     * @param array $data Serialized solution.
+     */
+    protected function process_forum_solution($data) {
+        global $DB;
+
+        $data = (object)$data;
+        $data->discussionid = $this->get_new_parentid('forum_discussion');
+        $data->postid = $this->get_mappingid('forum_post', $data->postid);
+        if (!$data->discussionid || !$data->postid) {
+            return;
+        }
+        $post = $DB->get_record('forum_posts', ['id' => $data->postid, 'discussion' => $data->discussionid]);
+        $discussion = $DB->get_record('forum_discussions', ['id' => $data->discussionid]);
+        if (!$post || !$discussion || (int)$post->id === (int)$discussion->firstpost ||
+                !empty($post->privatereplyto) || !empty($post->deleted)) {
+            return;
+        }
+        $data->userid = $this->get_mappingid('user', $data->userid) ?: 0;
+        $data->timecreated = $this->apply_date_offset($data->timecreated);
+        $data->timemodified = $this->apply_date_offset($data->timemodified);
+        unset($data->id);
+        if (!$DB->record_exists('forum_solutions', ['discussionid' => $data->discussionid])) {
+            $DB->insert_record('forum_solutions', $data);
         }
     }
 

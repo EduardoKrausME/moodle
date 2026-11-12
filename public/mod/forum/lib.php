@@ -3171,6 +3171,8 @@ function forum_delete_discussion($discussion, $fulldelete, $course, $cm, $forum)
 
     forum_tp_delete_read_records(-1, -1, $discussion->id);
 
+    $DB->delete_records('forum_solutions', ['discussionid' => $discussion->id]);
+
     // Discussion subscriptions must be removed before discussions because of key constraints.
     $DB->delete_records('forum_discussion_subs', array('discussion' => $discussion->id));
     if (!$DB->delete_records("forum_discussions", array("id" => $discussion->id))) {
@@ -3259,6 +3261,8 @@ function forum_delete_post($post, $children, $course, $cm, $forum, $skipcompleti
         forum_rss_delete_file($forum);
     }
 
+    // Remove accepted-answer references before deleting the source post.
+    $DB->delete_records('forum_solutions', ['postid' => $post->id]);
     if ($DB->delete_records("forum_posts", array("id" => $post->id))) {
 
         forum_tp_delete_read_records(-1, $post->id);
@@ -5100,6 +5104,8 @@ function forum_reset_userdata($data) {
                 core_tag_tag::delete_instances('mod_forum', null, $context->id);
             }
         }
+
+        $DB->delete_records_select('forum_solutions', "discussionid IN ($discussionssql)", $params);
 
         // First delete all read flags.
         $DB->delete_records_select('forum_read', "forumid IN ($forumssql)", $params);
