@@ -87,6 +87,10 @@ if ($mform->is_cancelled()) {
 
 } else if ($data = $mform->get_data()) {
 
+    if (optional_param('previewchapter', null, PARAM_RAW) !== null) {
+        // The editor's submitted HTML and draft files are shown, but nothing is persisted.
+        $previewdata = $data;
+    } else {
     if ($data->id) {
         // store the files
         $data->timemodified = time();
@@ -128,7 +132,19 @@ if ($mform->is_cancelled()) {
     }
 
     book_preload_chapters($book); // fix structure
+
+    if (optional_param('saveandnewchapter', null, PARAM_RAW) !== null) {
+        $saved = $DB->get_record('book_chapters', ['id' => $data->id, 'bookid' => $book->id],
+            '*', MUST_EXIST);
+        redirect(new moodle_url('/mod/book/edit.php', [
+            'cmid' => $cm->id,
+            'pagenum' => $saved->pagenum,
+            'subchapter' => $saved->subchapter,
+        ]), get_string('chaptercreatedsaved', 'mod_book'));
+    }
+
     redirect("view.php?id=$cm->id&chapterid=$data->id");
+    }
 }
 
 // Otherwise fill and print the form.
@@ -145,6 +161,19 @@ $PAGE->activityheader->set_attrs([
 ]);
 
 echo $OUTPUT->header();
+
+if (!empty($previewdata)) {
+    echo $OUTPUT->notification(get_string('previewnotpublished', 'mod_book'), 'info', false);
+    echo $OUTPUT->box_start('generalbox book-chapter-preview');
+    echo $OUTPUT->heading(format_string($previewdata->title, true, ['context' => $context]), 3);
+    $content = $previewdata->content_editor;
+    echo format_text($content['text'], $content['format'], [
+        'context' => $context,
+        'overflowdiv' => true,
+        'noclean' => false,
+    ]);
+    echo $OUTPUT->box_end();
+}
 
 $mform->display();
 
