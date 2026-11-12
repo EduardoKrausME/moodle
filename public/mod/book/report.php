@@ -44,10 +44,10 @@ if ($restrictgroups) {
 $pagesize = 50;
 $totalusers = ($restrictgroups && !$groupids) ? 0 :
     count_enrolled_users($coursecontext, '', $groupids);
-// Moodle 5.x exposes its configurable name fields through core_user\\fields.
+// Moodle 5.x exposes its configurable name fields through core_user\fields.
 $userfields = 'u.id, ' . implode(', ', array_map(
     static fn(string $namefield): string => 'u.' . $namefield,
-    \\core_user\\fields::get_name_fields()
+    \core_user\fields::get_name_fields()
 ));
 $users = ($restrictgroups && !$groupids) ? [] : get_enrolled_users($coursecontext, '', $groupids,
     $userfields, 'u.lastname ASC, u.firstname ASC, u.id ASC', $page * $pagesize, $pagesize);
