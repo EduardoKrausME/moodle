@@ -66,15 +66,20 @@ const initSectionNavigation = (form) => {
                 return;
             }
             event.preventDefault();
-            const toggle = legend.querySelector('a');
+            // The native Moodle toggle is a sibling of the visually hidden legend.
+            const toggle = fieldset.querySelector('a[data-bs-toggle="collapse"][aria-expanded]');
             const collapsed = fieldset.classList.contains('collapsed') ||
                 toggle?.getAttribute('aria-expanded') === 'false';
             if (collapsed && toggle) {
                 toggle.click();
             }
             fieldset.scrollIntoView({block: 'start'});
-            legend.setAttribute('tabindex', '-1');
-            legend.focus({preventScroll: true});
+            if (toggle) {
+                toggle.focus({preventScroll: true});
+            } else {
+                legend.setAttribute('tabindex', '-1');
+                legend.focus({preventScroll: true});
+            }
         });
         item.appendChild(link);
         fragment.appendChild(item);
