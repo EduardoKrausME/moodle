@@ -49,6 +49,7 @@ $string['customtitles_help'] = 'Normally the chapter title is displayed in the t
 
 If the custom titles checkbox is ticked, the chapter title is NOT displayed as a heading above the content. A different title (perhaps longer than the chapter title) may be entered as part of the content.';
 $string['chapters'] = 'Chapters';
+$string['chapterposition'] = 'Chapter {$a->current} of {$a->total}';
 $string['chaptertitle'] = 'Chapter title';
 $string['content'] = 'Content';
 $string['deletechapter'] = 'Delete chapter "{$a}"';
