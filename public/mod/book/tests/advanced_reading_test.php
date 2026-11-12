@@ -121,7 +121,7 @@ final class advanced_reading_test extends \advanced_testcase {
         reading_tools::set_note($book->id, $first->id, $student->id, '<b>Visible</b>');
         $this->assertSame('Visible', reading_tools::get($book->id, $first->id, $student->id)['note']);
         $this->assertSame("'=HYPERLINK(\"x\")", reading_tools::csv_safe('=HYPERLINK("x")'));
-        $this->assertSame("'+SUM(A1:A2)", reading_tools::csv_safe(' +SUM(A1:A2)'));
+        $this->assertSame("' +SUM(A1:A2)", reading_tools::csv_safe(' +SUM(A1:A2)'));
         $this->assertSame('Ordinary text', reading_tools::csv_safe('Ordinary text'));
 
         $this->expectException(\moodle_exception::class);
