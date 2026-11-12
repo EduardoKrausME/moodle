@@ -86,10 +86,17 @@ export const init = root => {
             methodname: 'mod_forum_get_course_unread_counts',
             args: {courseids: ids},
         };
-        Ajax.call([request])[0].then(response => {
-            const counts = new Map(response.courses.map(entry => [entry.courseid, entry]));
-            return Promise.all(nodes.map(node => display(node, counts.get(Number(node.dataset.courseId)))));
-        }).catch(Notification.exception);
+        // The "All" paging option can render more than 96 courses at once.
+        // Keep each request bounded while still avoiding a request per card.
+        for (let offset = 0; offset < ids.length; offset += 96) {
+            const batch = ids.slice(offset, offset + 96);
+            request.args.courseids = batch;
+            const batchNodes = nodes.filter(node => batch.includes(Number(node.dataset.courseId)));
+            Ajax.call([{...request, args: {courseids: batch}}])[0].then(response => {
+                const counts = new Map(response.courses.map(entry => [entry.courseid, entry]));
+                return Promise.all(batchNodes.map(node => display(node, counts.get(Number(node.dataset.courseId)))));
+            }).catch(Notification.exception);
+        }
     };
 
     const scheduleScan = () => {
