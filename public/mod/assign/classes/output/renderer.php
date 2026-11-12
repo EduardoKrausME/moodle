@@ -808,11 +808,25 @@ class renderer extends \plugin_renderer_base {
 
         // Describe only. Native submission flags and buttons still determine which
         // actions the student can perform, including group confirmation rules.
+        $workflowstatus = is_object($submission) ?
+            (string) $submission->status : ASSIGN_SUBMISSION_STATUS_NEW;
+        $waitingforgroup = false;
+        // A required individual confirmation can be complete while the shared
+        // assignment stays a draft. Check the user's record for this attempt.
+        if ($groupconfirmation && $status->teamsubmissionenabled &&
+                is_object($status->teamsubmission) && is_object($status->submission) &&
+                isset($status->teamsubmission->attemptnumber, $status->submission->attemptnumber) &&
+                (int) $status->teamsubmission->attemptnumber === (int) $status->submission->attemptnumber &&
+                $status->submission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+            $workflowstatus = ASSIGN_SUBMISSION_STATUS_SUBMITTED;
+            $waitingforgroup = $status->teamsubmission->status !== ASSIGN_SUBMISSION_STATUS_SUBMITTED;
+        }
         $workflowstate = \mod_assign\local\submission_workflow::describe(
-            is_object($submission) ? (string) $submission->status : ASSIGN_SUBMISSION_STATUS_NEW,
+            $workflowstatus,
             $requiresconfirmation,
             (bool) $status->locked,
-            (bool) $status->cansubmit
+            (bool) $status->cansubmit,
+            $waitingforgroup
         );
         $workflow = null;
         if ($status->submissionsenabled &&

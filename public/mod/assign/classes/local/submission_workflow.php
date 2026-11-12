@@ -34,20 +34,22 @@ final class submission_workflow {
      * @param bool $requiresconfirmation The activity uses the draft/submit flow.
      * @param bool $locked Native submission locked flag.
      * @param bool $canfinalise Native availability of the Submit assignment action.
+     * @param bool $waitingforgroup Viewer confirmed but other team members still have to.
      * @return array Descriptive state for the template.
      */
     public static function describe(
         string $status,
         bool $requiresconfirmation,
         bool $locked,
-        bool $canfinalise
+        bool $canfinalise,
+        bool $waitingforgroup = false
     ): array {
         $sent = $status === 'submitted';
         $draft = $status === 'draft';
         $reopened = $status === 'reopened';
 
         if ($sent) {
-            $state = 'sent';
+            $state = $waitingforgroup ? 'groupwaiting' : 'sent';
         } else if ($locked) {
             $state = 'locked';
         } else if ($draft && $requiresconfirmation) {
