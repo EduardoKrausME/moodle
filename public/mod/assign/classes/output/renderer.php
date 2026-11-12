@@ -705,6 +705,7 @@ class renderer extends \plugin_renderer_base {
      * @param bool $submissionopen Native submission availability for the current viewer.
      * @param bool $requiresconfirmation Native setting requiring a final submission.
      * @param bool $groupconfirmation Whether all team members must confirm.
+     * @param array|null $groupoverview Aggregated, viewer-scoped group submission data.
      * @return string
      */
     public function render_submission_overview(
@@ -712,7 +713,8 @@ class renderer extends \plugin_renderer_base {
         ?\assign_feedback_status $feedback = null,
         bool $submissionopen = false,
         bool $requiresconfirmation = false,
-        bool $groupconfirmation = false
+        bool $groupconfirmation = false,
+        ?array $groupoverview = null
     ): string {
         if ($status->view !== \assign_submission_status::STUDENT_VIEW) {
             return '';
@@ -842,11 +844,31 @@ class renderer extends \plugin_renderer_base {
             ];
         }
 
+        if ($groupoverview !== null) {
+            $state = $groupoverview['state'];
+            $groupoverview['heading'] = get_string('groupoverviewheading', 'assign');
+            $groupoverview['namelabel'] = get_string('groupoverviewnamelabel', 'assign');
+            $groupoverview['statuslabel'] = get_string('groupoverviewstatuslabel', 'assign');
+            $groupoverview['statelabel'] = get_string('groupoverviewstate' . $state, 'assign');
+            $groupoverview['description'] = get_string('groupoverviewdescription' . $state, 'assign');
+            $groupoverview['countlabel'] = get_string('groupoverviewcount', 'assign', (object) [
+                'confirmed' => $groupoverview['confirmed'],
+                'total' => $groupoverview['total'],
+            ]);
+            $groupoverview['pendinglabel'] = get_string('groupoverviewpending', 'assign', $groupoverview['pending']);
+            $groupoverview['progresslabel'] = get_string('groupoverviewprogresslabel', 'assign');
+            $groupoverview['myconfirmednote'] = get_string('groupoverviewmyconfirmed', 'assign');
+            $groupoverview['mypendingnote'] = get_string('groupoverviewmypending', 'assign');
+            $groupoverview['singleconfirmationnote'] = get_string('groupoverviewsingleconfirmation', 'assign');
+            $groupoverview['nomembersnote'] = get_string('groupoverviewnomembers', 'assign');
+        }
+
         return $this->render_from_template('mod_assign/submission_overview', [
             'submissionstatus' => $submissionlabel,
             'gradingstatus' => $gradinglabel,
             'availability' => $availabilityview,
             'workflow' => $workflow,
+            'groupoverview' => $groupoverview,
             'duedate' => $duedate > 0 ? userdate($duedate) : '',
             'grade' => $grade,
             'hasgrade' => $grade !== '',

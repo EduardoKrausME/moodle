@@ -6206,6 +6206,91 @@ class assign {
     }
 
     /**
+     * Prepare only aggregate information about the current viewer's group.
+     *
+     * Group resolution, active participants and submission visibility use native
+     * Moodle APIs. All confirmations are restricted to the current attempt in a
+     * single SQL count; no peer identities or stored files are exposed.
+     *
+     * @param int $userid Current learner.
+     * @param assign_submission_status $status Native submission status.
+     * @param stdClass $settings User-specific assignment settings.
+     * @return array|null Group information or null for other viewers/non-group assignments.
+     */
+    protected function get_group_submission_overview_data(
+        int $userid,
+        assign_submission_status $status,
+        stdClass $settings
+    ): ?array {
+        global $DB, $USER;
+
+        if (!$settings->teamsubmission || (int) $USER->id !== $userid) {
+            return null;
+        }
+
+        $groupcount = count($status->usergroups);
+        $group = $status->submissiongroup;
+        $blocked = !$group && $settings->preventsubmissionnotingroup;
+        $requiresall = (bool) ($settings->requireallteammemberssubmit && $settings->submissiondrafts);
+        $total = 0;
+        $confirmed = 0;
+        $myconfirmed = false;
+        $teamsubmission = $status->teamsubmission;
+
+        if (!$blocked && $requiresall) {
+            $groupid = $group ? (int) $group->id : 0;
+            // Respect Moodle's groupings, enrolled participants and suspended users.
+            $members = $this->get_submission_group_members($groupid, false, true);
+            $memberids = array_values(array_unique(array_map(
+                static fn($member): int => (int) $member->id,
+                $members
+            )));
+            $total = count($memberids);
+
+            if ($total > 0 && is_object($teamsubmission)) {
+                [$insql, $params] = $DB->get_in_or_equal($memberids, SQL_PARAMS_NAMED, 'groupmember');
+                $params['assignmentid'] = $settings->id;
+                $params['attemptnumber'] = $teamsubmission->attemptnumber;
+                $params['submitted'] = ASSIGN_SUBMISSION_STATUS_SUBMITTED;
+                $sql = "SELECT COUNT(DISTINCT userid)
+                          FROM {assign_submission}
+                         WHERE assignment = :assignmentid
+                           AND groupid = 0
+                           AND attemptnumber = :attemptnumber
+                           AND status = :submitted
+                           AND userid $insql";
+                $confirmed = (int) $DB->count_records_sql($sql, $params);
+            }
+            // Previous attempts must not count as the current learner's confirmation.
+            $myconfirmed = is_object($teamsubmission) &&
+                is_object($status->submission) &&
+                (int) $status->submission->attemptnumber === (int) $teamsubmission->attemptnumber &&
+                $status->submission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED;
+        }
+
+        $teamstatus = is_object($teamsubmission) ?
+            (string) $teamsubmission->status : ASSIGN_SUBMISSION_STATUS_NEW;
+        $overview = \mod_assign\local\group_submission_overview::describe(
+            $groupcount,
+            (bool) $settings->preventsubmissionnotingroup,
+            $requiresall,
+            $teamstatus,
+            $total,
+            $confirmed,
+            $myconfirmed,
+            (bool) $status->locked
+        );
+
+        $overview['groupname'] = $blocked ? '' :
+            ($group ? format_string($group->name, false, ['context' => $status->context]) :
+                get_string('defaultteam', 'assign'));
+        $overview['showgroupname'] = !$blocked;
+        $overview['nativestatus'] = get_string('submissionstatus_' . $teamstatus, 'assign');
+
+        return $overview;
+    }
+
+    /**
      * Print 2 tables of information with no action links -
      * the submission summary and the grading summary.
      *
@@ -6229,12 +6314,16 @@ class assign {
                 // Only the activity landing page passes an action bar. Other consumers keep their original output.
                 if ($actionbar !== '') {
                     $settings = $this->get_instance($user->id);
+                    $groupoverview = $this->get_group_submission_overview_data(
+                        (int) $user->id, $submissionstatus, $settings
+                    );
                     $o .= $this->get_renderer()->render_submission_overview(
                         $submissionstatus,
                         $feedbackstatus,
                         $this->submissions_open($user->id),
                         (bool) $settings->submissiondrafts,
-                        (bool) ($settings->teamsubmission && $settings->requireallteammemberssubmit)
+                        (bool) ($settings->teamsubmission && $settings->requireallteammemberssubmit),
+                        $groupoverview
                     );
                 }
 
