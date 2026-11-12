@@ -110,6 +110,7 @@ function book_delete_instance($id) {
     $cm = get_coursemodule_from_instance('book', $id);
     \core_completion\api::update_completion_date_event($cm->id, 'book', $id, null);
 
+    $DB->delete_records('book_chapter_reads', ['bookid' => $book->id]);
     $DB->delete_records('book_chapters', array('bookid'=>$book->id));
     $DB->delete_records('book', array('id'=>$book->id));
 
@@ -161,6 +162,21 @@ function book_reset_userdata($data) {
         ];
     }
 
+    if (!empty($data->reset_book_reading)) {
+        $bookids = $DB->get_fieldset_select('book', 'id', 'course = :courseid', [
+            'courseid' => $data->courseid,
+        ]);
+        if ($bookids) {
+            list($insql, $params) = $DB->get_in_or_equal($bookids, SQL_PARAMS_NAMED);
+            $DB->delete_records_select('book_chapter_reads', "bookid $insql", $params);
+        }
+        $status[] = [
+            'component' => get_string('modulenameplural', 'mod_book'),
+            'item' => get_string('resetbookreading', 'mod_book'),
+            'error' => false,
+        ];
+    }
+
     return $status;
 }
 
@@ -173,6 +189,7 @@ function book_reset_course_form_definition(&$mform) {
     $mform->addElement('header', 'bookheader', get_string('modulenameplural', 'book'));
     $mform->addElement('static', 'bookdelete', get_string('delete'));
     $mform->addElement('checkbox', 'reset_book_tags', get_string('removeallbooktags', 'book'));
+    $mform->addElement('checkbox', 'reset_book_reading', get_string('resetbookreading', 'mod_book'));
 }
 
 /**
@@ -642,7 +659,8 @@ function book_export_contents($cm, $baseurl) {
  * @param  stdClass $context    context object
  * @since Moodle 3.0
  */
-function book_view($book, $chapter, $islastchapter, $course, $cm, $context) {
+function book_view($book, $chapter, $islastchapter, $course, $cm, $context, bool $trackreading = true) {
+    global $USER;
 
     // First case, we are just opening the book.
     if (empty($chapter)) {
@@ -650,6 +668,10 @@ function book_view($book, $chapter, $islastchapter, $course, $cm, $context) {
 
     } else {
         \mod_book\event\chapter_viewed::create_from_chapter($book, $context, $chapter)->trigger();
+        // Do not store personal reading data for guest or anonymous visitors.
+        if ($trackreading && isloggedin() && !isguestuser()) {
+            \mod_book\reading_progress::record_view((int) $book->id, (int) $chapter->id, (int) $USER->id);
+        }
 
         if ($islastchapter) {
             // We cheat a bit here in assuming that viewing the last page means the user viewed the whole book.
