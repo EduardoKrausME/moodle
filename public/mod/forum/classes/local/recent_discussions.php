@@ -21,7 +21,8 @@ defined('MOODLE_INTERNAL') || die();
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class recent_discussions {
-    private const MAX_DISCUSSIONS = 3;
+    /** Maximum number of visible discussions can be configured as 3, 5 or 10. */
+    private const MAX_DISCUSSIONS = 10;
     private const BATCH_SIZE = 100;
     private const MAX_CANDIDATES = 400;
 
@@ -57,7 +58,7 @@ final class recent_discussions {
 
         $forums = $DB->get_records_list('forum', 'id', array_keys($modulemap));
         foreach ($forums as $forumid => $forum) {
-            if (empty($forum->showinmycourses)) {
+            if (!summary_settings::includes_forum($forum)) {
                 unset($forums[$forumid]);
             }
         }
@@ -76,9 +77,11 @@ final class recent_discussions {
         $seen = [];
         $lastcreated = 0;
         $lastpostid = 0;
-        // Use a bounded keyset rather than increasingly costly OFFSET scans.
-        // Only three visible discussions are returned, regardless of forum count.
-        for ($scanned = 0; $scanned < self::MAX_CANDIDATES; $scanned += self::BATCH_SIZE) {
+        // Keep the previously bounded scan, allowing a wider window for 5 or 10 items.
+        $requested = summary_settings::count();
+        $maxcandidates = min(self::MAX_CANDIDATES * 3,
+            self::MAX_CANDIDATES * (int)ceil($requested / 3));
+        for ($scanned = 0; $scanned < $maxcandidates; $scanned += self::BATCH_SIZE) {
             $seek = '';
             $seekparams = $params;
             if ($lastpostid > 0) {
@@ -125,7 +128,7 @@ final class recent_discussions {
                     'created' => (int)$post->created,
                     'url' => $posturl->out(false),
                 ];
-                if (count($visible) >= self::MAX_DISCUSSIONS) {
+                if (count($visible) >= min(self::MAX_DISCUSSIONS, $requested)) {
                     break 2;
                 }
             }

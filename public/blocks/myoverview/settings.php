@@ -33,6 +33,42 @@ if ($ADMIN->fulltree) {
             ''));
 
     // Display Course Categories on Dashboard course items (cards, lists, summary items).
+    // Forum discussion summary preferences apply consistently across the
+    // My courses block and the optional block on a course page.
+    $settings->add(new admin_setting_heading(
+            'block_myoverview/forumsummaryheading',
+            get_string('forumsummarysettings', 'block_myoverview'),
+            get_string('forumsummarysettings_desc', 'block_myoverview')));
+
+    $settings->add(new admin_setting_configselect(
+            'block_myoverview/forumsummarylocation',
+            get_string('forumsummarylocation', 'block_myoverview'),
+            get_string('forumsummarylocation_desc', 'block_myoverview'),
+            'mycourses',
+            [
+                'mycourses' => get_string('forumsummarylocationmycourses', 'block_myoverview'),
+                'course' => get_string('forumsummarylocationcourse', 'block_myoverview'),
+                'hidden' => get_string('forumsummarylocationhidden', 'block_myoverview'),
+            ]));
+
+    $settings->add(new admin_setting_configselect(
+            'block_myoverview/forumsummarycount',
+            get_string('forumsummarycount', 'block_myoverview'),
+            get_string('forumsummarycount_desc', 'block_myoverview'),
+            3,
+            [3 => '3', 5 => '5', 10 => '10']));
+
+    $settings->add(new admin_setting_configselect(
+            'block_myoverview/forumsummarysource',
+            get_string('forumsummarysource', 'block_myoverview'),
+            get_string('forumsummarysource_desc', 'block_myoverview'),
+            'selected',
+            [
+                'selected' => get_string('forumsummarysourceselected', 'block_myoverview'),
+                'all' => get_string('forumsummarysourceall', 'block_myoverview'),
+                'news' => get_string('forumsummarysourcenews', 'block_myoverview'),
+            ]));
+
     $settings->add(new admin_setting_configcheckbox(
             'block_myoverview/displaycategories',
             get_string('displaycategories', 'block_myoverview'),

@@ -81,8 +81,8 @@ final class course_unread_counts {
         $tracked = [];
         $hasuntracked = [];
         foreach ($forums as $forumid => $forum) {
-            // Forum-level opt-out added in item 1.
-            if (empty($forum->showinmycourses)) {
+            // Use the same source selection as the course discussion summary.
+            if (!summary_settings::includes_forum($forum)) {
                 continue;
             }
             $courseid = $modulemap[$forumid]['courseid'];
