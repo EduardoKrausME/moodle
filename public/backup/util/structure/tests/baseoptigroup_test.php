@@ -95,12 +95,40 @@ final class baseoptigroup_test extends \basic_testcase {
         } catch (base_optigroup_exception $e) {
             $this->assertSame('multiple_optigroup_duplicate_element', $e->errorcode);
             $this->assertSame('duplicate', $e->a);
+            $this->assertSame('backup', $e->module);
             $this->assertStringContainsString('Duplicate element "duplicate"', $e->debuginfo);
             $this->assertStringContainsString('multiple optigroup "conditions"', $e->debuginfo);
             $this->assertStringContainsString('under "parent"', $e->debuginfo);
             $this->assertStringContainsString('registering element "duplicate"', $e->debuginfo);
             $this->assertStringContainsString('previously registered by branch "firstbranch"', $e->debuginfo);
         }
+    }
+
+    /**
+     * Backup exceptions must resolve their messages from the backup language component.
+     */
+    public function test_exceptions_use_backup_language_component(): void {
+        $exceptions = [
+            new \backup_controller_exception('backup_unknown_backup_type', 'unknown'),
+            new \base_plan_exception('base_plan_not_built'),
+            new \base_task_exception('base_task_not_built', 'task1'),
+            new \base_step_exception('not_specified_base_task'),
+            new \base_atom_struct_exception('backupatomemptyname'),
+            new \backup_processor_exception('processorvariablenotfound', 'missing'),
+            new \progressive_parser_exception('invalid_file_to_parse'),
+            new \xml_writer_exception('xml_writer_not_started'),
+        ];
+
+        foreach ($exceptions as $exception) {
+            $this->assertSame('backup', $exception->module);
+            $this->assertTrue(get_string_manager()->string_exists($exception->errorcode, 'backup'));
+        }
+
+        $exception = new \xml_output_exception('xml_output_not_started', 'context', 'XML output debug');
+        $this->assertSame('backup', $exception->module);
+        $this->assertSame('context', $exception->a);
+        $this->assertSame('XML output debug', $exception->debuginfo);
+        $this->assertSame('The XML output has not started.', get_string('xml_output_not_started', 'backup'));
     }
 
     /**

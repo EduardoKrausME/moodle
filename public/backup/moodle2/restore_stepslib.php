@@ -676,12 +676,12 @@ class restore_gradebook_structure_step extends restore_structure_step {
                 fputs($fw, $line);
             }
             if (!feof($fr)) {
-                throw new restore_step_exception('Error while attempting to rewrite the gradebook step file.');
+                throw new restore_step_exception('gradebook_step_file_rewrite_failed');
             }
             fclose($fr);
             fclose($fw);
             if (!rename($newfile, $filepath)) {
-                throw new restore_step_exception('Error while attempting to rename the gradebook step file.');
+                throw new restore_step_exception('gradebook_step_file_rename_failed');
             }
         } else {
             if ($fr) {

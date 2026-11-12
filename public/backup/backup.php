@@ -103,7 +103,7 @@ switch ($type) {
         $heading = get_string('backupactivity', 'backup', $cm->name);
         break;
     default :
-        throw new \moodle_exception('unknownbackuptype');
+        throw new \moodle_exception('unknownbackuptype', 'backup');
 }
 
 $PAGE->set_title($heading);

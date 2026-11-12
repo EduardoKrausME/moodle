@@ -88,7 +88,7 @@ class imscc11_converter extends base_converter {
 
         $manifest = cc112moodle::get_manifest($this->get_tempdir_path());
         if (empty($manifest)) {
-            throw new imscc11_convert_exception('No Manifest detected!');
+            throw new imscc11_convert_exception('manifest_not_detected');
         }
 
         $this->log('validating manifest', backup::LOG_DEBUG, null, 1);

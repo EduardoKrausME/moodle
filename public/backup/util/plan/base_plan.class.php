@@ -227,6 +227,6 @@ abstract class base_plan implements checksumable, executable {
 class base_plan_exception extends moodle_exception {
 
     public function __construct($errorcode, $a=NULL, $debuginfo=null) {
-        parent::__construct($errorcode, '', '', $a, $debuginfo);
+        parent::__construct($errorcode, 'backup', '', $a, $debuginfo);
     }
 }

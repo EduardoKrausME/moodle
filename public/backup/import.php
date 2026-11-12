@@ -154,7 +154,7 @@ if ($backup->get_stage() == backup_ui::STAGE_FINAL) {
     // backups don't store resulting files ever
     $tempdestination = make_backup_temp_directory($backupid, false);
     if (!file_exists($tempdestination) || !is_dir($tempdestination)) {
-        throw new \moodle_exception('unknownbackupexporterror'); // Shouldn't happen ever.
+        throw new \moodle_exception('unknownbackupexporterror', 'backup'); // Shouldn't happen ever.
     }
 
     // Prepare the restore controller. We don't need a UI here as we will just use what

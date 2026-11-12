@@ -300,6 +300,6 @@ class progressive_parser {
 class progressive_parser_exception extends moodle_exception {
 
     public function __construct($errorcode, $a=NULL, $debuginfo=null) {
-        parent::__construct($errorcode, 'error', '', $a, $debuginfo);
+        parent::__construct($errorcode, 'backup', '', $a, $debuginfo);
     }
 }

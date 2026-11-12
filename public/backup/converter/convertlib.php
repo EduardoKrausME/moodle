@@ -284,6 +284,6 @@ class convert_exception extends moodle_exception {
      * @param string $debuginfo optional debugging information
      */
     public function __construct($errorcode, $a = null, $debuginfo = null) {
-        parent::__construct($errorcode, '', '', $a, $debuginfo);
+        parent::__construct($errorcode, 'backup', '', $a, $debuginfo);
     }
 }

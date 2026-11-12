@@ -127,6 +127,6 @@ abstract class base_step implements executable, loggable {
 class base_step_exception extends moodle_exception {
 
     public function __construct($errorcode, $a=NULL, $debuginfo=null) {
-        parent::__construct($errorcode, '', '', $a, $debuginfo);
+        parent::__construct($errorcode, 'backup', '', $a, $debuginfo);
     }
 }

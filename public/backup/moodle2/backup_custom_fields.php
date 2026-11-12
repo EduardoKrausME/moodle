@@ -152,7 +152,7 @@ class encrypted_final_element extends backup_final_element {
         // site encryption key and ivs.
         if ($bytes !== backup::CIPHERKEYLEN) {
             $info = (object)array('expected' => backup::CIPHERKEYLEN, 'found' => $bytes);
-            throw new base_element_struct_exception('encrypted_final_element incorrect key length', $info);
+            throw new base_element_struct_exception('encrypted_final_element_invalid_key_length', $info);
         }
         // Everything went ok, store the key.
         $this->key = $key;

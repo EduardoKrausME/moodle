@@ -1151,7 +1151,7 @@ class convert_path_exception extends moodle_exception {
      * @param string $debuginfo optional debugging information
      */
     public function __construct($errorcode, $a = null, $debuginfo = null) {
-        parent::__construct($errorcode, '', '', $a, $debuginfo);
+        parent::__construct($errorcode, 'backup', '', $a, $debuginfo);
     }
 }
 
@@ -1420,7 +1420,7 @@ class moodle1_file_manager implements loggable {
     protected function add_file_to_pool($pathname) {
 
         if (!is_readable($pathname)) {
-            throw new moodle1_convert_exception('file_not_readable');
+            throw new moodle1_convert_exception('file_not_readable', $pathname);
         }
 
         $contenthash = file_storage::hash_from_path($pathname);

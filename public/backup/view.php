@@ -31,7 +31,7 @@ $PAGE->set_url(new moodle_url('/backup/view.php', ['id' => $courseid]));
 
 // Basic access checks.
 if (!$course = $DB->get_record('course', ['id' => $courseid])) {
-    throw new \moodle_exception('invalidcourseid');
+    throw new \moodle_exception('invalidcourseid', 'backup');
 }
 require_login($course);
 
@@ -66,7 +66,7 @@ if ($hasactions) {
 } else {
     throw new \moodle_exception(
         'accessdenied',
-        'admin',
+        'backup',
         new moodle_url('/course/view.php', ['id' => $courseid])
     );
 }

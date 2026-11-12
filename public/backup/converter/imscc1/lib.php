@@ -87,7 +87,7 @@ class imscc1_converter extends base_converter {
 
         $manifest = cc2moodle::get_manifest($this->get_tempdir_path());
         if (empty($manifest)) {
-            throw new imscc1_convert_exception('No Manifest detected!');
+            throw new imscc1_convert_exception('manifest_not_detected');
         }
 
         $this->log('validating manifest', backup::LOG_DEBUG, null, 1);
