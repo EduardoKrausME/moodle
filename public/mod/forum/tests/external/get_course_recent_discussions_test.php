@@ -120,4 +120,54 @@ final class get_course_recent_discussions_test extends \core_external\tests\exte
         $this->assertContains('Busy discussion', $ids);
         $this->assertContains('Earlier discussion', $ids);
     }
+
+    public function test_configured_limits_return_three_five_or_ten_discussions(): void {
+        $this->resetAfterTest();
+        $generator = self::getDataGenerator();
+        $user = $generator->create_user();
+        $course = $generator->create_course();
+        $generator->enrol_user($user->id, $course->id);
+        $forum = $generator->create_module('forum', [
+            'course' => $course->id, 'showinmycourses' => 1,
+        ]);
+        $fg = $generator->get_plugin_generator('mod_forum');
+        for ($i = 0; $i < 12; $i++) {
+            $fg->create_discussion((object)[
+                'forum' => $forum->id,
+                'course' => $course->id,
+                'userid' => $user->id,
+                'name' => 'Topic ' . $i,
+            ]);
+        }
+        $this->setUser($user);
+        foreach ([3, 5, 10] as $count) {
+            set_config('forumsummarycount', $count, 'block_myoverview');
+            $response = get_course_recent_discussions::execute($course->id);
+            $this->assertCount($count, $response['discussions']);
+        }
+    }
+
+    public function test_all_source_includes_opted_out_forum_without_changing_global_feed(): void {
+        $this->resetAfterTest();
+        $generator = self::getDataGenerator();
+        $user = $generator->create_user();
+        $course = $generator->create_course();
+        $generator->enrol_user($user->id, $course->id);
+        $forum = $generator->create_module('forum', [
+            'course' => $course->id, 'showinmycourses' => 0,
+        ]);
+        $generator->get_plugin_generator('mod_forum')->create_discussion((object)[
+            'forum' => $forum->id,
+            'course' => $course->id,
+            'userid' => $user->id,
+        ]);
+        $this->setUser($user);
+        $this->assertEmpty(get_course_recent_discussions::execute($course->id)['discussions']);
+
+        set_config('forumsummarysource', 'all', 'block_myoverview');
+        $this->assertCount(1, get_course_recent_discussions::execute($course->id)['discussions']);
+
+        set_config('forumsummarysource', 'news', 'block_myoverview');
+        $this->assertEmpty(get_course_recent_discussions::execute($course->id)['discussions']);
+    }
 }

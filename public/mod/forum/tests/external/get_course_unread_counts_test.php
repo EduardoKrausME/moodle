@@ -248,4 +248,26 @@ final class get_course_unread_counts_test extends \core_external\tests\externall
         $result = $this->get_result($course->id);
         $this->assertSame(0, $result['count']);
     }
+
+    public function test_source_selection_matches_recent_summary_and_unread_counter(): void {
+        $this->resetAfterTest();
+        [$user, $course] = $this->fixture();
+        $generator = self::getDataGenerator();
+        $author = $generator->create_user();
+        $generator->enrol_user($author->id, $course->id);
+        $forum = $generator->create_module('forum', [
+            'course' => $course->id, 'showinmycourses' => 0,
+            'trackingtype' => FORUM_TRACKING_FORCED,
+        ]);
+        $generator->get_plugin_generator('mod_forum')->create_discussion((object)[
+            'course' => $course->id, 'forum' => $forum->id, 'userid' => $author->id,
+        ]);
+
+        $this->assertSame('none', $this->get_result($course->id)['state']);
+        set_config('forumsummarysource', 'all', 'block_myoverview');
+        $this->assertSame('unread', $this->get_result($course->id)['state']);
+        $this->assertSame(1, $this->get_result($course->id)['count']);
+        set_config('forumsummarysource', 'news', 'block_myoverview');
+        $this->assertSame('none', $this->get_result($course->id)['state']);
+    }
 }
