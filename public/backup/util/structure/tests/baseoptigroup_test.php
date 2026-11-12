@@ -18,6 +18,7 @@ namespace core_backup;
 
 use base_atom_struct_exception;
 use base_element_struct_exception;
+use base_optigroup_exception;
 use mock_base_attribute;
 use mock_base_final_element;
 use mock_base_nested_element;
@@ -72,6 +73,34 @@ final class baseoptigroup_test extends \basic_testcase {
         $this->assertTrue(strpos($tostring, '#four (level: 3) => final4value') !== false);
         $this->assertTrue(strpos($tostring, '@attr5 => attr5value') !== false);
         $this->assertTrue(strpos($tostring, '#five (level: 3) => not set') !== false);
+    }
+
+    /**
+     * A duplicate name across multiple branches includes enough context to locate the problem.
+     */
+    public function test_duplicate_element_exception_context(): void {
+        $parent = new mock_base_nested_element('parent');
+        $optigroup = new mock_base_optigroup('conditions', null, true);
+        $parent->add_optigroup($optigroup);
+
+        $firstbranch = new mock_base_nested_element('firstbranch');
+        $secondbranch = new mock_base_nested_element('secondbranch');
+        $optigroup->add_child($firstbranch);
+        $optigroup->add_child($secondbranch);
+        $firstbranch->add_child(new mock_base_nested_element('duplicate'));
+
+        try {
+            $secondbranch->add_child(new mock_base_nested_element('duplicate'));
+            $this->fail('Expected base_optigroup_exception for a duplicate element.');
+        } catch (base_optigroup_exception $e) {
+            $this->assertSame('multiple_optigroup_duplicate_element', $e->errorcode);
+            $this->assertSame('duplicate', $e->a);
+            $this->assertStringContainsString('Duplicate element "duplicate"', $e->debuginfo);
+            $this->assertStringContainsString('multiple optigroup "conditions"', $e->debuginfo);
+            $this->assertStringContainsString('under "parent"', $e->debuginfo);
+            $this->assertStringContainsString('registering element "duplicate"', $e->debuginfo);
+            $this->assertStringContainsString('previously registered by branch "firstbranch"', $e->debuginfo);
+        }
     }
 
     /**
