@@ -275,7 +275,16 @@ export const init = root => {
         });
     };
 
-    const mutationObserver = new MutationObserver(scheduleScan);
+    // Updating a badge also mutates text nodes. Only rescan when a course
+    // summary (or its ancestor) is actually added or removed.
+    const affectsSummary = node => node.nodeType === 1 &&
+        ((node.matches && node.matches(SELECTOR)) ||
+            (node.querySelector && node.querySelector(SELECTOR)));
+    const mutationObserver = new MutationObserver(records => {
+        if (records.some(record => [...record.addedNodes, ...record.removedNodes].some(affectsSummary))) {
+            scheduleScan();
+        }
+    });
     mutationObserver.observe(container, {childList: true, subtree: true});
     scheduleScan();
 

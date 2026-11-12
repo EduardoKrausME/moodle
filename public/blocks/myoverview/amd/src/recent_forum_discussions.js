@@ -45,7 +45,16 @@ export const init = root => {
             }
         });
     };
-    const observer = new MutationObserver(updateFeedLinks);
+    // Card replacement matters, but updating a post title or badge does not.
+    // Avoid traversing every feed link after every minor text mutation.
+    const affectsSummary = node => node.nodeType === 1 &&
+        ((node.matches && node.matches('[data-region="forum-course-summary"]')) ||
+            (node.querySelector && node.querySelector('[data-region="forum-course-summary"]')));
+    const observer = new MutationObserver(records => {
+        if (records.some(record => [...record.addedNodes, ...record.removedNodes].some(affectsSummary))) {
+            updateFeedLinks();
+        }
+    });
     observer.observe(container, {childList: true, subtree: true});
     updateFeedLinks();
 
