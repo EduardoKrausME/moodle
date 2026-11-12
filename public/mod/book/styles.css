@@ -303,3 +303,144 @@ body.path-mod-book.mod-book-courseindex-active .block_book_toc {
     border-radius: 50%;
     background: var(--bs-success, #198754);
 }
+
+/* Teacher-only chapter manager. Groups move together with their subchapters. */
+.path-mod-book .book-chapter-manager {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.65rem;
+    margin-bottom: 1.5rem;
+    padding: 0.8rem 1rem;
+    background: var(--bs-body-bg);
+}
+
+.path-mod-book .book-chapter-manager > summary {
+    cursor: pointer;
+    font-weight: 650;
+    padding: 0.35rem;
+}
+
+.path-mod-book .book-chapter-manager__help {
+    margin: 0.65rem 0;
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+}
+
+.path-mod-book .book-chapter-manager__toolbar {
+    margin-bottom: 0.75rem;
+}
+
+.path-mod-book .book-chapter-manager__notice {
+    min-height: 1.15rem;
+    color: var(--bs-secondary-color);
+    font-size: 0.825rem;
+}
+
+.path-mod-book .book-chapter-manager__groups,
+.path-mod-book .book-chapter-manager__children {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.path-mod-book .book-chapter-manager__group {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.45rem;
+    margin-bottom: 0.55rem;
+    background: var(--bs-body-bg);
+}
+
+.path-mod-book .book-chapter-manager__children {
+    padding-inline-start: 1.5rem;
+    margin: 0.3rem 0.45rem 0.45rem;
+    border-inline-start: 2px solid var(--bs-border-color);
+}
+
+.path-mod-book .book-chapter-manager__child {
+    border-radius: 0.35rem;
+}
+
+.path-mod-book .book-chapter-manager__row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    padding: 0.45rem 0.55rem;
+}
+
+.path-mod-book .book-chapter-manager__title {
+    flex: 1 1 12rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--bs-body-color);
+}
+
+.path-mod-book .book-chapter-manager__handle {
+    flex-shrink: 0;
+    padding: 0.35rem;
+    min-width: 1.5rem;
+    font-size: 1.25rem;
+    line-height: 1;
+    text-align: center;
+    cursor: grab;
+    color: var(--bs-secondary-color);
+    user-select: none;
+}
+
+.path-mod-book .book-chapter-manager__handle:active {
+    cursor: grabbing;
+}
+
+.path-mod-book .book-chapter-manager__dragging {
+    opacity: 0.35;
+}
+
+.path-mod-book .book-chapter-manager__hidden {
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+}
+
+.path-mod-book .book-chapter-manager__row form {
+    display: contents;
+}
+
+.path-mod-book .book-chapter-manager__row .btn {
+    white-space: nowrap;
+}
+
+.path-mod-book .book-chapter-manager__row button:focus-visible,
+.path-mod-book .book-chapter-manager__row a:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+.path-mod-book .book-chapter-preview {
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-primary);
+    border-radius: 0.45rem;
+}
+
+.path-mod-book .book-chapter-preview img,
+.path-mod-book .book-chapter-preview video {
+    max-width: 100%;
+    height: auto;
+}
+
+@media (max-width: 600px) {
+    .path-mod-book .book-chapter-manager {
+        padding: 0.6rem;
+    }
+
+    .path-mod-book .book-chapter-manager__children {
+        padding-inline-start: 0.7rem;
+    }
+
+    .path-mod-book .book-chapter-manager__row {
+        gap: 0.3rem;
+    }
+
+    .path-mod-book .book-chapter-manager__title {
+        flex-basis: calc(100% - 3rem);
+    }
+}
