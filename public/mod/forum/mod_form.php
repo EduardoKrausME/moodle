@@ -170,6 +170,11 @@ class mod_forum_mod_form extends moodleform_mod {
             }
         }
 
+        // Opt-in: existing forum activities must not change their behaviour.
+        $mform->addElement('selectyesno', 'allowsolutions', get_string('allowsolutions', 'forum'));
+        $mform->addHelpButton('allowsolutions', 'allowsolutions', 'forum');
+        $mform->setDefault('allowsolutions', 0);
+
         $mform->addElement('header', 'discussionlocking', get_string('discussionlockingheader', 'forum'));
         $mform->addElement('duration', 'lockdiscussionafter', get_string('lockdiscussionafter', 'forum'), [
             'optional' => true,

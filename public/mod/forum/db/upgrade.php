@@ -100,5 +100,33 @@ function xmldb_forum_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026111200, 'forum');
     }
 
+    if ($oldversion < 2026111210) {
+        // Optional per-forum accepted solutions; existing forums remain unchanged.
+        $table = new xmldb_table('forum');
+        $field = new xmldb_field('allowsolutions', XMLDB_TYPE_INTEGER, '1', null,
+            XMLDB_NOTNULL, null, '0', 'showinmycourses');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $table = new xmldb_table('forum_solutions');
+        if (!$dbman->table_exists($table)) {
+            $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+            $table->add_field('discussionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('postid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+            $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+            $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $table->add_key('discussion', XMLDB_KEY_FOREIGN, ['discussionid'], 'forum_discussions', ['id']);
+            $table->add_key('post', XMLDB_KEY_FOREIGN, ['postid'], 'forum_posts', ['id']);
+            $table->add_index('discussionunique', XMLDB_INDEX_UNIQUE, ['discussionid']);
+            $table->add_index('post', XMLDB_INDEX_NOTUNIQUE, ['postid']);
+            $table->add_index('userid', XMLDB_INDEX_NOTUNIQUE, ['userid']);
+            $dbman->create_table($table);
+        }
+        upgrade_mod_savepoint(true, 2026111210, 'forum');
+    }
+
     return true;
 }
