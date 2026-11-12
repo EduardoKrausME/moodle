@@ -30,11 +30,22 @@ $coursecontext = context_course::instance($course->id);
 require_capability('mod/book:edit', $context);
 require_capability('moodle/course:viewparticipants', $coursecontext);
 
-// Limit both the SQL query and generated CSV to the current page of enrolled users.
+// Respect separate groups: editing permissions alone must not expose students in
+// groups the teacher cannot access. An empty allowed set means no participants.
+$groupids = 0;
+$restrictgroups = groups_get_activity_groupmode($cm) === SEPARATEGROUPS &&
+    !has_capability('moodle/site:accessallgroups', $context);
+if ($restrictgroups) {
+    $allowedgroups = groups_get_activity_allowed_groups($cm);
+    $groupids = $allowedgroups ? array_map('intval', array_keys($allowedgroups)) : [];
+}
+
+// Limit both the SQL query and generated CSV to the current page of authorized enrolled users.
 $pagesize = 50;
-$totalusers = count_enrolled_users($coursecontext);
+$totalusers = ($restrictgroups && !$groupids) ? 0 :
+    count_enrolled_users($coursecontext, '', $groupids);
 $userfields = 'u.id, ' . get_all_user_name_fields(true, 'u');
-$users = get_enrolled_users($coursecontext, '', 0,
+$users = ($restrictgroups && !$groupids) ? [] : get_enrolled_users($coursecontext, '', $groupids,
     $userfields, 'u.lastname ASC, u.firstname ASC, u.id ASC', $page * $pagesize, $pagesize);
 
 $chapters = book_preload_chapters($book);
