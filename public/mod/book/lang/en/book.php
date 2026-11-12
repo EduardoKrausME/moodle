@@ -148,3 +148,4 @@ $string['previewchapter'] = 'Preview without saving';
 $string['saveandnewchapter'] = 'Save and add another';
 $string['previewnotpublished'] = 'Preview of your unsaved changes. Nothing has been published.';
 $string['chaptercreatedsaved'] = 'Chapter saved. You can now create the next one.';
+$string['hiddenchapterlabel'] = 'Hidden';
