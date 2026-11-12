@@ -50,7 +50,9 @@
         {{/hasprogress}}
     {{/progress}}
     {{$forumsummary}}
-        {{> block_myoverview/recent-forum-discussions }}
+        {{#showforumsummary}}
+            {{> block_myoverview/recent-forum-discussions }}
+        {{/showforumsummary}}
     {{/forumsummary}}
     {{$coursename}}
         <span class="multiline" title="{{fullname}}">

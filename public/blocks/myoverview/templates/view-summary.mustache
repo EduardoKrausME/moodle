@@ -96,7 +96,9 @@
                 {{> block_myoverview/course-action-menu }}
             </div>
         </div>
-        {{> block_myoverview/recent-forum-discussions }}
+        {{#showforumsummary}}
+            {{> block_myoverview/recent-forum-discussions }}
+        {{/showforumsummary}}
     </div>
 {{/courses}}
 </div>

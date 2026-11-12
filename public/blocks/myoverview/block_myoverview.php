@@ -49,6 +49,29 @@ class block_myoverview extends block_base {
         if (isset($this->content)) {
             return $this->content;
         }
+
+        // A native Moodle block is the supported course-page extension point.
+        // The site administrator can add this block to the course page region.
+        if (strpos($this->page->pagetype, 'course-view-') === 0) {
+            $this->content = new stdClass();
+            $this->content->text = '';
+            $this->content->footer = '';
+            if (!\mod_forum\local\summary_settings::show_on_course() ||
+                    isguestuser() || empty($this->page->course->id) ||
+                    (int)$this->page->course->id === SITEID) {
+                return $this->content;
+            }
+
+            $id = 'forum-course-summary-block-' . (int)$this->instance->id;
+            $this->content->text = '<div id="' . $id . '" class="block_myoverview block-myoverview">' .
+                $this->page->get_renderer('block_myoverview')->render_from_template(
+                    'block_myoverview/recent-forum-discussions',
+                    ['id' => (int)$this->page->course->id]) . '</div>';
+            $this->page->requires->js_call_amd('block_myoverview/recent_forum_discussions', 'init',
+                ['#' . $id]);
+            return $this->content;
+        }
+
         $group = get_user_preferences('block_myoverview_user_grouping_preference');
         $sort = get_user_preferences('block_myoverview_user_sort_preference');
         $view = get_user_preferences('block_myoverview_user_view_preference');
@@ -71,7 +94,7 @@ class block_myoverview extends block_base {
      * @return array
      */
     public function applicable_formats() {
-        return array('my' => true);
+        return ['my' => true, 'course-view-*' => true];
     }
 
     /**
