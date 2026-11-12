@@ -91,6 +91,15 @@ class provider implements
             'userid' => 'privacy:metadata:forum_discussion_subs:userid',
         ], 'privacy:metadata:forum_discussion_subs');
 
+        // Selecting a solution is personal data even if the user did not post.
+        $items->add_database_table('forum_solutions', [
+            'discussionid' => 'privacy:metadata:forum_solutions:discussionid',
+            'postid' => 'privacy:metadata:forum_solutions:postid',
+            'userid' => 'privacy:metadata:forum_solutions:userid',
+            'timecreated' => 'privacy:metadata:forum_solutions:timecreated',
+            'timemodified' => 'privacy:metadata:forum_solutions:timemodified',
+        ], 'privacy:metadata:forum_solutions');
+
         // The 'forum_posts' table stores the metadata about each forum discussion.
         $items->add_database_table('forum_posts', [
             'discussion' => 'privacy:metadata:forum_posts:discussion',
@@ -278,6 +287,17 @@ class provider implements
         ";
         $contextlist->add_from_sql($sql, $params);
 
+        // Accepted-solution selectors may not have authored forum content.
+        $sql = "SELECT c.id
+                  FROM {context} c
+                  JOIN {course_modules} cm ON cm.id = c.instanceid AND c.contextlevel = :contextlevel
+                  JOIN {modules} m ON m.id = cm.module AND m.name = :modname
+                  JOIN {forum} f ON f.id = cm.instance
+                  JOIN {forum_discussions} d ON d.forum = f.id
+                  JOIN {forum_solutions} s ON s.discussionid = d.id
+                 WHERE s.userid = :userid";
+        $contextlist->add_from_sql($sql, $params);
+
         return $contextlist;
     }
 
@@ -370,6 +390,16 @@ class provider implements
                   JOIN {forum} f ON f.id = cm.instance
                   JOIN {forum_track_prefs} pref ON pref.forumid = f.id
                  WHERE cm.id = :instanceid";
+        $userlist->add_from_sql('userid', $sql, $params);
+
+        // Users who selected solutions (only users with non-anonymised IDs).
+        $sql = "SELECT s.userid
+                  FROM {course_modules} cm
+                  JOIN {modules} m ON m.id = cm.module AND m.name = :modulename
+                  JOIN {forum} f ON f.id = cm.instance
+                  JOIN {forum_discussions} d ON d.forum = f.id
+                  JOIN {forum_solutions} s ON s.discussionid = d.id
+                 WHERE cm.id = :instanceid AND s.userid <> 0";
         $userlist->add_from_sql('userid', $sql, $params);
 
         // Forum grades.
@@ -605,6 +635,26 @@ class provider implements
             $mappings[$forum->id] = $forum->contextid;
 
             $context = \context::instance_by_id($mappings[$forum->id]);
+
+            // Export all accepted-answer decisions made by this user in this forum.
+            $solutions = $DB->get_records_sql(
+                "SELECT s.id, s.discussionid, s.postid, s.timecreated, s.timemodified
+                   FROM {forum_solutions} s
+                   JOIN {forum_discussions} d ON d.id = s.discussionid
+                  WHERE d.forum = :solutionforum AND s.userid = :solutionuser",
+                ['solutionforum' => $forum->id, 'solutionuser' => $userid]);
+            foreach ($solutions as $solution) {
+                writer::with_context($context)->export_metadata(
+                    [],
+                    'acceptedsolution_' . $solution->discussionid,
+                    (object)[
+                        'discussionid' => $solution->discussionid,
+                        'postid' => $solution->postid,
+                        'timecreated' => transform::datetime($solution->timecreated),
+                        'timemodified' => transform::datetime($solution->timemodified),
+                    ],
+                    get_string('privacy:metadata:forum_solutions', 'mod_forum'));
+            }
 
             // Store the main forum data.
             $data = request_helper::get_context_data($context, $user);
@@ -1161,6 +1211,11 @@ class provider implements
 
         $DB->delete_records('forum_grades', ['forum' => $forumid]);
 
+        // Delete the accepted answers before their native posts and discussions.
+        $DB->delete_records_select('forum_solutions',
+            'discussionid IN (SELECT id FROM {forum_discussions} WHERE forum = :forum)',
+            ['forum' => $forumid]);
+
         // Delete all discussion items.
         $DB->delete_records_select(
             'forum_queue',
@@ -1256,6 +1311,19 @@ class provider implements
                 'userid' => $userid,
             ]);
 
+            // A deleted user's accepted post can no longer be a valid solution.
+            $DB->delete_records_select('forum_solutions',
+                "postid IN (SELECT p.id FROM {forum_posts} p
+                             JOIN {forum_discussions} d ON d.id = p.discussion
+                            WHERE p.userid = :postuser AND d.forum = :postforum)",
+                ['postuser' => $userid, 'postforum' => $forum->id]);
+            // Retain pedagogical solution state when permissible, but anonymise
+            // the identity of the user who selected it.
+            $DB->set_field_select('forum_solutions', 'userid', 0,
+                "userid = :solutionuser AND discussionid IN
+                    (SELECT id FROM {forum_discussions} WHERE forum = :solutionforum)",
+                ['solutionuser' => $userid, 'solutionforum' => $forum->id]);
+
             // Do not delete discussion or forum posts.
             // Instead update them to reflect that the content has been deleted.
             $postsql = "userid = :userid AND discussion IN (SELECT id FROM {forum_discussions} WHERE forum = :forum)";
@@ -1316,6 +1384,16 @@ class provider implements
             $params
         );
         $DB->delete_records_select('forum_discussion_subs', "forum = :forumid AND userid {$userinsql}", $params);
+
+        // Do not keep accepted replies authored by users being deleted.
+        $DB->delete_records_select('forum_solutions',
+            "postid IN (SELECT p.id FROM {forum_posts} p
+                         JOIN {forum_discussions} d ON d.id = p.discussion
+                        WHERE p.userid {$userinsql} AND d.forum = :forumid)", $params);
+        // Anonymise the selection actor while preserving visible pedagogical state.
+        $DB->set_field_select('forum_solutions', 'userid', 0,
+            "userid {$userinsql} AND discussionid IN
+                (SELECT id FROM {forum_discussions} WHERE forum = :forumid)", $params);
 
         // Do not delete discussion or forum posts.
         // Instead update them to reflect that the content has been deleted.
