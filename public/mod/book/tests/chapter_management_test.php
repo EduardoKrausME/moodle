@@ -131,7 +131,7 @@ final class chapter_management_test extends \advanced_testcase {
             array_map(fn($ch) => (int) $ch->id, $rows));
         $this->assertSame(0, (int) $rows[2]->subchapter);
         $this->assertSame(1, (int) $rows[3]->subchapter);
-        $this->assertStringContainsString('(copy)', $rows[2]->title);
+        $this->assertStringContainsString(get_string('chaptercopytitle', 'mod_book'), $rows[2]->title);
         $this->assertSame($DB->get_field('book_chapters', 'content', ['id' => $first->id]),
             $rows[2]->content);
 
