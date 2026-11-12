@@ -1,0 +1,12 @@
+{{!
+    @template block_myoverview/recent-forum-discussions
+    Collapsible forum summary for My courses.
+}}
+<div class="forum-course-summary p-2 border-top" data-region="forum-course-summary" data-course-id="{{id}}">
+    <button class="btn btn-link btn-sm p-0 text-start" type="button" data-action="toggle-forum-discussions"
+            aria-controls="forum-course-discussions-{{id}}" aria-expanded="false">
+        {{#str}}recentforumdiscussions, block_myoverview{{/str}}
+    </button>
+    <div id="forum-course-discussions-{{id}}" data-region="forum-discussions-content" hidden
+         class="mt-2" aria-live="polite"></div>
+</div>

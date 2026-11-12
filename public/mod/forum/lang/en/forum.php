@@ -25,6 +25,8 @@
 
 $string['activitydate:due'] = 'Due:';
 $string['activityoverview'] = 'There are new forum posts';
+$string['showinmycourses'] = 'Show discussions in My courses';
+$string['showinmycourses_help'] = 'When enabled, recent conversations from this forum may appear in the expandable summary on My courses. This does not change access rules or email notifications.';
 $string['actionsforgraderinterface'] = 'Actions for the grader interface';
 $string['actionsforpost'] = 'Actions for post';
 $string['addanewdiscussion'] = 'Add discussion topic';

@@ -225,6 +225,13 @@ $functions = array(
         'services' => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
 
+    'mod_forum_get_course_recent_discussions' => [
+        'classname' => 'mod_forum\\external\\get_course_recent_discussions',
+        'methodname' => 'execute',
+        'description' => 'Get recent accessible forum conversations for a course.',
+        'type' => 'read',
+        'ajax' => true,
+    ],
     'mod_forum_set_read_state' => [
         'classname' => 'mod_forum\external\set_read_state',
         'methodname' => 'execute',

@@ -22,6 +22,7 @@
 
 import * as View from 'block_myoverview/view';
 import * as ViewNav from 'block_myoverview/view_nav';
+import * as RecentForumDiscussions from 'block_myoverview/recent_forum_discussions';
 
 /**
  * Initialise all of the modules for the overview block.
@@ -33,4 +34,5 @@ export const init = (root) => {
     ViewNav.init(root);
     // Initialise the courses view modules.
     View.init(root);
+    RecentForumDiscussions.init(root);
 };

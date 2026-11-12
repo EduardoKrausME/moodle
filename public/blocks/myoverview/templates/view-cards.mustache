@@ -49,6 +49,9 @@
             </div>
         {{/hasprogress}}
     {{/progress}}
+    {{$forumsummary}}
+        {{> block_myoverview/recent-forum-discussions }}
+    {{/forumsummary}}
     {{$coursename}}
         <span class="multiline" title="{{fullname}}">
             <span class="visually-hidden">{{{fullname}}}</span>

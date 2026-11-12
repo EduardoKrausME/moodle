@@ -1,0 +1,13 @@
+{{!
+    @template block_myoverview/recent-forum-discussions-list
+    User-entered strings are escaped by Mustache.
+}}
+{{#discussions}}
+<div class="py-2 border-top">
+    <a href="{{url}}" class="d-block fw-semibold">{{subject}}</a>
+    <div class="small text-muted">{{author}} · {{forumname}} · {{time}}</div>
+</div>
+{{/discussions}}
+{{^discussions}}
+<p class="small text-muted mb-0">{{#str}}recentforumempty, block_myoverview{{/str}}</p>
+{{/discussions}}

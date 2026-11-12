@@ -66,6 +66,7 @@ class backup_forum_activity_structure_step extends backup_activity_structure_ste
             'lockdiscussionafter',
             'grade_forum',
             'showimmediately',
+            'showinmycourses',
         ]);
 
         $discussions = new backup_nested_element('discussions');

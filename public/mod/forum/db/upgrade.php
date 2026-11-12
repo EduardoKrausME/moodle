@@ -88,5 +88,17 @@ function xmldb_forum_upgrade($oldversion) {
     // Automatically generated Moodle v5.3.0 release upgrade line.
     // Put any upgrade step following this.
 
+    if ($oldversion < 2026111200) {
+        $table = new xmldb_table('forum');
+        $field = new xmldb_field('showinmycourses', XMLDB_TYPE_INTEGER, '1', null,
+            XMLDB_NOTNULL, null, '1', 'showimmediately');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026111200, 'forum');
+    }
+
     return true;
 }
