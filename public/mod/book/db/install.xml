@@ -59,6 +59,7 @@
       <INDEXES>
         <INDEX NAME="bookuserchapter" UNIQUE="true" FIELDS="bookid, userid, chapterid"/>
         <INDEX NAME="bookuserlast" UNIQUE="false" FIELDS="bookid, userid, lastviewed"/>
+        <INDEX NAME="userbook" UNIQUE="false" FIELDS="userid, bookid"/>
       </INDEXES>
     </TABLE>
   </TABLES>
