@@ -9464,6 +9464,29 @@ class assign {
 
         $mform->addElement('header', 'submission header', get_string('addsubmission', 'mod_assign'));
 
+        // Keep these instructions inside the native form fieldset. All controls,
+        // submission plugin contracts and save semantics remain unchanged.
+        $guideheading = \html_writer::tag(
+            'h4',
+            get_string('submissionformguideheading', 'assign'),
+            ['class' => 'h5 mb-2', 'id' => 'assign-submission-guide-heading']
+        );
+        $guidecontent = \html_writer::tag('p', get_string('submissionformintro', 'assign'), ['class' => 'mb-1']);
+        $noticekey = $draftsenabled ? 'submissionformdraftnotice' : 'submissionformdirectnotice';
+        $guidecontent .= \html_writer::tag('p', get_string($noticekey, 'assign'), ['class' => 'mb-0']);
+        if ($this->get_instance()->teamsubmission) {
+            $guidecontent .= \html_writer::tag(
+                'p',
+                get_string('submissionformgroupnotice', 'assign'),
+                ['class' => 'mb-0 mt-2']
+            );
+        }
+        $mform->addElement('html', \html_writer::tag('section', $guideheading . $guidecontent, [
+            'class' => 'assign-submission-intro',
+            'data-region' => 'assign-submission-intro',
+            'aria-labelledby' => 'assign-submission-guide-heading',
+        ]));
+
         // Only show submission statement if we are editing our own submission.
         if ($requiresubmissionstatement && !$draftsenabled && $userid == $USER->id) {
             $mform->addElement('checkbox', 'submissionstatement', '', $submissionstatement);

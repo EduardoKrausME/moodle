@@ -41,7 +41,7 @@ class mod_assign_submission_form extends moodleform {
      * Define this form - called by the parent constructor
      */
     public function definition() {
-        global $USER;
+        global $USER, $PAGE;
         $mform = $this->_form;
         list($assign, $data) = $this->_customdata;
         $instance = $assign->get_instance();
@@ -57,6 +57,9 @@ class mod_assign_submission_form extends moodleform {
 
         $assign->add_submission_form_elements($mform, $data);
         $this->add_action_buttons(true, get_string('savechanges', 'assign'));
+
+        // Enhance only this submission form. Never replace the native plugin inputs.
+        $PAGE->requires->js_call_amd('mod_assign/submission_form', 'init');
         if ($data) {
             $this->set_data($data);
         }
