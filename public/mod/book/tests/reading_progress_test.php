@@ -32,6 +32,15 @@ final class reading_progress_test extends \advanced_testcase {
         $this->setAdminUser();
     }
 
+    public function test_book_entry_preserves_resume_location(): void {
+        // A new reader starts at chapter one and establishes an initial position.
+        $this->assertTrue(reading_progress::should_track_view(0, 0));
+        // Returning to the Book itself must not replace an established last-read chapter.
+        $this->assertFalse(reading_progress::should_track_view(0, 42));
+        // Opening a specific chapter deliberately changes the last-read location.
+        $this->assertTrue(reading_progress::should_track_view(17, 42));
+    }
+
     public function test_visited_chapters_last_chapter_and_hidden_chapters(): void {
         global $DB;
 
