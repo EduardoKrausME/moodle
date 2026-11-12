@@ -124,7 +124,7 @@ final class recent_feed {
      * @param bool $unread Unread-only filter.
      * @return array State for iteration.
      */
-    private static function parse_cursor(string $cursor, int $courseid, bool $unread): array {
+    private static function parse_cursor(string $cursor, int $courseid, bool $unread, bool $following): array {
         global $USER;
 
         $empty = ['time' => 0, 'post' => 0, 'seen' => []];
@@ -141,6 +141,7 @@ final class recent_feed {
                 ($data['uid'] ?? null) !== (int)$USER->id ||
                 ($data['course'] ?? null) !== $courseid ||
                 ($data['unread'] ?? null) !== (int)$unread ||
+                ($data['following'] ?? 0) !== (int)$following ||
                 !isset($data['time'], $data['post'], $data['seen']) ||
                 !is_int($data['time']) || !is_int($data['post']) ||
                 $data['time'] <= 0 || $data['post'] <= 0 ||
@@ -168,7 +169,8 @@ final class recent_feed {
      * @param bool $unread Only unread posts.
      * @return string
      */
-    private static function encode_cursor(array $position, array $seen, int $courseid, bool $unread): string {
+    private static function encode_cursor(array $position, array $seen, int $courseid, bool $unread,
+            bool $following): string {
         global $USER;
 
         if (count($seen) >= self::MAX_SEEN) {
@@ -179,6 +181,7 @@ final class recent_feed {
             'uid' => (int)$USER->id,
             'course' => $courseid,
             'unread' => (int)$unread,
+            'following' => (int)$following,
             'time' => (int)$position['time'],
             'post' => (int)$position['post'],
             'seen' => array_map('intval', array_keys($seen)),
@@ -251,12 +254,16 @@ final class recent_feed {
      * @param string $cursor Continuation from the preceding page.
      * @return array Entries, nextcursor and hasmore.
      */
-    public static function get_page(int $courseid = 0, bool $unread = false, string $cursor = ''): array {
+    public static function get_page(int $courseid = 0, bool $unread = false, string $cursor = '',
+            bool $following = false): array {
         global $CFG, $DB, $USER;
 
         require_once($CFG->dirroot . '/mod/forum/lib.php');
 
-        $state = self::parse_cursor($cursor, $courseid, $unread);
+        if ($unread && $following) {
+            throw new \invalid_parameter_exception('Conflicting forum feed filters.');
+        }
+        $state = self::parse_cursor($cursor, $courseid, $unread, $following);
         $courses = self::get_accessible_courses($courseid);
         $empty = ['items' => [], 'nextcursor' => '', 'hasmore' => false];
         if (!$courses) {
@@ -305,10 +312,23 @@ final class recent_feed {
             $filtersql .= ' AND r.id IS NULL AND p.modified >= :feedcutoff';
             $parameters['feedcutoff'] = $cutoff;
         }
+        // Filter favourites at SQL level, before keyset pagination and limits.
+        // The user's native discussion stars do not affect email subscriptions.
+        $favouritejoin = '';
+        if ($following) {
+            $favouritejoin = " JOIN {favourite} fav ON fav.itemid = d.id
+                                    AND fav.userid = :followuserid
+                                    AND fav.component = :followcomponent
+                                    AND fav.itemtype = :followtype";
+            $parameters['followuserid'] = $USER->id;
+            $parameters['followcomponent'] = 'mod_forum';
+            $parameters['followtype'] = 'discussions';
+        }
         $sql = "SELECT p.id, p.discussion, p.userid, p.parent, p.created, p.modified,
                        p.privatereplyto, p.deleted, d.forum AS forumid, r.id AS readid
                   FROM {forum_posts} p
                   JOIN {forum_discussions} d ON d.id = p.discussion
+                  {$favouritejoin}
              LEFT JOIN {forum_read} r ON r.postid = p.id AND r.userid = :readuser
                  WHERE d.forum {$insql} AND p.deleted = 0 {$filtersql}";
 
@@ -395,7 +415,7 @@ final class recent_feed {
         if (!$rawitems) {
             return [
                 'items' => [],
-                'nextcursor' => $hasmore ? self::encode_cursor($lastposition, $seen, $courseid, $unread) : '',
+                'nextcursor' => $hasmore ? self::encode_cursor($lastposition, $seen, $courseid, $unread, $following) : '',
                 'hasmore' => $hasmore,
             ];
         }
@@ -415,6 +435,28 @@ final class recent_feed {
         $authors = $DB->get_records_list('user', 'id', $userids);
         $urlfactory = \mod_forum\local\container::get_url_factory();
 
+        // Single bounded lookup for the page, scoped to this user and the
+        // actual forum context. Do not fetch one favourite per card.
+        $discussionids = array_unique(array_map(static function(array $item): int {
+            return (int)$item['discussion']->id;
+        }, $rawitems));
+        [$favinsql, $favparams] = $DB->get_in_or_equal(
+            $discussionids, SQL_PARAMS_NAMED, 'favdiscussion');
+        $favparams['favuserid'] = $USER->id;
+        $favparams['favcomponent'] = 'mod_forum';
+        $favparams['favtype'] = 'discussions';
+        $records = $DB->get_recordset_sql(
+            "SELECT f.itemid, f.contextid
+               FROM {favourite} f
+              WHERE f.userid = :favuserid AND f.component = :favcomponent
+                    AND f.itemtype = :favtype AND f.itemid {$favinsql}",
+            $favparams);
+        $favourites = [];
+        foreach ($records as $favourite) {
+            $favourites[(int)$favourite->itemid][(int)$favourite->contextid] = true;
+        }
+        $records->close();
+
         $items = [];
         foreach ($rawitems as $item) {
             $post = $item['post'];
@@ -422,6 +464,11 @@ final class recent_feed {
             $context = $item['context'];
             $course = $item['course'];
             $forum = $item['forum'];
+            $favourited = !empty($favourites[(int)$discussion->id][(int)$context->id]);
+            if ($following && !$favourited) {
+                // Ignore orphaned favourites referring to another context.
+                continue;
+            }
             $url = $urlfactory->get_view_post_url_from_post_id((int)$discussion->id, (int)$post->id);
             $url->param('targetpost', (int)$post->id);
             $preview = '';
@@ -443,10 +490,12 @@ final class recent_feed {
                 'preview' => $preview,
                 'url' => $url->out(false),
                 'unread' => (bool)$item['unread'],
+                'favourited' => $favourited,
+                'canfavourite' => has_capability('mod/forum:cantogglefavourite', $context, $USER),
             ];
         }
 
-        $nextcursor = $hasmore ? self::encode_cursor($lastposition, $seen, $courseid, $unread) : '';
+        $nextcursor = $hasmore ? self::encode_cursor($lastposition, $seen, $courseid, $unread, $following) : '';
         return [
             'items' => $items,
             'nextcursor' => $nextcursor,

@@ -31,12 +31,16 @@ final class get_recent_feed extends external_api {
             'courseid' => new external_value(PARAM_INT, '0 for all accessible courses'),
             'unread' => new external_value(PARAM_BOOL, 'Unread only'),
             'cursor' => new external_value(PARAM_RAW_TRIMMED, 'Opaque continuation cursor'),
+            'following' => new external_value(PARAM_BOOL, 'Only starred discussions',
+                VALUE_DEFAULT, false),
         ]);
     }
 
-    public static function execute(int $courseid, bool $unread, string $cursor): array {
+    public static function execute(int $courseid, bool $unread, string $cursor,
+            bool $following = false): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid' => $courseid, 'unread' => $unread, 'cursor' => $cursor,
+            'following' => $following,
         ]);
         require_login();
         if (isguestuser()) {
@@ -47,7 +51,8 @@ final class get_recent_feed extends external_api {
         if ($params['courseid'] < 0) {
             throw new \invalid_parameter_exception('Invalid course filter.');
         }
-        return recent_feed::get_page((int)$params['courseid'], (bool)$params['unread'], $params['cursor']);
+        return recent_feed::get_page((int)$params['courseid'], (bool)$params['unread'],
+            $params['cursor'], (bool)$params['following']);
     }
 
     public static function execute_returns(): external_single_structure {
@@ -64,6 +69,8 @@ final class get_recent_feed extends external_api {
                 'preview' => new external_value(PARAM_TEXT, 'Plain-text post excerpt'),
                 'url' => new external_value(PARAM_URL, 'Direct link to the post'),
                 'unread' => new external_value(PARAM_BOOL, 'Whether the visible post is unread'),
+                'favourited' => new external_value(PARAM_BOOL, 'Starred by the current user'),
+                'canfavourite' => new external_value(PARAM_BOOL, 'User can star this discussion'),
             ])),
             'nextcursor' => new external_value(PARAM_RAW_TRIMMED, 'Next page token'),
             'hasmore' => new external_value(PARAM_BOOL, 'Whether more items may be available'),
