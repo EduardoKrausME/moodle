@@ -581,8 +581,8 @@ final class events_test extends \advanced_testcase {
         require_once($CFG->dirroot . '/mod/forum/lib.php');
 
         $course = $this->getDataGenerator()->create_course();
-        $vault = \\mod_forum\\local\\container::get_vault_factory()->get_forum_vault();
-        $mapper = \\mod_forum\\local\\container::get_legacy_data_mapper_factory()->get_forum_data_mapper();
+        $vault = \mod_forum\local\container::get_vault_factory()->get_forum_vault();
+        $mapper = \mod_forum\local\container::get_legacy_data_mapper_factory()->get_forum_data_mapper();
 
         foreach ([[0, 1], [1, 0]] as [$showinmycourses, $allowsolutions]) {
             $forum = $this->getDataGenerator()->create_module('forum', [
@@ -591,7 +591,7 @@ final class events_test extends \advanced_testcase {
                 'allowsolutions' => $allowsolutions,
             ]);
             $cm = get_coursemodule_from_instance('forum', $forum->id);
-            $context = \\context_module::instance($cm->id);
+            $context = \context_module::instance($cm->id);
             $stored = $DB->get_record('forum', ['id' => $forum->id], '*', MUST_EXIST);
             $this->assertSame($showinmycourses, (int) $stored->showinmycourses);
             $this->assertSame($allowsolutions, (int) $stored->allowsolutions);
@@ -602,7 +602,7 @@ final class events_test extends \advanced_testcase {
             $this->assertSame($allowsolutions, (int) $legacy->allowsolutions);
 
             $sink = $this->redirectEvents();
-            \\forum_view($legacy, $course, $cm, $context);
+            \forum_view($legacy, $course, $cm, $context);
             $events = $sink->get_events();
             $sink->close();
 
