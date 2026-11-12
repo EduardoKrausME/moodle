@@ -7,12 +7,14 @@ on:
       - 'public/mod/forum/**'
       - 'public/mod/book/**'
       - 'public/theme/boost/**'
+      - '.stylelintrc'
       - '.github/workflows/components-ci.yml'
   pull_request:
     paths:
       - 'public/mod/forum/**'
       - 'public/mod/book/**'
       - 'public/theme/boost/**'
+      - '.stylelintrc'
       - '.github/workflows/components-ci.yml'
   workflow_dispatch:
 
