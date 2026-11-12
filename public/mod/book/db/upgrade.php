@@ -81,6 +81,7 @@ function xmldb_book_upgrade($oldversion) {
             $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
             $table->add_index('bookuserchapter', XMLDB_INDEX_UNIQUE, ['bookid', 'userid', 'chapterid']);
             $table->add_index('bookuserlast', XMLDB_INDEX_NOTUNIQUE, ['bookid', 'userid', 'lastviewed']);
+            $table->add_index('userbook', XMLDB_INDEX_NOTUNIQUE, ['userid', 'bookid']);
             $dbman->create_table($table);
         }
 
