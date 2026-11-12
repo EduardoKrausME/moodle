@@ -18,6 +18,7 @@ use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 use mod_book\reading_progress;
+use mod_book\reading_tools;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -38,12 +39,15 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
     public function test_metadata_and_context_discovery(): void {
         $collection = provider::get_metadata(new collection('mod_book'));
         $tables = $collection->get_collection();
-        $this->assertCount(1, $tables);
-        $this->assertEquals('book_chapter_reads', reset($tables)->get_name());
+        $this->assertCount(2, $tables);
+        $names = array_map(fn($table) => $table->get_name(), $tables);
+        $this->assertContains('book_chapter_reads', $names);
+        $this->assertContains('book_chapter_userdata', $names);
 
         [$book, $chapter, $context] = $this->make_book_with_chapter();
         $user = $this->getDataGenerator()->create_user();
-        reading_progress::record_view($book->id, $chapter->id, $user->id);
+        // Context discovery must work even when there are only personal notes.
+        reading_tools::set_note($book->id, $chapter->id, $user->id, 'My private note');
 
         $contextlist = provider::get_contexts_for_userid($user->id);
         $this->assertCount(1, $contextlist);
@@ -62,6 +66,8 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         $second = $this->getDataGenerator()->create_user();
         reading_progress::record_view($book->id, $chapter->id, $first->id);
         reading_progress::record_view($book->id, $chapter->id, $second->id);
+        reading_tools::set_note($book->id, $chapter->id, $first->id, 'Only first user');
+        reading_tools::set_favourite($book->id, $chapter->id, $second->id, true);
 
         $this->export_context_data_for_user($first->id, $context, 'mod_book');
         $this->assertTrue(writer::with_context($context)->has_any_data());
@@ -70,11 +76,14 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         provider::delete_data_for_user($approved);
         $this->assertSame(0, $DB->count_records('book_chapter_reads', ['userid' => $first->id]));
         $this->assertSame(1, $DB->count_records('book_chapter_reads', ['userid' => $second->id]));
+        $this->assertSame(0, $DB->count_records('book_chapter_userdata', ['userid' => $first->id]));
+        $this->assertSame(1, $DB->count_records('book_chapter_userdata', ['userid' => $second->id]));
 
         // Deleting an unapproved context must not remove the other reader's data.
         $approvedusers = new approved_userlist($context, 'mod_book', [$second->id]);
         provider::delete_data_for_users($approvedusers);
         $this->assertSame(0, $DB->count_records('book_chapter_reads'));
+        $this->assertSame(0, $DB->count_records('book_chapter_userdata'));
     }
 
     public function test_delete_all_data_for_context_preserves_other_books(): void {
@@ -85,10 +94,14 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         $user = $this->getDataGenerator()->create_user();
         reading_progress::record_view($firstbook->id, $firstchapter->id, $user->id);
         reading_progress::record_view($secondbook->id, $secondchapter->id, $user->id);
+        reading_tools::set_note($firstbook->id, $firstchapter->id, $user->id, 'First');
+        reading_tools::set_note($secondbook->id, $secondchapter->id, $user->id, 'Second');
 
         provider::delete_data_for_all_users_in_context($firstcontext);
         $this->assertSame(0, $DB->count_records('book_chapter_reads', ['bookid' => $firstbook->id]));
         $this->assertSame(1, $DB->count_records('book_chapter_reads', ['bookid' => $secondbook->id]));
+        $this->assertSame(0, $DB->count_records('book_chapter_userdata', ['bookid' => $firstbook->id]));
+        $this->assertSame(1, $DB->count_records('book_chapter_userdata', ['bookid' => $secondbook->id]));
     }
 
     /**
