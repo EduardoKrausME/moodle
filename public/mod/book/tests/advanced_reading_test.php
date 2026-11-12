@@ -123,6 +123,11 @@ final class advanced_reading_test extends \advanced_testcase {
         $this->assertSame("'=HYPERLINK(\"x\")", reading_tools::csv_safe('=HYPERLINK("x")'));
         $this->assertSame("' +SUM(A1:A2)", reading_tools::csv_safe(' +SUM(A1:A2)'));
         $this->assertSame('Ordinary text', reading_tools::csv_safe('Ordinary text'));
+        // Zero-width separators and tabs must not bypass spreadsheet injection defence.
+        $hiddenprefix = "\u{200B}=1+1";
+        $this->assertSame("'" . $hiddenprefix, reading_tools::csv_safe($hiddenprefix));
+        $tabprefix = "\t@SUM(A1:A2)";
+        $this->assertSame("'" . $tabprefix, reading_tools::csv_safe($tabprefix));
 
         $this->expectException(\moodle_exception::class);
         reading_tools::set_note($book->id, $first->id, $student->id, str_repeat('x', 5001));
