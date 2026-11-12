@@ -40,36 +40,71 @@ export const init = root => {
     observer.observe(container, {childList: true, subtree: true});
     updateFeedLinks();
 
+    /**
+     * Keep the button label, its ARIA state and panel visibility in sync.
+     *
+     * @param {HTMLElement} button Course discussion control.
+     * @param {HTMLElement} content Controlled region.
+     * @param {boolean} expanded Whether the panel is expanded.
+     */
+    const setExpanded = (button, content, expanded) => {
+        button.setAttribute('aria-expanded', String(expanded));
+        content.hidden = !expanded;
+        const label = button.querySelector('[data-region="forum-summary-toggle-label"]');
+        if (label) {
+            const key = expanded ? 'recentforumcollapse' : 'recentforumexpand';
+            getString(key, 'block_myoverview').then(value => {
+                // A delayed translation must not overwrite a newer toggle state.
+                if (button.isConnected && button.getAttribute('aria-expanded') === String(expanded)) {
+                    label.textContent = value;
+                }
+                return value;
+            }).catch(Notification.exception);
+        }
+    };
+
     $(root).on('click', '[data-action="toggle-forum-discussions"]', async event => {
         const button = event.currentTarget;
         const wrapper = button.closest('[data-region="forum-course-summary"]');
         const content = wrapper.querySelector('[data-region="forum-discussions-content"]');
-        if (button.disabled) {
-            return;
-        }
         const expanded = button.getAttribute('aria-expanded') === 'true';
-        button.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-        content.hidden = expanded;
-        if (expanded || content.dataset.loaded === 'true') {
+        setExpanded(button, content, !expanded);
+        if (expanded || content.dataset.loaded === 'true' || content.dataset.loading === 'true') {
             return;
         }
-        button.disabled = true;
+
+        // Do not disable the control during the request. A user on a slow mobile
+        // connection must still be able to collapse and reopen the summary.
+        content.dataset.loading = 'true';
+        content.setAttribute('aria-busy', 'true');
         try {
-            content.textContent = await getString('recentforumloading', 'block_myoverview');
+            const loading = await getString('recentforumloading', 'block_myoverview');
+            if (!wrapper.isConnected) {
+                return;
+            }
+            content.textContent = loading;
             const request = {
                 methodname: 'mod_forum_get_course_recent_discussions',
                 args: {courseid: Number(wrapper.dataset.courseId)},
             };
             const response = await Ajax.call([request])[0];
+            if (!wrapper.isConnected) {
+                return;
+            }
             const [html, js] = await Templates.render('block_myoverview/recent-forum-discussions-list', response);
+            if (!wrapper.isConnected) {
+                return;
+            }
             await Templates.replaceNodeContents($(content), html, js);
             content.dataset.loaded = 'true';
         } catch (error) {
-            button.setAttribute('aria-expanded', 'false');
-            content.hidden = true;
-            Notification.exception(error);
+            if (wrapper.isConnected) {
+                setExpanded(button, content, false);
+                Notification.exception(error);
+            }
         } finally {
-            button.disabled = false;
+            delete content.dataset.loading;
+            content.setAttribute('aria-busy', 'false');
         }
     });
 };
