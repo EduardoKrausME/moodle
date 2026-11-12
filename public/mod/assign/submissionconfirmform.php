@@ -53,6 +53,12 @@ class mod_assign_confirm_submission_form extends moodleform {
         }
 
         $mform->addElement('static', 'confirmmessage', '', get_string('confirmsubmission', 'mod_assign'));
+        // Explain the effect of Continue without bypassing native acceptance.
+        $mform->addElement('html', \html_writer::tag(
+            'p',
+            get_string('submissionworkflowconfirmhint', 'assign'),
+            ['id' => 'assign-confirm-final-hint', 'class' => 'assign-confirm-final-hint']
+        ));
         $mform->addElement('hidden', 'id', $coursemoduleid);
         $mform->setType('id', PARAM_INT);
         $mform->addElement('hidden', 'action', 'confirmsubmit');

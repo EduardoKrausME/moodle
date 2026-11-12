@@ -50,6 +50,29 @@
             </dl>
         {{/hasgrade}}
     </div>
+    {{#workflow}}
+        <section class="assign-submission-workflow assign-submission-workflow--{{state}} mt-3"
+                 aria-labelledby="assign-submission-workflow-heading">
+            <h3 id="assign-submission-workflow-heading" class="h5 mb-2">{{heading}}</h3>
+            <p class="assign-submission-workflow-status mb-1"><strong>{{label}}</strong></p>
+            <p class="mb-0">{{description}}</p>
+            {{#requiresconfirmation}}
+                <ol class="assign-submission-workflow-steps mt-3 mb-0">
+                    <li class="assign-submission-workflow-step{{#preparationcomplete}} is-complete{{/preparationcomplete}}">
+                        <span class="assign-submission-workflow-number" aria-hidden="true">1</span>
+                        {{step1}}
+                    </li>
+                    <li class="assign-submission-workflow-step{{#finalcomplete}} is-complete{{/finalcomplete}}">
+                        <span class="assign-submission-workflow-number" aria-hidden="true">2</span>
+                        {{step2}}
+                    </li>
+                </ol>
+            {{/requiresconfirmation}}
+            {{#groupnote}}
+                <p class="assign-submission-workflow-groupnote mt-2 mb-0">{{groupnote}}</p>
+            {{/groupnote}}
+        </section>
+    {{/workflow}}
     {{#availability}}
         <section class="assign-availability mt-3" aria-labelledby="assign-availability-title">
             <div class="assign-availability-heading">
