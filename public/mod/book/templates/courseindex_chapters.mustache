@@ -30,14 +30,24 @@
             <li class="book-courseindex-chapter {{#hidden}}dimmed{{/hidden}}">
                 <a class="book-courseindex-link"
                     href="{{url}}"
-                    {{#current}}aria-current="page"{{/current}}>{{title}}</a>
+                    {{#current}}aria-current="page"{{/current}}>
+                    <span class="book-courseindex-chaptertitle">{{title}}</span>
+                    {{#visited}}<span class="book-courseindex-visited" title="{{#str}}chaptervisited, mod_book{{/str}}">
+                        <span class="visually-hidden">{{#str}}chaptervisited, mod_book{{/str}}</span>
+                    </span>{{/visited}}
+                </a>
                 {{#hassubchapters}}
                     <ul class="book-courseindex-subchapters">
                         {{#subchapters}}
                             <li class="book-courseindex-chapter {{#hidden}}dimmed{{/hidden}}">
                                 <a class="book-courseindex-link"
                                     href="{{url}}"
-                                    {{#current}}aria-current="page"{{/current}}>{{title}}</a>
+                                    {{#current}}aria-current="page"{{/current}}>
+                                    <span class="book-courseindex-chaptertitle">{{title}}</span>
+                                    {{#visited}}<span class="book-courseindex-visited" title="{{#str}}chaptervisited, mod_book{{/str}}">
+                                        <span class="visually-hidden">{{#str}}chaptervisited, mod_book{{/str}}</span>
+                                    </span>{{/visited}}
+                                </a>
                             </li>
                         {{/subchapters}}
                     </ul>
