@@ -1752,3 +1752,176 @@ table.quizreviewsummary td.cell {
         font-size: 1.2rem;
     }
 }
+
+/* Final-attempt overview. This is read-only; the native finish form is untouched. */
+#page-mod-quiz-summary .mod-quiz-summary-progress {
+    display: grid;
+    gap: 0.875rem;
+    margin: 1rem 0 1.25rem;
+    padding: 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-lg, 0.75rem);
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    text-align: left;
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-intro,
+#page-mod-quiz-summary .mod-quiz-summary-progress-description,
+#page-mod-quiz-summary .mod-quiz-summary-progress-caption {
+    margin: 0;
+    line-height: 1.5;
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-counts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-count {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius, 0.375rem);
+    background-color: var(--bs-tertiary-bg);
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-count-number {
+    font-size: clamp(1.3rem, 3vw, 1.75rem);
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-count-label {
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-track {
+    height: 0.75rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: var(--bs-secondary-bg);
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--bs-success);
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-caption {
+    color: var(--bs-secondary-color);
+    font-size: 0.8rem;
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-notice {
+    margin: 0;
+    padding: 0.75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius, 0.375rem);
+    background-color: var(--bs-tertiary-bg);
+    line-height: 1.5;
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-notice[data-summary-notice="pending"],
+#page-mod-quiz-summary .mod-quiz-summary-progress-notice[data-summary-notice="restricted"],
+#page-mod-quiz-summary .mod-quiz-summary-progress-notice[data-summary-notice="overdue"] {
+    border-color: var(--bs-warning);
+    background-color: var(--bs-warning-bg-subtle, var(--bs-tertiary-bg));
+    color: var(--bs-warning-text-emphasis, var(--bs-body-color));
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-progress-notice[data-summary-notice="complete"] {
+    border-color: var(--bs-success);
+    background-color: var(--bs-success-bg-subtle, var(--bs-tertiary-bg));
+    color: var(--bs-success-text-emphasis, var(--bs-body-color));
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    text-align: left;
+}
+
+#page-mod-quiz-summary .mod-quiz-summary-table-scroll .quizsummaryofattempt {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+#page-mod-quiz-summary .quizsummaryofattempt .mod-quiz-summary-native-state {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+#page-mod-quiz-summary .quizsummaryofattempt .mod-quiz-summary-state-label,
+#page-mod-quiz-summary .quizsummaryofattempt .mod-quiz-summary-flag-label {
+    display: inline-block;
+    margin: 0 0.375rem 0.25rem 0;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 999px;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+#page-mod-quiz-summary .quizsummaryofattempt .mod-quiz-summary-pending > td:first-child {
+    border-left: 4px solid var(--bs-danger);
+}
+
+#page-mod-quiz-summary .quizsummaryofattempt .mod-quiz-summary-answered > td:first-child {
+    border-left: 4px solid var(--bs-success);
+}
+
+#page-mod-quiz-summary .quizsummaryofattempt .mod-quiz-summary-flagged > td:first-child {
+    border-top-color: var(--bs-warning);
+}
+
+#page-mod-quiz-summary .quizsummaryofattempt .mod-quiz-summary-pending .mod-quiz-summary-state-label {
+    border-color: var(--bs-danger);
+}
+
+#page-mod-quiz-summary .quizsummaryofattempt .mod-quiz-summary-flag-label {
+    border-color: var(--bs-warning);
+}
+
+#page-mod-quiz-summary .quizsummaryofattempt a:focus-visible {
+    outline: 3px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+@media (max-width: 575.98px) {
+    #page-mod-quiz-summary .mod-quiz-summary-progress {
+        padding: 0.75rem;
+    }
+
+    #page-mod-quiz-summary .mod-quiz-summary-progress-counts {
+        gap: 0.375rem;
+    }
+
+    #page-mod-quiz-summary .mod-quiz-summary-progress-count {
+        padding: 0.5rem;
+    }
+
+    #page-mod-quiz-summary .mod-quiz-summary-progress-count-label {
+        font-size: 0.75rem;
+    }
+
+    #page-mod-quiz-summary .mod-quiz-summary-table-scroll .quizsummaryofattempt {
+        min-width: 28rem;
+    }
+}

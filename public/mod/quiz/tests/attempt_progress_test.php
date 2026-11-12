@@ -93,6 +93,13 @@ final class attempt_progress_test extends \advanced_testcase {
             'pending' => 3,
             'flagged' => 2,
         ], attempt_progress::summarise($attempt));
+
+        // The final summary's row badges must agree with the navigation counts.
+        $this->assertTrue(attempt_progress::is_slot_answered($attempt, 1));
+        $this->assertFalse(attempt_progress::is_slot_answered($attempt, 2));
+        $this->assertFalse(attempt_progress::is_slot_answered($attempt, 3));
+        $this->assertFalse(attempt_progress::is_slot_answered($attempt, 5));
+        $this->assertTrue(attempt_progress::is_slot_answered($attempt, 6));
     }
 
     public function test_empty_attempt_is_valid(): void {

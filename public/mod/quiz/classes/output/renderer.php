@@ -795,10 +795,94 @@ class renderer extends plugin_renderer_base {
         $output .= $this->during_attempt_tertiary_nav($attemptobj->view_url());
         $output .= $this->heading(format_string($attemptobj->get_quiz_name()));
         $output .= $this->heading(get_string('summaryofattempt', 'quiz'), 3);
+        $output .= $this->summary_progress($attemptobj);
         $output .= $this->summary_table($attemptobj, $displayoptions);
         $output .= $this->summary_page_controls($attemptobj);
         $output .= $this->footer();
         return $output;
+    }
+
+    /**
+     * Render a read-only overview of the recorded answers before final submission.
+     *
+     * Uses the same persisted-state classifier as the attempt navigation progress.
+     * No form controls are introduced here: processattempt.php and its native
+     * confirmation dialogue remain the only path for final submission.
+     *
+     * @param quiz_attempt $attemptobj Current authorised attempt.
+     * @return string HTML.
+     */
+    public function summary_progress(quiz_attempt $attemptobj): string {
+        $counts = attempt_progress::summarise($attemptobj);
+        $percentage = $counts['total'] ? (int) round(100 * $counts['answered'] / $counts['total']) : 0;
+        $description = get_string('progresssummary', 'quiz', (object) [
+            'answered' => $counts['answered'],
+            'total' => $counts['total'],
+        ]);
+
+        $stats = '';
+        foreach (['answered', 'pending', 'flagged'] as $state) {
+            $stats .= html_writer::tag('div',
+                html_writer::tag('strong', $counts[$state], [
+                    'class' => 'mod-quiz-summary-progress-count-number',
+                    'data-summary-count' => $state,
+                ]) . html_writer::tag('span', get_string('progress' . $state, 'quiz'), [
+                    'class' => 'mod-quiz-summary-progress-count-label',
+                ]), ['class' => 'mod-quiz-summary-progress-count mod-quiz-summary-progress-count-' . $state]);
+        }
+
+        $bar = html_writer::tag('div', html_writer::tag('div', '', [
+            'class' => 'mod-quiz-summary-progress-fill',
+            'style' => 'width: ' . $percentage . '%;',
+        ]), [
+            'class' => 'mod-quiz-summary-progress-track',
+            'role' => 'progressbar',
+            'aria-label' => get_string('progresslabel', 'quiz'),
+            'aria-valuemin' => '0',
+            'aria-valuemax' => $counts['total'],
+            'aria-valuenow' => $counts['answered'],
+            'aria-valuetext' => $description,
+        ]);
+
+        if ($counts['total'] === 0) {
+            $notice = get_string('summaryprogressnoquestions', 'quiz');
+            $noticetype = 'neutral';
+        } else if ($counts['pending'] === 0) {
+            $notice = get_string('summaryprogressallanswered', 'quiz');
+            $noticetype = 'complete';
+        } else if ($attemptobj->get_state() == quiz_attempt::OVERDUE) {
+            $notice = get_string('summaryprogresspendingoverdue', 'quiz', $counts['pending']);
+            $noticetype = 'overdue';
+        } else if ($attemptobj->get_navigation_method() == QUIZ_NAVMETHOD_FREE) {
+            $notice = get_string('summaryprogresspendingfree', 'quiz', $counts['pending']);
+            $noticetype = 'pending';
+        } else {
+            $notice = get_string('summaryprogresspendingsequential', 'quiz', $counts['pending']);
+            $noticetype = 'restricted';
+        }
+
+        return html_writer::tag('section',
+            html_writer::tag('h4', get_string('progresslabel', 'quiz'), [
+                'id' => 'mod-quiz-summary-progress-heading',
+                'class' => 'mod-quiz-summary-progress-title',
+            ]) .
+            html_writer::tag('p', get_string('summaryprogressintro', 'quiz'), [
+                'class' => 'mod-quiz-summary-progress-intro',
+            ]) .
+            html_writer::tag('div', $stats, ['class' => 'mod-quiz-summary-progress-counts']) .
+            $bar .
+            html_writer::tag('p', $description, ['class' => 'mod-quiz-summary-progress-description']) .
+            html_writer::tag('p', $notice, [
+                'class' => 'mod-quiz-summary-progress-notice',
+                'data-summary-notice' => $noticetype,
+            ]) .
+            html_writer::tag('p', get_string('progresssavedonly', 'quiz'), [
+                'class' => 'mod-quiz-summary-progress-caption',
+            ]), [
+                'id' => 'mod-quiz-summary-progress',
+                'class' => 'mod-quiz-summary-progress',
+                'aria-labelledby' => 'mod-quiz-summary-progress-heading',
+            ]);
     }
 
     /**
@@ -860,24 +944,40 @@ class renderer extends plugin_renderer_base {
                 $flag = html_writer::empty_tag('img', ['src' => $this->image_url('i/flagged'),
                     'alt' => get_string('flagged', 'question'), 'class' => 'questionflag icon ms-2']);
             }
+            // Use the same persisted question state as the progress summary.
+            // Native status text remains visible, including its special cases.
+            $answered = attempt_progress::is_slot_answered($attemptobj, $slot);
+            $status = html_writer::tag('span',
+                $attemptobj->get_question_status($slot, $displayoptions->correctness),
+                ['class' => 'mod-quiz-summary-native-state']);
+            $status .= html_writer::tag('span', get_string($answered ? 'progressanswered' : 'progresspending', 'quiz'), [
+                'class' => 'mod-quiz-summary-state-label',
+            ]);
+            if ($attemptobj->is_question_flagged($slot)) {
+                // The original flag icon already has accessible alternative text.
+                $status .= html_writer::tag('span', get_string('progressflagged', 'quiz'), [
+                    'class' => 'mod-quiz-summary-flag-label',
+                    'aria-hidden' => 'true',
+                ]);
+            }
             if ($attemptobj->can_navigate_to($slot)) {
                 $row = [html_writer::link($attemptobj->attempt_url($slot),
-                        $attemptobj->get_question_number($slot) . $flag),
-                        $attemptobj->get_question_status($slot, $displayoptions->correctness)];
+                        $attemptobj->get_question_number($slot) . $flag), $status];
             } else {
-                $row = [$attemptobj->get_question_number($slot) . $flag,
-                        $attemptobj->get_question_status($slot, $displayoptions->correctness)];
+                $row = [$attemptobj->get_question_number($slot) . $flag, $status];
             }
             if ($markscolumn) {
                 $row[] = $attemptobj->get_question_mark($slot);
             }
             $table->data[] = $row;
             $table->rowclasses[] = 'quizsummary' . $slot . ' ' . $attemptobj->get_question_state_class(
-                            $slot, $displayoptions->correctness);
+                            $slot, $displayoptions->correctness) .
+                    ($answered ? ' mod-quiz-summary-answered' : ' mod-quiz-summary-pending') .
+                    ($attemptobj->is_question_flagged($slot) ? ' mod-quiz-summary-flagged' : '');
         }
 
         // Print the summary table.
-        return html_writer::table($table);
+        return html_writer::div(html_writer::table($table), 'mod-quiz-summary-table-scroll');
     }
 
     /**

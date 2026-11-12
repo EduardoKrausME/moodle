@@ -46,6 +46,22 @@ final class attempt_progress {
     }
 
     /**
+     * Whether this slot has a recorded answer and is not blocked by a prerequisite.
+     *
+     * Caller must have checked is_real_question(), so information items are not
+     * treated as an answered question. Used by both the progress widget and the
+     * final summary, keeping their status classifications consistent.
+     *
+     * @param quiz_attempt $attemptobj Quiz attempt.
+     * @param int $slot Real question slot.
+     * @return bool
+     */
+    public static function is_slot_answered(quiz_attempt $attemptobj, int $slot): bool {
+        return !$attemptobj->is_blocked_by_previous_question($slot) &&
+                self::is_answered($attemptobj->get_question_attempt($slot)->get_state());
+    }
+
+    /**
      * Summarise the authorised, already-loaded attempt without further queries.
      *
      * Each real question slot counts once, even when it has several subparts.
@@ -67,8 +83,7 @@ final class attempt_progress {
             if ($qa->is_flagged()) {
                 $flagged++;
             }
-            if (!$attemptobj->is_blocked_by_previous_question($slot) &&
-                    self::is_answered($qa->get_state())) {
+            if (self::is_slot_answered($attemptobj, $slot)) {
                 $answered++;
             }
         }
