@@ -343,7 +343,11 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
             return;
         }
         if (checker.checkFormForChanges('[data-region="grade-panel"] .gradeform')) {
-            // Do not mutate data-selected until the grader has chosen an action.
+            // A select2/autocomplete may already have changed its visible value.
+            // Keep the old participant selected until saving or discarding.
+            if (target > 0 && Number.isInteger(current) && current > 0) {
+                select.val(String(current)).trigger('change.select2');
+            }
             this._confirmUnsavedNavigation(target);
         } else {
             this._navigateDirectly(target);
@@ -657,6 +661,5 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
         this._requestNavigation(userid);
     };
 
-    /** @private */
     return GradingNavigation;
 });
