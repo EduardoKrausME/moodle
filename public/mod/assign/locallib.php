@@ -5130,7 +5130,13 @@ class assign {
         $navigationurl = new moodle_url('/mod/assign/view.php',
             \mod_assign\local\grading_filter_state::parameters($cmid, $navigationstate));
 
-        $PAGE->requires->js_call_amd('mod_assign/user', 'init', [$navigationurl->out(false)]);
+        // A search for all matching users must not inherit a previous userid.
+        // Keep the native AMD module and its existing production build unchanged.
+        $usernavigationstate = $navigationstate;
+        unset($usernavigationstate['userid']);
+        $usernavigationurl = new moodle_url('/mod/assign/view.php',
+            \mod_assign\local\grading_filter_state::parameters($cmid, $usernavigationstate));
+        $PAGE->requires->js_call_amd('mod_assign/user', 'init', [$usernavigationurl->out(false)]);
 
         // Group changes retain the other filters, but the native group picker
         // still determines which groups the teacher may access.
