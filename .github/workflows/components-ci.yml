@@ -27,7 +27,7 @@ permissions:
 
 concurrency:
   group: components-ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   static-checks:
@@ -255,7 +255,7 @@ jobs:
           fi
 
           php public/admin/tool/behat/cli/init.php --disable-composer
-          php public/admin/tool/behat/cli/run.php --profile=chrome --tags='@forum_ux_14' --stop-on-failure=1
+          php public/admin/tool/behat/cli/run.php --profile=chrome --tags='@forum_ux_14'
 
       - name: Collect browser diagnostics on failure
         if: failure()
