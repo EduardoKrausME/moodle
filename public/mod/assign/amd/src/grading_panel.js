@@ -165,9 +165,11 @@ define([
         var commentAreaElement = document.querySelector('.comment-area');
         if (commentAreaElement) {
             var commentTextAreaElement = commentAreaElement.querySelector('.db > textarea');
-            if (commentTextAreaElement.value !== '') {
+            if (commentTextAreaElement && commentTextAreaElement.value !== '') {
                 var commentActionPostElement = commentAreaElement.querySelector('.fd a[id^="comment-action-post-"]');
-                commentActionPostElement.click();
+                if (commentActionPostElement) {
+                    commentActionPostElement.click();
+                }
             }
         }
 
