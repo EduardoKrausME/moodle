@@ -2898,3 +2898,29 @@ body.path-mod-assign [data-region="grade-panel"] .mform .fitem.has-popout .felem
         transition: none;
     }
 }
+
+/* Permission-scoped marking status and grades: never an editable input. */
+.path-mod-assign [data-region="grade-panel"] .assign-assessment-workflow {
+    color: var(--bs-body-color, #212529);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.path-mod-assign [data-region="grade-panel"] .assign-assessment-slot {
+    flex-wrap: wrap;
+}
+
+.path-mod-assign [data-region="grade-panel"] .assign-assessment-individual-mark {
+    flex-basis: 100%;
+    font-size: 0.825rem;
+    color: var(--bs-body-color, #212529);
+}
+
+.path-mod-assign [data-region="grade-panel"] .assign-assessment-agreed {
+    margin-block-start: 0.35rem;
+    padding-block-start: 0.5rem;
+    border-block-start: 1px solid var(--bs-border-color, #dee2e6);
+    font-size: 0.875rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
