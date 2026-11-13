@@ -1,0 +1,172 @@
+{{!
+    @template mod_forum/participation_page
+    Read-only participation dashboard. Numeric data and links are escaped.
+    This server-rendered page works without JavaScript.
+}}
+<div class="forum-participation" data-region="forum-participation">
+    <h2 class="h4">{{#str}}participationtitle, mod_forum{{/str}}</h2>
+    <p class="text-muted">{{#str}}participationsubtitle, mod_forum{{/str}}</p>
+    <form action="{{actionurl}}" method="get" data-region="participation-filters" class="mb-4">
+        <div class="forum-participation__filters">
+            <div>
+                <label for="participation-course" class="form-label">{{#str}}participationcourse, mod_forum{{/str}}</label>
+                <select id="participation-course" name="courseid" class="form-select">
+                    {{#courses}}
+                        <option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>
+                    {{/courses}}
+                </select>
+            </div>
+            <div>
+                <label for="participation-forum" class="form-label">{{#str}}participationforum, mod_forum{{/str}}</label>
+                <select id="participation-forum" name="forumid" class="form-select">
+                    <option value="0">{{#str}}participationallforums, mod_forum{{/str}}</option>
+                    {{#forumoptions}}
+                        <option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>
+                    {{/forumoptions}}
+                </select>
+            </div>
+            <div>
+                <label for="participation-group" class="form-label">{{#str}}participationgroup, mod_forum{{/str}}</label>
+                <select id="participation-group" name="groupid" class="form-select"
+                        {{^hasgroupoptions}}disabled{{/hasgroupoptions}}>
+                    <option value="0">{{#str}}participationallgroups, mod_forum{{/str}}</option>
+                    {{#groupoptions}}
+                        <option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>
+                    {{/groupoptions}}
+                </select>
+            </div>
+            <div>
+                <label for="participation-from" class="form-label">{{#str}}participationfrom, mod_forum{{/str}}</label>
+                <input type="date" class="form-control" id="participation-from" name="from" value="{{fromdate}}" required>
+            </div>
+            <div>
+                <label for="participation-to" class="form-label">{{#str}}participationto, mod_forum{{/str}}</label>
+                <input type="date" class="form-control" id="participation-to" name="to" value="{{todate}}" required>
+            </div>
+            <button type="submit" class="btn btn-primary">{{#str}}participationapply, mod_forum{{/str}}</button>
+        </div>
+    </form>
+
+    <section aria-label="{{#str}}participationtitle, mod_forum{{/str}}">
+        <div class="forum-participation__metrics mb-4">
+            <div class="forum-participation__metric border rounded-3 p-3">
+                <strong class="h3 d-block">{{metrics.discussions}}</strong>
+                <span>{{#str}}participationdiscussions, mod_forum{{/str}}</span>
+            </div>
+            <div class="forum-participation__metric border rounded-3 p-3">
+                <strong class="h3 d-block">{{metrics.replies}}</strong>
+                <span>{{#str}}participationreplies, mod_forum{{/str}}</span>
+            </div>
+            <div class="forum-participation__metric border rounded-3 p-3">
+                <strong class="h3 d-block">{{metrics.participants}}</strong>
+                <span>{{#str}}participationparticipants, mod_forum{{/str}}</span>
+            </div>
+            <div class="forum-participation__metric border rounded-3 p-3">
+                <strong class="h3 d-block">{{metrics.responded}}</strong>
+                <span>{{#str}}participationresponded, mod_forum{{/str}}</span>
+            </div>
+            <div class="forum-participation__metric border rounded-3 p-3">
+                <strong class="h3 d-block">{{metrics.coverage}}%</strong>
+                <span>{{#str}}participationcoverage, mod_forum{{/str}}</span>
+            </div>
+            <div class="forum-participation__metric border rounded-3 p-3">
+                <strong class="h3 d-block">{{metrics.medianhours}}</strong>
+                <span>{{#str}}participationmedian, mod_forum{{/str}}</span>
+            </div>
+            <div class="forum-participation__metric border rounded-3 p-3">
+                <strong class="h3 d-block">{{metrics.accepted}}</strong>
+                <span>{{#str}}participationaccepted, mod_forum{{/str}}</span>
+            </div>
+        </div>
+        <p class="small text-muted">{{#str}}participationcurrent, mod_forum{{/str}}</p>
+        {{^hasactivity}}
+            <p class="alert alert-info">{{#str}}participationempty, mod_forum{{/str}}</p>
+        {{/hasactivity}}
+    </section>
+
+    <section class="mb-4" aria-labelledby="participation-timeline-heading">
+        <h3 id="participation-timeline-heading" class="h5">{{#str}}participationtimeline, mod_forum{{/str}}</h3>
+        <p class="small text-muted">{{#str}}participationtimelinehelp, mod_forum{{/str}}</p>
+        <div class="table-responsive">
+            <table class="table table-sm forum-participation__chart-table">
+                <caption class="visually-hidden">{{#str}}participationseriesdata, mod_forum{{/str}}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{#str}}participationday, mod_forum{{/str}}</th>
+                        <th scope="col">{{#str}}participationdiscussions, mod_forum{{/str}}</th>
+                        <th scope="col">{{#str}}participationreplies, mod_forum{{/str}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#series}}
+                        <tr>
+                            <th scope="row">{{label}}</th>
+                            <td>
+                                <span class="visually-hidden">{{discussions}}</span>
+                                <div class="d-flex gap-2 align-items-center" aria-hidden="true">
+                                    <span class="forum-participation__bar rounded" style="width: {{discussionwidth}}%"></span>
+                                    <span>{{discussions}}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="visually-hidden">{{replies}}</span>
+                                <div class="d-flex gap-2 align-items-center" aria-hidden="true">
+                                    <span class="forum-participation__bar forum-participation__bar--reply rounded" style="width: {{replywidth}}%"></span>
+                                    <span>{{replies}}</span>
+                                </div>
+                            </td>
+                        </tr>
+                    {{/series}}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="mb-4" aria-labelledby="participation-forums-heading">
+        <h3 id="participation-forums-heading" class="h5">{{#str}}participationforums, mod_forum{{/str}}</h3>
+        <div class="table-responsive">
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th scope="col">{{#str}}participationforum, mod_forum{{/str}}</th>
+                        <th scope="col">{{#str}}participationdiscussions, mod_forum{{/str}}</th>
+                        <th scope="col">{{#str}}participationreplies, mod_forum{{/str}}</th>
+                        <th scope="col">{{#str}}participationparticipants, mod_forum{{/str}}</th>
+                        <th scope="col">{{#str}}participationcoverage, mod_forum{{/str}}</th>
+                        <th scope="col">{{#str}}participationaccepted, mod_forum{{/str}}</th>
+                        <th scope="col">{{#str}}actions{{/str}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#forums}}
+                        <tr>
+                            <th scope="row"><a href="{{url}}">{{name}}</a></th>
+                            <td>{{discussions}}</td>
+                            <td>{{replies}}</td>
+                            <td>{{participants}}</td>
+                            <td>{{coverage}}%</td>
+                            <td>{{accepted}}</td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {{#summaryurl}}
+                                        <a href="{{summaryurl}}">{{#str}}participationdetails, mod_forum{{/str}}</a>
+                                    {{/summaryurl}}
+                                    {{#queueurl}}
+                                        <a href="{{queueurl}}">{{#str}}participationquestions, mod_forum{{/str}}</a>
+                                    {{/queueurl}}
+                                </div>
+                            </td>
+                        </tr>
+                    {{/forums}}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="d-flex flex-wrap gap-3 mb-3">
+        <a class="btn btn-outline-primary" href="{{downloadurl}}">
+            {{#str}}participationdownload, mod_forum{{/str}}
+        </a>
+    </div>
+    <p class="small text-muted">{{#str}}participationexportnote, mod_forum{{/str}}</p>
+</div>
