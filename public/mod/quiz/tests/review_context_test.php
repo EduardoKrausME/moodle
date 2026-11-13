@@ -76,14 +76,17 @@ final class review_context_test extends \advanced_testcase {
         $options = $this->hidden_options();
         $options->correctness = question_display_options::VISIBLE;
         $qa = $this->getMockBuilder(question_attempt::class)->disableOriginalConstructor()
-            ->onlyMethods(['get_state_string', 'has_marks'])->getMock();
+            ->onlyMethods(['get_state_string', 'get_state_class', 'has_marks'])->getMock();
         $qa->method('has_marks')->willReturn(true);
         $qa->expects($this->once())->method('get_state_string')->with(true)
             ->willReturn('Partially correct');
+        $qa->expects($this->once())->method('get_state_class')->with(true)
+            ->willReturn('partiallycorrect');
         $context = review_context::for_review($options, true, $qa);
         $this->assertTrue($context['show']);
         $this->assertTrue($context['hasstate']);
         $this->assertSame('Partially correct', $context['state']);
+        $this->assertSame('mod-quiz-review-context-state--partiallycorrect', $context['stateclass']);
         $this->assertSame([get_string('reviewcontextcorrectness', 'quiz')], $this->labels($context));
     }
 
@@ -198,5 +201,81 @@ final class review_context_test extends \advanced_testcase {
         $this->assertFalse(review_context::for_review($later)['show']);
         $this->assertSame([get_string('reviewcontextspecificfeedback', 'quiz')],
             $this->labels(review_context::for_review($closed)));
+    }
+
+    public function test_native_status_classes_are_allowlisted(): void {
+        $options = $this->hidden_options();
+        $options->correctness = question_display_options::VISIBLE;
+        foreach (['correct', 'partiallycorrect', 'incorrect', 'requiresgrading'] as $state) {
+            $qa = $this->getMockBuilder(question_attempt::class)->disableOriginalConstructor()
+                ->onlyMethods(['has_marks', 'get_state_string', 'get_state_class'])->getMock();
+            $qa->method('has_marks')->willReturn(true);
+            $qa->method('get_state_string')->willReturn('Native status');
+            $qa->method('get_state_class')->willReturn($state);
+            $context = review_context::for_review($options, true, $qa);
+            $this->assertSame('mod-quiz-review-context-state--' . $state, $context['stateclass']);
+            $this->assertSame('Native status', $context['state']);
+        }
+    }
+
+    public function test_unexpected_native_status_class_cannot_become_css_or_html(): void {
+        $options = $this->hidden_options();
+        $options->correctness = question_display_options::VISIBLE;
+        $qa = $this->getMockBuilder(question_attempt::class)->disableOriginalConstructor()
+            ->onlyMethods(['has_marks', 'get_state_string', 'get_state_class'])->getMock();
+        $qa->method('has_marks')->willReturn(true);
+        $qa->method('get_state_string')->willReturn('Native status');
+        $qa->method('get_state_class')->willReturn('correct" onmouseover="alert(1)');
+        $context = review_context::for_review($options, true, $qa);
+        $this->assertTrue($context['hasstate']);
+        $this->assertArrayNotHasKey('stateclass', $context);
+        $this->assertSame('Native status', $context['state']);
+    }
+
+    public function test_hidden_correctness_does_not_consult_status_even_if_feedback_is_visible(): void {
+        $options = $this->hidden_options();
+        $options->feedback = question_display_options::VISIBLE;
+        $options->marks = question_display_options::MAX_ONLY;
+        $qa = $this->getMockBuilder(question_attempt::class)->disableOriginalConstructor()
+            ->onlyMethods(['get_state_string', 'get_state_class'])->getMock();
+        $qa->expects($this->never())->method('get_state_string');
+        $qa->expects($this->never())->method('get_state_class');
+        $context = review_context::for_review($options, true, $qa);
+        $this->assertTrue($context['hasitems']);
+        $this->assertFalse($context['hasstate']);
+        $this->assertArrayNotHasKey('state', $context);
+        $this->assertArrayNotHasKey('stateclass', $context);
+        $this->assertNotContains(get_string('reviewcontextcorrectness', 'quiz'), $this->labels($context));
+    }
+
+    public function test_review_during_attempt_does_not_advertise_future_results(): void {
+        $quiz = (object) [
+            'reviewattempt' => display_options::IMMEDIATELY_AFTER | display_options::AFTER_CLOSE,
+            'reviewcorrectness' => display_options::AFTER_CLOSE,
+            'reviewmaxmarks' => display_options::IMMEDIATELY_AFTER,
+            'reviewmarks' => display_options::IMMEDIATELY_AFTER,
+            'reviewspecificfeedback' => display_options::AFTER_CLOSE,
+            'reviewgeneralfeedback' => 0,
+            'reviewrightanswer' => display_options::AFTER_CLOSE,
+            'reviewoverallfeedback' => 0,
+            'questiondecimalpoints' => -1,
+            'decimalpoints' => 2,
+        ];
+        foreach ([display_options::DURING, display_options::LATER_WHILE_OPEN] as $phase) {
+            $context = review_context::for_review(display_options::make_from_quiz($quiz, $phase));
+            $this->assertFalse($context['show']);
+            $this->assertFalse($context['hasitems']);
+            $this->assertEmpty($context['items']);
+        }
+        $immediate = review_context::for_review(display_options::make_from_quiz(
+            $quiz, display_options::IMMEDIATELY_AFTER));
+        $this->assertSame([get_string('reviewcontextmarks', 'quiz')], $this->labels($immediate));
+        $afterclose = review_context::for_review(display_options::make_from_quiz(
+            $quiz, display_options::AFTER_CLOSE));
+        $this->assertSame([
+            get_string('reviewcontextcorrectness', 'quiz'),
+            get_string('reviewcontextspecificfeedback', 'quiz'),
+            get_string('reviewcontextcorrectanswer', 'quiz'),
+        ], $this->labels($afterclose));
     }
 }

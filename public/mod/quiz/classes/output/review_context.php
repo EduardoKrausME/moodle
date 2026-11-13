@@ -55,6 +55,7 @@ final class review_context {
             'heading' => get_string(
                 $question ? 'reviewcontextquestiontitle' : 'reviewcontexttitle', 'quiz'),
             'items' => [],
+            'hasitems' => false,
             'hasstate' => false,
         ];
 
@@ -72,6 +73,15 @@ final class review_context {
                 // Native state text, never reconstruct correctness from a fraction.
                 $result['hasstate'] = true;
                 $result['state'] = $qa->get_state_string(true);
+
+                // Style only permitted native correctness classes, never a
+                // guessed status or a value supplied by the browser.
+                $stateclass = $qa->get_state_class(true);
+                if (in_array($stateclass, [
+                    'correct', 'partiallycorrect', 'incorrect', 'requiresgrading',
+                ], true)) {
+                    $result['stateclass'] = 'mod-quiz-review-context-state--' . $stateclass;
+                }
             }
         }
 
@@ -105,7 +115,8 @@ final class review_context {
         }
 
         $result['items'] = $items;
-        $result['show'] = !empty($items);
+        $result['hasitems'] = !empty($items);
+        $result['show'] = $result['hasitems'];
         return $result;
     }
 }

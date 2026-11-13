@@ -103,3 +103,40 @@ Feature: The contextual quiz review respects information visibility
     And I follow "Review"
     Then ".mod-quiz-review-context" "css_element" should exist
     And ".que .info" "css_element" should exist
+  
+  @javascript
+  Scenario: Review details collapse per question while native question output remains visible
+    Given user "student" has attempted "Full review" with responses:
+      | slot | response |
+      | 1    | True     |
+      | 2    | False    |
+    When I am on the "Full review" "mod_quiz > View" page logged in as "student"
+    And I follow "Review"
+    Then ".mod-quiz-review-context-question details:not([open])" "css_element" should exist
+    And I should see "Review information available" in ".mod-quiz-review-context-question" "css_element"
+    And ".que .info" "css_element" should exist
+
+  @javascript
+  Scenario: The overview is not repeated on subsequent review pages
+    Given user "student" has attempted "Full review" with responses:
+      | slot | response |
+      | 1    | True     |
+      | 2    | False    |
+    When I am on the "Full review" "mod_quiz > View" page logged in as "student"
+    And I follow "Review"
+    And I follow "Show one page at a time"
+    Then ".mod-quiz-review-context:not(.mod-quiz-review-context-question)" "css_element" should exist
+    And I follow "Next page"
+    And ".mod-quiz-review-context:not(.mod-quiz-review-context-question)" "css_element" should not exist
+    And ".mod-quiz-review-question-section" "css_element" should exist
+
+  @javascript
+  Scenario: Questions keep consistent layout when review information is restricted
+    Given user "student" has attempted "Restricted review" with responses:
+      | slot | response |
+      | 1    | True     |
+    When I am on the "Restricted review" "mod_quiz > View" page logged in as "student"
+    And I follow "Review"
+    Then ".mod-quiz-review-question-section" "css_element" should exist
+    And ".mod-quiz-review-context-state" "css_element" should not exist
+    And ".que .info" "css_element" should exist

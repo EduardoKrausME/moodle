@@ -1228,6 +1228,7 @@ $string['reviewcontexttitle'] = 'Information available for review';
 $string['reviewcontextquestiontitle'] = 'Review details for this question';
 $string['reviewcontextquestionlabel'] = 'Review of question {$a}';
 $string['reviewcontextdescription'] = 'The quiz review settings determine which details may appear below.';
+$string['reviewcontextshowdetails'] = 'Review information available';
 $string['reviewcontextcorrectness'] = 'Correction status';
 $string['reviewcontextmarks'] = 'Earned and maximum marks';
 $string['reviewcontextmaxmarks'] = 'Maximum possible marks';

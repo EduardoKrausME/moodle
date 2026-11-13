@@ -26,27 +26,43 @@
         "question": true,
         "heading": "Review information for this question",
         "items": [{"label": "Correction status"}, {"label": "Specific feedback"}],
+        "hasitems": true,
         "hasstate": true,
-        "state": "Correct"
+        "state": "Correct",
+        "stateclass": "mod-quiz-review-context-state--correct"
     }
 }}
 {{#show}}
-<div class="mod-quiz-review-context {{#question}}mod-quiz-review-context-question{{/question}}"
-        role="note">
-    <h4 class="mod-quiz-review-context-heading">{{heading}}</h4>
-    <p class="mod-quiz-review-context-description">
-        {{#str}} reviewcontextdescription, mod_quiz {{/str}}
-    </p>
-    <ul class="mod-quiz-review-context-items">
-        {{#items}}
-            <li class="mod-quiz-review-context-item">{{label}}</li>
-        {{/items}}
-    </ul>
-    {{#hasstate}}
-        <p class="mod-quiz-review-context-state">
-            <strong>{{#str}} reviewcontextstate, mod_quiz {{/str}}:</strong>
-            <span>{{state}}</span>
+<div class="mod-quiz-review-context {{#question}}mod-quiz-review-context-question{{/question}}">
+    {{#question}}
+        <p class="mod-quiz-review-context-heading"><strong>{{heading}}</strong></p>
+        {{#hasstate}}
+            <p class="mod-quiz-review-context-state {{stateclass}}">
+                <strong>{{#str}} reviewcontextstate, mod_quiz {{/str}}:</strong>
+                <span>{{state}}</span>
+            </p>
+        {{/hasstate}}
+        {{#hasitems}}
+            <details class="mod-quiz-review-context-details">
+                <summary>{{#str}} reviewcontextshowdetails, mod_quiz {{/str}}</summary>
+                <ul class="mod-quiz-review-context-items">
+                    {{#items}}
+                        <li class="mod-quiz-review-context-item">{{label}}</li>
+                    {{/items}}
+                </ul>
+            </details>
+        {{/hasitems}}
+    {{/question}}
+    {{^question}}
+        <h3 class="mod-quiz-review-context-heading">{{heading}}</h3>
+        <p class="mod-quiz-review-context-description">
+            {{#str}} reviewcontextdescription, mod_quiz {{/str}}
         </p>
-    {{/hasstate}}
+        <ul class="mod-quiz-review-context-items">
+            {{#items}}
+                <li class="mod-quiz-review-context-item">{{label}}</li>
+            {{/items}}
+        </ul>
+    {{/question}}
 </div>
 {{/show}}

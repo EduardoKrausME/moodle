@@ -2041,9 +2041,58 @@ table.quizreviewsummary td.cell {
 #page-mod-quiz-reviewquestion .mod-quiz-review-context-state {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 0.35rem;
     margin: 0;
     font-size: 0.875rem;
+}
+#page-mod-quiz-review .mod-quiz-review-context-question,
+#page-mod-quiz-reviewquestion .mod-quiz-review-context-question {
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 0.75rem;
+    background: var(--bs-tertiary-bg);
+}
+#page-mod-quiz-review .mod-quiz-review-context-details,
+#page-mod-quiz-reviewquestion .mod-quiz-review-context-details {
+    min-width: 0;
+    font-size: 0.875rem;
+}
+#page-mod-quiz-review .mod-quiz-review-context-details summary,
+#page-mod-quiz-reviewquestion .mod-quiz-review-context-details summary {
+    display: list-item;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: var(--bs-border-radius, 0.375rem);
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+#page-mod-quiz-review .mod-quiz-review-context-details summary:focus-visible,
+#page-mod-quiz-reviewquestion .mod-quiz-review-context-details summary:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 3px;
+}
+#page-mod-quiz-review .mod-quiz-review-context-details[open] .mod-quiz-review-context-items,
+#page-mod-quiz-reviewquestion .mod-quiz-review-context-details[open] .mod-quiz-review-context-items {
+    margin-top: 0.5rem;
+}
+#page-mod-quiz-review .mod-quiz-review-context-state span,
+#page-mod-quiz-reviewquestion .mod-quiz-review-context-state span {
+    overflow-wrap: anywhere;
+}
+#page-mod-quiz-review .mod-quiz-review-context-state--correct span:last-child,
+#page-mod-quiz-reviewquestion .mod-quiz-review-context-state--correct span:last-child {
+    color: var(--bs-success-text-emphasis, var(--bs-body-color));
+}
+#page-mod-quiz-review .mod-quiz-review-context-state--incorrect span:last-child,
+#page-mod-quiz-reviewquestion .mod-quiz-review-context-state--incorrect span:last-child {
+    color: var(--bs-danger-text-emphasis, var(--bs-body-color));
+}
+#page-mod-quiz-review .mod-quiz-review-context-state--partiallycorrect span:last-child,
+#page-mod-quiz-reviewquestion .mod-quiz-review-context-state--partiallycorrect span:last-child,
+#page-mod-quiz-review .mod-quiz-review-context-state--requiresgrading span:last-child,
+#page-mod-quiz-reviewquestion .mod-quiz-review-context-state--requiresgrading span:last-child {
+    color: var(--bs-warning-text-emphasis, var(--bs-body-color));
 }
 #page-mod-quiz-review .mod-quiz-review-question-section {
     margin-bottom: 1.25rem;

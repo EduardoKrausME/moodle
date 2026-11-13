@@ -256,14 +256,14 @@ class renderer extends plugin_renderer_base {
             if ($reviewing && $attemptobj->is_real_question($slot) &&
                     !$attemptobj->is_blocked_by_previous_question($slot)) {
                 $context = $this->review_context($displayoptions, true, $attemptobj->get_question_attempt($slot));
-                if ($context !== '') {
-                    $output .= html_writer::tag('section', $context . $questionhtml, [
-                        'class' => 'mod-quiz-review-question-section',
-                        'aria-label' => get_string('reviewcontextquestionlabel', 'quiz',
-                                $attemptobj->get_question_number($slot)),
-                    ]);
-                    continue;
-                }
+                // Keep the layout consistent when every review category is
+                // hidden. The native question renderer remains authoritative.
+                $output .= html_writer::tag('section', $context . $questionhtml, [
+                    'class' => 'mod-quiz-review-question-section',
+                    'aria-label' => get_string('reviewcontextquestionlabel', 'quiz',
+                            $attemptobj->get_question_number($slot)),
+                ]);
+                continue;
             }
             $output .= $questionhtml;
         }
