@@ -41,4 +41,6 @@ Feature: Assignment submission count includes submissions from active students i
       | Assignment 1 | 2 of 2      |
     And I am on "Course 1" course homepage
     And I follow "Assignment 1"
+    And I should see "2" in the ".assign-grading-dashboard-card--submitted" "css_element"
+    And I click on "Show original grading summary" "text"
     And I should see "2" in the "Submitted" "table_row"

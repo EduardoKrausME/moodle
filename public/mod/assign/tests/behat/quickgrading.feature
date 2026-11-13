@@ -34,7 +34,7 @@ Feature: In an assignment, teachers grade multiple students on one page
     And I change window size to "medium"
     And I press "Save changes"
     And I am on the "Test assignment name" "assign activity" page
-    Then I should see "1" in the "Needs grading" "table_row"
+    Then I should see "1" in the ".assign-grading-dashboard-card--pending" "css_element"
 
   Scenario: Grade multiple students on one page
     Given the following "courses" exist:

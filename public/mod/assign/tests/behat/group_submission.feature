@@ -255,17 +255,17 @@ Feature: Group assignment submissions
       | Test assignment name  | student2  | I'm the student's first submission  |
       | Test assignment name  | student3  | I'm the student's first submission  |
     And I am on the "Test assignment name" Activity page logged in as admin
-    And I should see "3" in the "Groups" "table_row"
-    And I should see "3" in the "Submitted" "table_row"
+    And I should see "3" in the ".assign-grading-dashboard-card--participants" "css_element"
+    And I should see "3" in the ".assign-grading-dashboard-card--submitted" "css_element"
     When I select "Group 1" from the "Separate groups" singleselect
-    Then I should see "1" in the "Groups" "table_row"
-    And I should see "1" in the "Submitted" "table_row"
+    Then I should see "1" in the ".assign-grading-dashboard-card--participants" "css_element"
+    And I should see "1" in the ".assign-grading-dashboard-card--submitted" "css_element"
     And I select "Group 2" from the "Separate groups" singleselect
-    And I should see "1" in the "Groups" "table_row"
-    And I should see "1" in the "Submitted" "table_row"
+    And I should see "1" in the ".assign-grading-dashboard-card--participants" "css_element"
+    And I should see "1" in the ".assign-grading-dashboard-card--submitted" "css_element"
     And I select "Group 3" from the "Separate groups" singleselect
-    And I should see "1" in the "Groups" "table_row"
-    And I should see "1" in the "Submitted" "table_row"
+    And I should see "1" in the ".assign-grading-dashboard-card--participants" "css_element"
+    And I should see "1" in the ".assign-grading-dashboard-card--submitted" "css_element"
 
   Scenario: Confirm that the submission status changes for each group member
     Given the following "group members" exist:

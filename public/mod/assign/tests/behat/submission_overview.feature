@@ -50,5 +50,7 @@ Feature: Assignment landing page overview
       | assignsubmission_onlinetext_enabled | 1 |
     When I am on the "Overview assignment" Activity page logged in as teacher1
     Then ".assign-landing .gradingsummary" "css_element" should exist
+    And ".assign-grading-dashboard" "css_element" should exist
     And I should see "Grading summary" in the ".assign-landing" "css_element"
-    And I should see "Number of participants" in the ".assign-landing" "css_element"
+    When I click on "Show original grading summary" "text"
+    Then I should see "Number of participants" in the ".assign-landing" "css_element"
