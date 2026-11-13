@@ -188,8 +188,10 @@ final class question_selection_ux_test extends \advanced_testcase {
             'values' => [$category->id],
             'filteroptions' => ['includesubcategories' => false],
         ]]];
-        $structure = \mod_quiz\quiz_settings::create($quiz->id)->get_structure();
+        $quizsettings = \mod_quiz\quiz_settings::create($quiz->id);
+        $structure = $quizsettings->get_structure();
         $structure->add_random_questions(1, 1, $condition);
+        $quizsettings->get_grade_calculator()->recompute_quiz_sumgrades();
         $quizgenerator->create_attempt($quiz->id, $student->id);
 
         $this->expectException(\moodle_exception::class);
