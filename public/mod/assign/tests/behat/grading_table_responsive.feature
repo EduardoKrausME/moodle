@@ -107,8 +107,8 @@ Feature: Native submissions table remains readable and fully functional on narro
     And I navigate to "Submissions" in current page administration
     When I change window size to "small"
     Then "#submissions .assign-grading-team" "css_element" should exist
-    And "Our team answer" "text" should exist in the "#submissions" "css_element"
-    And "Group One" "text" should exist in the "#submissions" "css_element"
+    And I should see "Our team answer" in the "#submissions" "css_element"
+    And I should see "Group One" in the "#submissions" "css_element"
 
   @javascript
   Scenario: Column visibility and table preference controls remain native

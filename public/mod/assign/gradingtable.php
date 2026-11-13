@@ -621,8 +621,8 @@ class assign_grading_table extends table_sql implements renderable {
                     ($column === 'fullname' ? 'username ' : '') . $role
                 ));
             }
-            $identity = in_array('fullname', $columns, true) ? 'fullname' : 'recordid';
-            $this->define_header_column($identity);
+            // Keep the native td cells used by grading table selectors and
+            // existing Behat table_row lookups. Column headers retain scope=col.
         }
 
         $this->no_sorting('finalgrade');
