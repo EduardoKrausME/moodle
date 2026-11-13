@@ -112,10 +112,19 @@ define([], function() {
             return;
         }
         form.dataset.assignAssessmentInitialised = 'true';
+        let scheduled = false;
         const changed = () => {
             // Rubric's own JS updates its checked state on the same click.
-            // Read after its handler, without intercepting its events.
-            window.requestAnimationFrame(() => update(form));
+            // Coalesce rapid input and click events without interfering with
+            // the core controller or its grading change checker.
+            if (scheduled) {
+                return;
+            }
+            scheduled = true;
+            window.requestAnimationFrame(() => {
+                scheduled = false;
+                update(form);
+            });
         };
         form.addEventListener('change', changed);
         form.addEventListener('input', changed);
