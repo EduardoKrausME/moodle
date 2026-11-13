@@ -1,0 +1,213 @@
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle. If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Progressive UI enhancements around the native core/bulkactions grader.
+ * Selection is strictly limited to the rendered page. No participant IDs
+ * are retained across navigation, pagination, filters or a new page load.
+ *
+ * @module mod_assign/bulkactions/grading/selection_ui
+ */
+define(['core/str'], function(Str) {
+    'use strict';
+
+    const tableSelector = '#submissions';
+    const rowSelector = 'input[type="checkbox"][name="selectedusers"]';
+    const selectAllSelector = 'input[type="checkbox"][name="selectall"]';
+    const modalSelector = '[data-region="assign-bulk-confirm"]';
+    const footerSelector = '[data-type="bulkactions"]';
+
+    /**
+     * Read only the visible grading table; do not accidentally select checkboxes
+     * from quick grading forms, other activities, or modal dialogs.
+     *
+     * @returns {HTMLInputElement[]}
+     */
+    const getPageItems = () => [...document.querySelectorAll(tableSelector + ' ' + rowSelector)];
+
+    /**
+     * Current selected IDs, without duplicates or unchecked/off-page records.
+     *
+     * @returns {string[]}
+     */
+    const getSelectedIds = () => [...new Set(
+        getPageItems().filter(box => box.checked).map(box => box.value)
+    )];
+
+    /**
+     * Synchronise the native checkbox's mixed state, row presentation and
+     * screen-reader description without intercepting the Moodle YUI handler.
+     *
+     * @returns {void}
+     */
+    const syncSelection = () => {
+        const header = document.querySelector(tableSelector + ' ' + selectAllSelector);
+        const pageItems = getPageItems();
+        const selected = pageItems.filter(box => box.checked).length;
+
+        if (header) {
+            header.indeterminate = selected > 0 && selected < pageItems.length;
+            header.checked = pageItems.length > 0 && selected === pageItems.length;
+            header.setAttribute('aria-checked', header.indeterminate ? 'mixed' : String(header.checked));
+        }
+
+        pageItems.forEach(box => {
+            const row = box.closest('tr');
+            if (row) {
+                row.classList.toggle('selectedrow', box.checked);
+                row.classList.toggle('unselectedrow', !box.checked);
+            }
+        });
+    };
+
+    /**
+     * Decorate the core sticky footer without replacing it or its event handlers.
+     * Core continues to manage button availability, counts and cancellation.
+     *
+     * @returns {void}
+     */
+    const enhanceFooter = () => {
+        const footer = document.querySelector(footerSelector);
+        if (!footer) {
+            return;
+        }
+        const count = footer.querySelector('[data-for="bulkcount"]');
+        if (count && !footer.querySelector('[data-region="assign-bulk-page-scope"]')) {
+            const note = document.createElement('span');
+            note.dataset.region = 'assign-bulk-page-scope';
+            note.className = 'assign-bulk-page-scope';
+            footer.append(note);
+            Str.get_string('bulkselectionpagescope', 'mod_assign').then(label => {
+                if (note.isConnected) {
+                    note.textContent = label;
+                }
+                return label;
+            }).catch(() => {});
+        }
+        const cancel = footer.querySelector('[data-action="bulkcancel"]');
+        if (cancel && !cancel.querySelector('[data-region="assign-bulk-clear-label"]')) {
+            const label = document.createElement('span');
+            label.dataset.region = 'assign-bulk-clear-label';
+            label.className = 'assign-bulk-clear-label';
+            cancel.append(label);
+            Str.get_string('bulkclearselection', 'mod_assign').then(value => {
+                if (label.isConnected) {
+                    label.textContent = value;
+                    cancel.setAttribute('aria-label', value);
+                    cancel.title = value;
+                }
+                return value;
+            }).catch(() => {});
+        }
+    };
+
+    /**
+     * Add a count derived from the same hidden IDs the native modal submits.
+     * Never insert participant names (particularly in blind marking).
+     *
+     * @returns {void}
+     */
+    const enhanceModal = () => {
+        document.querySelectorAll(modalSelector).forEach(element => {
+            if (element.dataset.assignBulkReady) {
+                return;
+            }
+            const form = element.closest('.modal')?.querySelector('form[action="view.php"]');
+            const targets = form?.querySelector('input[name="selectedusers"]');
+            const summary = element.querySelector('[data-region="assign-bulk-count"]');
+            if (!targets || !summary) {
+                return;
+            }
+            element.dataset.assignBulkReady = '1';
+            const ids = targets.value.split(',').filter(id => /^[1-9][0-9]*$/.test(id));
+            const total = new Set(ids).size;
+            Str.get_string('bulkselectedcount', 'mod_assign', total).then(label => {
+                if (summary.isConnected) {
+                    summary.textContent = label;
+                }
+                return label;
+            }).catch(() => {});
+        });
+    };
+
+    /**
+     * Prevent a second confirmation click until the original native POST
+     * hands off to view.php. The operation still uses core modal events.
+     *
+     * @param {MouseEvent} event Native click, captured before the modal handler.
+     * @returns {void}
+     */
+    const preventDuplicateConfirmation = event => {
+        const button = event.target.closest('.modal-footer button');
+        const modal = button?.closest('.modal');
+        if (!modal || !modal.querySelector(modalSelector) ||
+                button.matches('[data-action="cancel"], .btn-secondary, .btn-close')) {
+            return;
+        }
+        if (modal.dataset.assignBulkSubmitting === '1') {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
+        modal.dataset.assignBulkSubmitting = '1';
+        // Do not disable the button before core/modal handles its first click.
+        Promise.resolve().then(() => {
+            if (button.isConnected) {
+                button.disabled = true;
+                button.setAttribute('aria-disabled', 'true');
+            }
+        });
+    };
+
+    /**
+     * Register once. Native core/bulkactions remains the selection owner.
+     *
+     * @returns {void}
+     */
+    const init = () => {
+        if (!document.querySelector(tableSelector) || document.body.dataset.assignBulkUiReady) {
+            return;
+        }
+        document.body.dataset.assignBulkUiReady = '1';
+
+        // Delegated listener runs after each input's existing direct YUI/AMD
+        // change handlers. No synthetic change events are generated.
+        document.addEventListener('change', event => {
+            if (event.target.matches(tableSelector + ' ' + rowSelector + ', ' +
+                    tableSelector + ' ' + selectAllSelector)) {
+                syncSelection();
+            }
+        });
+
+        document.addEventListener('click', event => {
+            if (event.target.closest(footerSelector + ' [data-action="bulkcancel"]')) {
+                Promise.resolve().then(syncSelection);
+            }
+        });
+
+        document.addEventListener('click', preventDuplicateConfirmation, true);
+
+        const observer = new MutationObserver(() => {
+            enhanceFooter();
+            enhanceModal();
+        });
+        observer.observe(document.body, {childList: true, subtree: true});
+        syncSelection();
+        enhanceFooter();
+        enhanceModal();
+    };
+
+    return {init, getSelectedIds, syncSelection};
+});
