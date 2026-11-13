@@ -117,12 +117,11 @@
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="discussion" TYPE="foreign" FIELDS="discussionid" REFTABLE="forum_discussions" REFFIELDS="id"/>
+        <KEY NAME="discussion" TYPE="foreign-unique" FIELDS="discussionid" REFTABLE="forum_discussions" REFFIELDS="id"/>
         <KEY NAME="post" TYPE="foreign" FIELDS="postid" REFTABLE="forum_posts" REFFIELDS="id"/>
       </KEYS>
       <INDEXES>
         <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
-        <INDEX NAME="discussionunique" UNIQUE="true" FIELDS="discussionid"/>
       </INDEXES>
     </TABLE>
     <TABLE NAME="forum_queue" COMMENT="For keeping track of posts that will be mailed in digest form">

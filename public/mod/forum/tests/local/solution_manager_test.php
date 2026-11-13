@@ -61,9 +61,15 @@ final class solution_manager_test extends \advanced_testcase {
         global $DB;
 
         $this->resetAfterTest();
-        $table = new \xmldb_table('forum_solutions');
-        $index = new \xmldb_index('discussionunique', XMLDB_INDEX_UNIQUE, ['discussionid']);
-        $this->assertTrue($DB->get_manager()->index_exists($table, $index));
+        // Moodle's index_exists() checks only the field list, not uniqueness.
+        $unique = false;
+        foreach ($DB->get_indexes('forum_solutions') as $index) {
+            if (!empty($index['unique']) && array_values($index['columns']) === ['discussionid']) {
+                $unique = true;
+                break;
+            }
+        }
+        $this->assertTrue($unique, 'An actual unique database index must protect discussionid.');
     }
 
     public function test_existing_forums_remain_opted_out(): void {

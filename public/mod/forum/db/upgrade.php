@@ -137,5 +137,29 @@ function xmldb_forum_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026111300, 'forum');
     }
 
+    if ($oldversion < 2026111301) {
+        // index_exists() checks column names but not the UNIQUE property.
+        // Replace the old non-unique foreign-key index, which otherwise makes
+        // a unique index appear present on some supported database drivers.
+        $table = new xmldb_table('forum_solutions');
+        $hasunique = false;
+        foreach ($DB->get_indexes('forum_solutions') as $existingindex) {
+            if (!empty($existingindex['unique']) &&
+                    array_values($existingindex['columns']) === ['discussionid']) {
+                $hasunique = true;
+                break;
+            }
+        }
+        if (!$hasunique) {
+            $oldkey = new xmldb_key('discussion', XMLDB_KEY_FOREIGN,
+                ['discussionid'], 'forum_discussions', ['id']);
+            $dbman->drop_key($table, $oldkey);
+            $newkey = new xmldb_key('discussion', XMLDB_KEY_FOREIGN_UNIQUE,
+                ['discussionid'], 'forum_discussions', ['id']);
+            $dbman->add_key($table, $newkey);
+        }
+        upgrade_mod_savepoint(true, 2026111301, 'forum');
+    }
+
     return true;
 }
