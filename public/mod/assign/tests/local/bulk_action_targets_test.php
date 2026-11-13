@@ -86,6 +86,7 @@ final class bulk_action_targets_test extends \basic_testcase {
             'grantextension', 'addattempt', 'reverttodraft',
             'setmarkingworkflowstate', 'setmarkingallocation',
             'plugingradingbatchoperation_editpdf_download',
+            'plugingradingbatchoperation_editpdf_send-report',
         ] as $operation) {
             $this->assertTrue(bulk_action_targets::supported($operation), $operation);
         }
