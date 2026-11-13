@@ -2580,3 +2580,62 @@ body.path-mod-assign [data-region="grade-panel"] .mform .fitem.has-popout .felem
         transition: none !important;
     }
 }
+
+/* Native continuous grading: visible, screen-reader-announced save status. */
+.path-mod-assign .assign-grading-save-status {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    min-height: 2.5rem;
+    padding: 0.25rem 0.65rem;
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 0.875rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.path-mod-assign .assign-grading-save-status[data-state="gradingpendingchanges"] {
+    color: var(--bs-warning-text-emphasis, #664d03);
+}
+
+.path-mod-assign .assign-grading-save-status[data-state="gradingsavedsuccess"] {
+    color: var(--bs-success-text-emphasis, #0f5132);
+}
+
+.path-mod-assign .assign-grading-save-status[data-state="gradingvalidationfailed"],
+.path-mod-assign .assign-grading-save-status[data-state="gradingnetworkuncertain"],
+.path-mod-assign .assign-grading-save-status[data-state="gradingnewchanges"] {
+    color: var(--bs-danger-text-emphasis, #842029);
+}
+
+.path-mod-assign .assign-grading-unsaved-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.path-mod-assign .assign-grading-unsaved-actions button {
+    min-height: 44px;
+}
+
+.path-mod-assign [data-region="grading-navigation"] [aria-disabled="true"] {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+@media (max-width: 767px) {
+    .path-mod-assign [data-region="grade-actions"] > .d-flex {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .path-mod-assign .assign-grading-save-status {
+        width: 100%;
+        order: 1;
+    }
+
+    .path-mod-assign [data-region="grading-actions-form"] .btn {
+        flex: 1 1 auto;
+    }
+}
