@@ -31,6 +31,7 @@ define([
     'core/str',
     'mod_assign/grading_form_change_checker',
     'mod_assign/grading_save_state',
+    'mod_assign/grading_assessment',
     'mod_assign/grading_events',
     'mod_assign/optional_marker',
     'core_form/events',
@@ -46,6 +47,7 @@ define([
     str,
     checker,
     GradingSaveState,
+    GradingAssessment,
     GradingEvents,
     OptionalMarker,
     FormEvents,
@@ -452,6 +454,9 @@ define([
                         this._niceReplaceNodeContents(this._region, html, js)
                         .done(function() {
                             checker.saveFormState('[data-region="grade-panel"] .gradeform');
+                            // Read only the real, freshly rendered grading controls;
+                            // never duplicate native rubric, guide or marker inputs.
+                            GradingAssessment.init(this._region.find('form.gradeform')[0]);
                             OptionalMarker.saveEnabledState();
                             $(document).on('editor-content-restored', function() {
                                 // If the editor has some content that has been restored
