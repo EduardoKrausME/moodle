@@ -439,7 +439,6 @@ class mod_quiz_mod_form extends moodleform_mod {
             throw new \coding_exception('Unknown quiz settings guidance area: ' . $area);
         }
         $attributes = [
-            'class' => 'mod-quiz-settings-guidance',
             'data-region' => 'quiz-settings-guidance',
             'data-guidance' => $area,
             'role' => 'note',
@@ -456,7 +455,8 @@ class mod_quiz_mod_form extends moodleform_mod {
             'aria-live' => 'polite',
             'aria-atomic' => 'true',
         ]);
-        $mform->addElement('html', \html_writer::div($label . ' ' . $summary, '', $attributes));
+        $mform->addElement('html', \html_writer::div($label . ' ' . $summary,
+                'mod-quiz-settings-guidance', $attributes));
     }
 
     protected function add_review_options_group($mform, $quizconfig, $whenname,
