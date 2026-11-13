@@ -193,12 +193,17 @@ define([
         var marker = vars.includes('action=marker');
 
         // Now we can continue...
-        ajax.call([{
-            methodname: 'mod_assign_submit_grading_form',
-            args: {assignmentid: assignmentid, userid: this._lastUserId, marker: marker, jsonformdata: JSON.stringify(data)},
-            done: this._handleFormSubmissionResponse.bind(this, request, data, nextUserId, nextUser),
-            fail: this._handleSaveError.bind(this, request)
-        }]);
+        try {
+            ajax.call([{
+                methodname: 'mod_assign_submit_grading_form',
+                args: {assignmentid: assignmentid, userid: request.userId, marker: marker,
+                    jsonformdata: JSON.stringify(data)},
+                done: this._handleFormSubmissionResponse.bind(this, request, data, nextUserId, nextUser),
+                fail: this._handleSaveError.bind(this, request)
+            }]);
+        } catch (error) {
+            this._handleSaveError(request, error);
+        }
     };
 
     /**
@@ -232,13 +237,6 @@ define([
             // validation errors.
             $(document).trigger('reset', [this._lastUserId, formdata, true]);
         } else {
-            str.get_string('gradechangessaveddetail', 'mod_assign')
-            .then(function(str) {
-                Toast.add(str);
-                return str;
-            })
-            .catch(notification.exception);
-
             // The save is confirmed, but plugins or editors may have changed
             // fields after the request snapshot. Never navigate in that case.
             var form = $(this._region.find('form.gradeform'));
@@ -247,9 +245,14 @@ define([
                 $(document).trigger('assign-grading-save-failed', ['newchanges']);
                 return;
             }
+            form.removeData('unresolved-error');
             FormChangeChecker.markFormSubmitted(form[0]);
             FormChangeChecker.resetFormDirtyState(form[0]);
             $(document).trigger('assign-grading-save-success', [request.userId]);
+            str.get_string('gradechangessaveddetail', 'mod_assign')
+                .then(function(message) {
+                    Toast.add(message);
+                }).catch(notification.exception);
 
             if (nextUserId == request.userId || (!nextUser && (nextUserId === null || nextUserId <= 0))) {
                 $(document).trigger('reset', nextUserId);
