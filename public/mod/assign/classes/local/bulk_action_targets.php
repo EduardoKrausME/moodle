@@ -71,6 +71,9 @@ final class bulk_action_targets {
             'lock', 'unlock', 'downloadselected', 'removesubmission',
             'grantextension', 'addattempt', 'reverttodraft',
             'setmarkingworkflowstate', 'setmarkingallocation',
-        ], true) || str_starts_with($operation, 'plugingradingbatchoperation_');
+        ], true) || preg_match(
+            '/^plugingradingbatchoperation_[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/D',
+            $operation
+        ) === 1;
     }
 }
