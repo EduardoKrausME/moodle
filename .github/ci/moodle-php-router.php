@@ -23,6 +23,11 @@ $webroot = realpath(__DIR__ . '/../../public');
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
 $path = rawurldecode($path);
 
+// The homepage uses index.php; only clean routes need the router.
+if ($path === '/') {
+    return false;
+}
+
 // Let PHP's built-in server serve static assets and regular PHP scripts,
 // including slash-argument URLs such as /lib/requirejs.php/revision/core/a.js.
 $script = $path;
