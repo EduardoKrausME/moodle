@@ -181,6 +181,7 @@ $string['blindmarking_help'] = 'Anonymous submissions hide the identity of stude
 $string['bulkactionsselection'] = 'Bulk actions selection';
 $string['bulkselectallpage'] = 'Select all participants on this page';
 $string['bulkselectionpagescope'] = 'The action applies only to the selected participants on this page.';
+$string['bulkselectedsingle'] = '1 participant selected on this page';
 $string['bulkselectedcount'] = '{$a} participants selected on this page';
 $string['bulkclearselection'] = 'Clear selection';
 $string['invalidbulkselection'] = 'The selected participants are invalid or are no longer available to you. Refresh the page and select them again.';
