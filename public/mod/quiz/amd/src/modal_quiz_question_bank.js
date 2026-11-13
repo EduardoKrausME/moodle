@@ -140,13 +140,13 @@ export default class ModalQuizQuestionBank extends Modal {
         }
         const bodySink = this.pendingBody;
 
-        const lastBankCmid = window.sessionStorage.getItem('lastBankCmid');
+        const lastBankCmid = window.sessionStorage.getItem('mod_quiz:lastBankCmid:' + this.quizCmId);
         let bankCmid = lastBankCmid ? lastBankCmid : this.bankCmId;
 
         this.bodyFragment(querystring, bankCmid)
             .catch((ex) => {
                 if (lastBankCmid && (ex.errorcode === 'nopermissions' || ex.errorcode === 'invalidcoursemodule')) {
-                    window.sessionStorage.removeItem('lastBankCmid');
+                    window.sessionStorage.removeItem('mod_quiz:lastBankCmid:' + this.quizCmId);
                     bankCmid = this.bankCmId;
                     return this.bodyFragment(querystring, bankCmid);
                 }
@@ -184,7 +184,7 @@ export default class ModalQuizQuestionBank extends Modal {
         // directly then we need to intercept the click in order to adjust the
         // href and include the correct add on page id and cmid before the page is
         // redirected.
-        const href = new URL(anchorElement.getAttribute('href'));
+        const href = new URL(anchorElement.getAttribute('href'), window.location.href);
         href.searchParams.set('addonpage', this.getAddOnPageId());
         href.searchParams.set('cmid', this.quizCmId);
         anchorElement.setAttribute('href', href);
@@ -195,6 +195,23 @@ export default class ModalQuizQuestionBank extends Modal {
      *
      * @method registerEventListeners
      */
+    
+    /**
+     * Count only question inputs submitted by the native quiz form.
+     * A checkbox such as qbank-selectall is not a question.
+     */
+    updateSelectedCount() {
+        const root = this.getBody().get(0);
+        const counter = root?.querySelector('[data-region="quiz-selection-selected"]');
+        const form = root?.querySelector(SELECTORS.ADD_QUESTIONS_FORM);
+        if (!counter || !form) {
+            return;
+        }
+        const selected = Array.from(form.querySelectorAll('input[type="checkbox"]:checked'))
+            .filter(input => /^q[0-9]+$/.test(input.name)).length;
+        counter.textContent = counter.dataset.countTemplate.replace('%COUNT%', String(selected));
+    }
+
     registerEventListeners() {
         // Apply parent event listeners.
         super.registerEventListeners(this);
@@ -210,13 +227,22 @@ export default class ModalQuizQuestionBank extends Modal {
             // then we need to intercept the submit in order to include the correct "add on page id"
             // and the quizmod id before the form is submitted.
             const formElement = e.currentTarget;
-            document.querySelector(SELECTORS.ADD_ON_PAGE_FORM_ELEMENT).setAttribute('value', this.getAddOnPageId());
+            formElement.querySelector(SELECTORS.ADD_ON_PAGE_FORM_ELEMENT).setAttribute('value', this.getAddOnPageId());
 
             // We also need to set the form cmid & action as the quiz modid as this could be coming from a module that isn't a quiz.
-            document.querySelector(SELECTORS.CMID_FORM_ELEMENT).setAttribute('value', this.quizCmId);
-            const actionUrl = new URL(formElement.getAttribute('action'));
+            formElement.querySelector('input[name="cmid"]').setAttribute('value', this.quizCmId);
+            const actionUrl = new URL(formElement.getAttribute('action'), window.location.href);
             actionUrl.searchParams.set('cmid', this.quizCmId);
             formElement.setAttribute('action', actionUrl.toString());
+        });
+
+        
+        // Update after native checkbox and select-all handlers have run.
+        this.getModal().on('change', SELECTORS.ADD_QUESTIONS_FORM + ' input[type="checkbox"]', () => {
+            Promise.resolve().then(() => this.updateSelectedCount());
+        });
+        this.getModal().on('click', '[data-togglegroup="qbank"]', () => {
+            Promise.resolve().then(() => this.updateSelectedCount());
         });
 
         const switcher = new BankSwitcher();
@@ -232,7 +258,7 @@ export default class ModalQuizQuestionBank extends Modal {
         this.getModal().get(0).addEventListener('bankSwitched', (e) => {
             const bankCmId = e.detail.cmid;
             if (bankCmId > 0) {
-                window.sessionStorage.setItem('lastBankCmid', bankCmId);
+                window.sessionStorage.setItem('mod_quiz:lastBankCmid:' + this.quizCmId, bankCmId);
                 // We need to clear the filter as we are about to reload the content.
                 const url = new URL(location.href);
                 url.searchParams.delete('filter');
@@ -264,6 +290,7 @@ export default class ModalQuizQuestionBank extends Modal {
         this.getRoot().on(ModalEvents.bodyRendered, () => {
             this.submitting = false;
             this.addingQuestion = false;
+            this.updateSelectedCount();
             // Make sure the form change checker is disabled otherwise it'll stop the user from navigating away from the
             // page once the modal is hidden.
             FormChangeChecker.disableAllChecks();
