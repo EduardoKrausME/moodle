@@ -60,6 +60,26 @@ $CFG->phpunit_prefix = 't_';
 
 $CFG->routerconfigured = true;
 
+// Enable isolated Behat settings only in the dedicated GitHub Actions browser job.
+if (getenv('MOODLE_CI_BEHAT') === '1') {
+    $CFG->wwwroot = 'http://localhost:8000';
+    $CFG->behat_wwwroot = 'http://host.docker.internal:8000';
+    $CFG->behat_dataroot = realpath(dirname(__DIR__)) . '/behatdata';
+    $CFG->behat_prefix = 'b_';
+    $CFG->behat_profiles = [
+        'chrome' => [
+            'browser' => 'chrome',
+            'wd_host' => 'http://127.0.0.1:4444/wd/hub',
+            'capabilities' => [
+                'browserName' => 'chrome',
+                'goog:chromeOptions' => [
+                    'args' => ['--no-sandbox', '--disable-dev-shm-usage'],
+                ],
+            ],
+        ],
+    ];
+}
+
 define('TEST_EXTERNAL_FILES_HTTP_URL', 'http://localhost:8080');
 define('TEST_EXTERNAL_FILES_HTTPS_URL', 'http://localhost:8080');
 

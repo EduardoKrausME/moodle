@@ -1,6 +1,6 @@
 name: Moodle Components CI
 
-# This CI checks only the forum, book and Boost components.
+# This CI checks forum, book and Boost; forum has explicit coverage of all 14 UX items.
 on:
   push:
     paths:
@@ -9,6 +9,8 @@ on:
       - 'public/theme/boost/**'
       - '.stylelintrc'
       - '.github/workflows/components-ci.yml'
+      - '.github/workflows/config-template.php'
+      - '.github/ci/forum-ux-14.json'
   pull_request:
     paths:
       - 'public/mod/forum/**'
@@ -16,6 +18,8 @@ on:
       - 'public/theme/boost/**'
       - '.stylelintrc'
       - '.github/workflows/components-ci.yml'
+      - '.github/workflows/config-template.php'
+      - '.github/ci/forum-ux-14.json'
   workflow_dispatch:
 
 permissions:
@@ -23,7 +27,7 @@ permissions:
 
 concurrency:
   group: components-ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   static-checks:
@@ -64,6 +68,36 @@ jobs:
           npx grunt eslint:amd --root=public/mod/forum
           npx grunt stylelint:css --root=public/mod/forum
           npx grunt gherkinlint --root=public/mod/forum
+
+      - name: Verify the 14 forum UX regression mappings
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import re
+
+          path = Path('.github/ci/forum-ux-14.json')
+          items = json.loads(path.read_text(encoding='utf-8'))['items']
+          assert [item['number'] for item in items] == list(range(1, 15)), 'Missing/duplicate forum UX item'
+          for item in items:
+              assert item['phpunit'], f"Item {item['number']} lacks a PHPUnit target"
+              for filename in item['phpunit']:
+                  file = Path(filename)
+                  assert file.is_file() and file.as_posix().startswith('public/mod/forum/tests/'), filename
+                  assert re.search(r'function\s+test_[A-Za-z0-9_]+\s*\(', file.read_text()), filename
+              print(f"Item {item['number']:02}: {item['title']} -> {', '.join(item['phpunit'])}")
+
+          features = [
+              'track_read_posts', 'discussion_navigation', 'favourite_discussion',
+              'inpage_reply', 'accepted_solutions', 'unanswered_discussions',
+              'solution_listing', 'participation_report',
+          ]
+          for name in features:
+              file = Path(f'public/mod/forum/tests/behat/{name}.feature')
+              assert file.is_file() and '@forum_ux_14' in file.read_text(), name
+          print('14 PHPUnit item mappings and 8 tagged browser feature files verified.')
+          PY
 
       - name: Check book CSS and Behat syntax
         run: |
@@ -137,3 +171,92 @@ jobs:
             vendor/bin/phpunit --testsuite "$suite" --fail-on-empty-test-suite
             echo '::endgroup::'
           done
+
+  forum-behat:
+    name: Forum UX 14 - Browser acceptance
+    needs: static-checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      dbtype: pgsql
+      MOODLE_CI_BEHAT: '1'
+      PHP_CLI_SERVER_WORKERS: '4'
+    steps:
+      - name: Check out Moodle
+        uses: actions/checkout@v6
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pgsql, pdo_pgsql, mbstring, intl, gd, zip, soap
+          ini-values: max_input_vars=5000
+          coverage: none
+
+      - name: Install PHP dependencies
+        uses: ramsey/composer-install@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Build forum AMD modules
+        run: |
+          npm ci
+          npx grunt amd --root=public/mod/forum
+
+      - name: Run selected forum UX browser scenarios
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "pathtophp=$(command -v php)" >> "$GITHUB_ENV"
+          cp .github/workflows/config-template.php config.php
+          mkdir -p ../moodledata ../behatdata
+          sudo locale-gen en_AU.UTF-8
+
+          echo '127.0.0.1 host.docker.internal' | sudo tee -a /etc/hosts
+          docker run -d --rm --name forum-ci-selenium \
+            --shm-size=2g -p 4444:4444 \
+            --add-host=host.docker.internal:host-gateway \
+            selenium/standalone-chrome:4.33.0
+
+          php -S 0.0.0.0:8000 -t public >/tmp/forum-behat-php.log 2>&1 &
+          webpid=$!
+          trap 'kill "$webpid" 2>/dev/null || true; docker rm -f forum-ci-selenium >/dev/null 2>&1 || true' EXIT
+
+          for i in {1..90}; do
+            if curl -fsS http://127.0.0.1:4444/status | grep -q '"ready":true'; then
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:4444/status | grep -q '"ready":true'
+
+          php public/admin/tool/behat/cli/init.php --disable-composer
+          php public/admin/tool/behat/cli/run.php --profile=chrome --tags='@forum_ux_14' --stop-on-failure=1
+
+      - name: Upload browser diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: forum-ux-14-browser-diagnostics
+          path: |
+            ../behatdata/behat_dump
+            /tmp/forum-behat-php.log
+          if-no-files-found: ignore

@@ -1,0 +1,103 @@
+{
+  "description": "Each item has a PHPUnit test class executed by mod_forum_testsuite. Selected browser scenarios use @forum_ux_14.",
+  "items": [
+    {
+      "number": 1,
+      "title": "Recent conversations in My courses",
+      "phpunit": [
+        "public/mod/forum/tests/external/get_course_recent_discussions_test.php"
+      ]
+    },
+    {
+      "number": 2,
+      "title": "Unread counts by course",
+      "phpunit": [
+        "public/mod/forum/tests/external/get_course_unread_counts_test.php"
+      ]
+    },
+    {
+      "number": 3,
+      "title": "Deep links to individual messages",
+      "phpunit": [
+        "public/mod/forum/tests/externallib_test.php"
+      ]
+    },
+    {
+      "number": 4,
+      "title": "Unified forum feed",
+      "phpunit": [
+        "public/mod/forum/tests/external/get_recent_feed_test.php"
+      ]
+    },
+    {
+      "number": 5,
+      "title": "Recent/unread/course filters",
+      "phpunit": [
+        "public/mod/forum/tests/external/get_recent_feed_test.php"
+      ]
+    },
+    {
+      "number": 6,
+      "title": "Responsive course forum overview",
+      "phpunit": [
+        "public/mod/forum/tests/courseformat/overview_test.php"
+      ]
+    },
+    {
+      "number": 7,
+      "title": "On-demand AJAX pagination",
+      "phpunit": [
+        "public/mod/forum/tests/external/get_recent_feed_test.php"
+      ]
+    },
+    {
+      "number": 8,
+      "title": "Configurable forum summary settings",
+      "phpunit": [
+        "public/mod/forum/tests/local/summary_settings_test.php"
+      ]
+    },
+    {
+      "number": 9,
+      "title": "Following discussions",
+      "phpunit": [
+        "public/mod/forum/tests/external/get_recent_feed_test.php"
+      ]
+    },
+    {
+      "number": 10,
+      "title": "Contextual posting, quotes and mentions",
+      "phpunit": [
+        "public/mod/forum/tests/external/feed_reply_test.php"
+      ]
+    },
+    {
+      "number": 11,
+      "title": "Accepted answers",
+      "phpunit": [
+        "public/mod/forum/tests/local/solution_manager_test.php"
+      ]
+    },
+    {
+      "number": 12,
+      "title": "Unanswered teacher queue",
+      "phpunit": [
+        "public/mod/forum/tests/local/unanswered_discussions_test.php"
+      ]
+    },
+    {
+      "number": 13,
+      "title": "Solution discovery and filters",
+      "phpunit": [
+        "public/mod/forum/tests/local/solution_listing_test.php"
+      ]
+    },
+    {
+      "number": 14,
+      "title": "Participation metrics",
+      "phpunit": [
+        "public/mod/forum/tests/local/participation_report_test.php"
+      ]
+    }
+  ]
+}
