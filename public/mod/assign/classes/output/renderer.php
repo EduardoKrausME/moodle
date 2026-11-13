@@ -1635,6 +1635,10 @@ class renderer extends \plugin_renderer_base {
         $o .= $this->output->box_start('boxaligncenter gradingtable position-relative');
 
         $this->page->requires->js_init_call('M.mod_assign.init_grading_table', array());
+        $o .= $this->output->container(
+            get_string('gradingtableresponsivehint', 'assign'),
+            'assign-grading-table-hint small text-muted'
+        );
         $o .= $this->flexible_table($table, $table->get_rows_per_page(), false);
         $o .= $this->output->box_end();
 

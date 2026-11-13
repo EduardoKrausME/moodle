@@ -5082,7 +5082,9 @@ class assign {
         // Load the table of submissions, to be printed further down.
         $usequickgrading = $showquickgrading && $quickgrading;
         $gradingtable = new assign_grading_table($this, $perpage, $filter, 0, $usequickgrading);
-        $gradingtable->responsive = false;
+        // Keep table_sql, native AJAX/bulk actions and form field names intact.
+        // The wrapper adds a keyboard-accessible horizontal scroll region.
+        $gradingtable->responsive = true;
         $table = $this->get_renderer()->render($gradingtable);
         // This initialises the selected first/last initials for the action menu.
         $gradingtable->initialbars(true);

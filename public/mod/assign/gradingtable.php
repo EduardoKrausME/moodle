@@ -456,6 +456,11 @@ class assign_grading_table extends table_sql implements renderable {
             // Cutoffdate.
             $columns[] = 'cutoffdate';
             $headers[] = get_string('cutoffdate', 'assign');
+        } else if (!$this->is_downloading()) {
+            // Always show the effective due date on-screen, even without overrides.
+            // Export worksheets retain the original column set and order.
+            $columns[] = 'duedate';
+            $headers[] = get_string('duedate', 'assign');
         }
 
         // Team submission columns.
@@ -588,14 +593,36 @@ class assign_grading_table extends table_sql implements renderable {
             $headers[] = get_string('outcomes', 'grades');
         }
 
-        // Set the columns.
+        // Reorder display columns only. Native identifiers, filter/sort keys,
+        // plugin columns and export worksheets remain unchanged.
+        [$columns, $headers] = \mod_assign\local\grading_table_layout::prioritise(
+            $columns,
+            $headers,
+            (bool) $this->is_downloading()
+        );
         $this->define_columns($columns);
         $this->define_headers($headers);
         $this->column_class('fullname', 'username');
         $this->column_class('status', 'status');
         $this->column_class('grade', 'grade');
         foreach ($extrauserfields as $extrafield) {
-             $this->column_class($extrafield, $extrafield);
+            $this->column_class($extrafield, $extrafield);
+        }
+
+        if (!$this->is_downloading()) {
+            // Retain core table classes and the #submissions ID used by YUI,
+            // AMD quick grading, bulk actions and existing Behat selectors.
+            $selectionclass = in_array('select', $columns, true) ?
+                'assign-grading-has-select' : 'assign-grading-no-select';
+            $this->set_attribute('class',
+                'generaltable assign-responsive-grading-table ' . $selectionclass);
+            foreach (\mod_assign\local\grading_table_layout::roles($columns) as $column => $role) {
+                $this->column_class($column, trim(
+                    ($column === 'fullname' ? 'username ' : '') . $role
+                ));
+            }
+            $identity = in_array('fullname', $columns, true) ? 'fullname' : 'recordid';
+            $this->define_header_column($identity);
         }
 
         $this->no_sorting('finalgrade');
@@ -1568,14 +1595,19 @@ class assign_grading_table extends table_sql implements renderable {
      * @return string
      */
     public function col_duedate(stdClass $row) {
-        $o = '';
-
-        if ($row->duedate) {
-            $userdate = userdate($row->duedate);
-            $o = ($this->is_downloading()) ? $userdate : $this->output->container($userdate, 'duedate');
+        // Downloads retain the previous data semantics, including empty dates.
+        if ($this->is_downloading()) {
+            return !empty($row->duedate) ? userdate($row->duedate) : '';
         }
 
-        return $o;
+        // Match the precedence used by col_status(): extension, user/group
+        // override and finally the assignment's normal deadline.
+        $date = !empty($row->extensionduedate) ? $row->extensionduedate :
+            (!empty($row->duedate) ? $row->duedate : $this->assignment->get_instance($row->userid)->duedate);
+        if (!$date) {
+            return '-';
+        }
+        return $this->output->container(userdate($date), 'duedate');
     }
 
     /**
@@ -2268,7 +2300,14 @@ class assign_grading_table extends table_sql implements renderable {
         // Start of main data table.
 
         if ($this->responsive) {
-            echo html_writer::start_tag('div', ['class' => 'table-responsive']);
+            // The native <table> remains fully semantic; the scrollable region
+            // is keyboard-focusable and labelled independently of JavaScript.
+            echo html_writer::start_tag('div', [
+                'class' => 'table-responsive assign-grading-table-scroll',
+                'role' => 'region',
+                'aria-label' => get_string('gradingtableresponsivelabel', 'assign'),
+                'tabindex' => '0',
+            ]);
         }
         echo html_writer::start_tag('table', $this->attributes) . $this->render_caption();
     }
