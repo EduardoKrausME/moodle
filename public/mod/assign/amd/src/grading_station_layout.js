@@ -29,6 +29,7 @@ define(['core_user/repository', 'core/notification'], function(UserRepository, N
             this.root = document.querySelector('[data-region="grade-actions"]');
             this.review = document.querySelector('[data-region="review-panel"]');
             this.grade = document.querySelector('[data-region="grade-panel"]');
+            this.reviewContent = this.review ? this.review.querySelector('[data-region="review-panel-content"]') : null;
             this.resizer = document.querySelector('[data-region="resizer"]');
             this.tabs = document.querySelector('[data-region="grading-mobile-tabs"]');
             this.mobile = window.matchMedia(mediaQuery);
@@ -226,8 +227,14 @@ define(['core_user/repository', 'core/notification'], function(UserRepository, N
                     }
                     panel.setAttribute('role', 'tabpanel');
                     panel.setAttribute('aria-labelledby', button.id);
+                    panel.setAttribute('tabindex', '0');
                     panel.setAttribute('aria-hidden', String(!active));
                 });
+            // The native preview controller also hides its inner region when
+            // the desktop preview is collapsed. Restore it for mobile tabs.
+            if (this.reviewContent) {
+                this.reviewContent.setAttribute('aria-hidden', String(!reviewActive));
+            }
         }
 
         updateDesktopAria() {
@@ -235,8 +242,23 @@ define(['core_user/repository', 'core/notification'], function(UserRepository, N
             this.review.removeAttribute('aria-labelledby');
             this.grade.removeAttribute('role');
             this.grade.removeAttribute('aria-labelledby');
+            this.review.removeAttribute('tabindex');
+            this.grade.removeAttribute('tabindex');
             this.review.setAttribute('aria-hidden', String(this.mode === 'grade'));
             this.grade.setAttribute('aria-hidden', String(this.mode === 'review'));
+            if (this.reviewContent) {
+                this.reviewContent.setAttribute('aria-hidden', String(this.mode === 'grade'));
+            }
+            [
+                ['grade', '.collapse-review-panel'],
+                ['review', '.collapse-grade-panel'],
+                ['split', '.collapse-none'],
+            ].forEach(([mode, selector]) => {
+                const button = this.root.querySelector(selector);
+                if (button) {
+                    button.setAttribute('aria-pressed', String(mode === this.mode));
+                }
+            });
         }
 
         sync() {
