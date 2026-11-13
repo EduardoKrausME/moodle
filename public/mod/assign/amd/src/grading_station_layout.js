@@ -189,6 +189,7 @@ define(['core_user/repository', 'core/notification'], function(UserRepository, N
                 }
                 this.mode = 'split';
                 this.split = clampSplit(split);
+                this.resizer.setAttribute('aria-valuenow', String(this.split));
             }
             this.updateDesktopAria();
             this.persist();
