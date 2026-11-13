@@ -27,6 +27,8 @@
                 "statuslabel": "Finished",
                 "statusvariant": "finished",
                 "islatest": false,
+                "headingid": "mod-quiz-history-attempt-13",
+                "hasreviewlink": true,
                 "reviewlink": "<a href='https://qa.moodledemo.net/mod/quiz/review.php?attempt=13&cmid=30'>Review</a>",
                 "summarydata": {
                     "hasitems": true,
@@ -53,10 +55,10 @@
     {{#attempts}}
         <li class="col mod-quiz-attempt-history__item">
             <article class="card h-100 mod-quiz-attempt-history__card
-                    mod-quiz-attempt-history__card--{{statusvariant}}">
+                    mod-quiz-attempt-history__card--{{statusvariant}}" aria-labelledby="{{headingid}}">
                 <header class="card-header mod-quiz-attempt-history__header">
                     <div class="mod-quiz-attempt-history__heading">
-                        <h4 class="card-title my-0">{{name}}</h4>
+                        <h4 id="{{headingid}}" class="card-title my-0">{{name}}</h4>
                         {{#islatest}}
                             <span class="mod-quiz-attempt-history__latest">
                                 {{#str}} historylatestattempt, quiz {{/str}}
@@ -73,9 +75,11 @@
                         {{> mod_quiz/attempt_summary_information}}
                     {{/summarydata}}
                 </div>
-                <footer class="card-footer mod-quiz-attempt-history__actions">
-                    {{{reviewlink}}}
-                </footer>
+                {{#hasreviewlink}}
+                    <footer class="card-footer mod-quiz-attempt-history__actions">
+                        {{{reviewlink}}}
+                    </footer>
+                {{/hasreviewlink}}
             </article>
         </li>
     {{/attempts}}

@@ -18,6 +18,7 @@ namespace mod_quiz\output;
 
 use core\output\named_templatable;
 use mod_quiz\quiz_attempt;
+use mod_quiz\question\display_options;
 use renderable;
 use renderer_base;
 
@@ -70,9 +71,29 @@ class list_of_attempts implements renderable, named_templatable {
             quiz_attempt::IN_PROGRESS => 'inprogress',
             quiz_attempt::OVERDUE => 'overdue',
             quiz_attempt::FINISHED => 'finished',
+            quiz_attempt::SUBMITTED => 'submitted',
             quiz_attempt::ABANDONED => 'abandoned',
             default => 'other',
         };
+    }
+
+    /**
+     * Match the capability requirements checked by quiz_attempt::check_review_capability().
+     * Review configuration alone does not grant access to a review page.
+     *
+     * @param quiz_attempt $attemptobj The user's authorised attempt.
+     * @return bool Whether the user can follow a native review link.
+     */
+    public static function can_review_attempt(quiz_attempt $attemptobj): bool {
+        if ($attemptobj->has_capability('mod/quiz:viewreports') ||
+                $attemptobj->has_capability('mod/quiz:preview')) {
+            return true;
+        }
+
+        $capability = $attemptobj->get_attempt_state() === display_options::IMMEDIATELY_AFTER
+            ? 'mod/quiz:attempt'
+            : 'mod/quiz:reviewmyattempts';
+        return $attemptobj->has_capability($capability);
     }
 
     public function export_for_template(renderer_base $output): array {
@@ -88,17 +109,22 @@ class list_of_attempts implements renderable, named_templatable {
         foreach ($this->attempts as $index => $attemptobj) {
             $displayoptions = $attemptobj->get_display_options(true);
             $state = $attemptobj->get_state();
+            $reviewlink = self::can_review_attempt($attemptobj)
+                ? $attemptobj->get_access_manager($this->timenow)->make_review_link(
+                    $attemptobj->get_attempt(), $displayoptions, $output)
+                : '';
             $templatecontext['attempts'][] = (object) [
                 'name' => get_string('attempt', 'mod_quiz', $attemptobj->get_attempt_number()),
                 'statuslabel' => quiz_attempt::state_name($state),
                 'statusvariant' => self::state_variant($state),
                 'islatest' => $multipleattempts && $index === 0,
+                'headingid' => 'mod-quiz-history-attempt-' . $attemptobj->get_attemptid(),
+                'hasreviewlink' => $reviewlink !== '',
                 // Do not duplicate review availability or expose any grade here.
                 // Both continue to be determined by the existing native objects.
                 'summarydata' => attempt_summary_information::create_for_attempt(
                         $attemptobj, $displayoptions)->export_for_template($output),
-                'reviewlink' => $attemptobj->get_access_manager($this->timenow)->make_review_link(
-                        $attemptobj->get_attempt(), $displayoptions, $output),
+                'reviewlink' => $reviewlink,
             ];
         }
 

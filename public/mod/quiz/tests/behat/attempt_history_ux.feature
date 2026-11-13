@@ -84,6 +84,7 @@ Feature: Responsive, permission-aware history of quiz attempts
     Then ".mod-quiz-attempt-history__card--inprogress" "css_element" should exist
     And I should see "In progress" in the "Attempt 1" "list_item"
     And ".mod-quiz-attempt-history__actions a[href*='review.php']" "css_element" should not exist
+    And ".mod-quiz-attempt-history__actions" "css_element" should not exist
 
   Scenario: The attempt history remains readable without JavaScript
     Given user "student" has attempted "History quiz" with responses:

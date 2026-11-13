@@ -17,6 +17,7 @@
 namespace mod_quiz;
 
 use mod_quiz\output\list_of_attempts;
+use mod_quiz\question\display_options;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -29,6 +30,7 @@ defined('MOODLE_INTERNAL') || die();
 final class list_of_attempts_ux_test extends \advanced_testcase {
     public function test_known_states_are_mapped_to_fixed_classes(): void {
         $this->assertSame('finished', list_of_attempts::state_variant(quiz_attempt::FINISHED));
+        $this->assertSame('submitted', list_of_attempts::state_variant(quiz_attempt::SUBMITTED));
         $this->assertSame('inprogress', list_of_attempts::state_variant(quiz_attempt::IN_PROGRESS));
         $this->assertSame('overdue', list_of_attempts::state_variant(quiz_attempt::OVERDUE));
         $this->assertSame('abandoned', list_of_attempts::state_variant(quiz_attempt::ABANDONED));
@@ -58,6 +60,7 @@ final class list_of_attempts_ux_test extends \advanced_testcase {
             'attempts' => [
                 [
                     'name' => 'Attempt 2',
+                    'headingid' => 'mod-quiz-history-attempt-2',
                     'statuslabel' => 'Finished',
                     'statusvariant' => 'finished',
                     'islatest' => true,
@@ -70,6 +73,7 @@ final class list_of_attempts_ux_test extends \advanced_testcase {
                             ['title' => 'Grade', 'content' => '8.50/10.00'],
                         ],
                     ],
+                    'hasreviewlink' => true,
                     'reviewlink' => '<a class="native-review" href="/mod/quiz/review.php?attempt=2">Review</a>',
                 ],
             ],
@@ -77,6 +81,8 @@ final class list_of_attempts_ux_test extends \advanced_testcase {
 
         $html = $PAGE->get_renderer('mod_quiz')->render_from_template('mod_quiz/list_of_attempts', $context);
         $this->assertStringContainsString('mod-quiz-attempt-history__card--finished', $html);
+        $this->assertStringContainsString('aria-labelledby="mod-quiz-history-attempt-2"', $html);
+        $this->assertStringContainsString('id="mod-quiz-history-attempt-2"', $html);
         $this->assertStringContainsString('Most recent attempt', $html);
         $this->assertStringContainsString('quizreviewsummary', $html);
         $this->assertStringContainsString('scope="row"', $html);
@@ -96,6 +102,7 @@ final class list_of_attempts_ux_test extends \advanced_testcase {
             'attempts' => [
                 [
                     'name' => 'Attempt 1',
+                    'headingid' => 'mod-quiz-history-attempt-1',
                     'statuslabel' => 'Finished',
                     'statusvariant' => 'finished',
                     'islatest' => false,
@@ -104,6 +111,7 @@ final class list_of_attempts_ux_test extends \advanced_testcase {
                         'caption' => 'Summary of attempt 1',
                         'items' => [['title' => 'Status', 'content' => 'Finished']],
                     ],
+                    'hasreviewlink' => true,
                     'reviewlink' => '<span class="noreviewmessage">Review not permitted</span>',
                 ],
             ],
@@ -127,10 +135,12 @@ final class list_of_attempts_ux_test extends \advanced_testcase {
             'attempts' => [
                 [
                     'name' => 'Attempt 1',
+                    'headingid' => 'mod-quiz-history-attempt-1',
                     'statuslabel' => '<script>alert(1)</script>',
                     'statusvariant' => 'other',
                     'islatest' => false,
                     'summarydata' => ['hasitems' => false, 'items' => []],
+                    'hasreviewlink' => false,
                     'reviewlink' => '',
                 ],
             ],
@@ -138,6 +148,60 @@ final class list_of_attempts_ux_test extends \advanced_testcase {
         $html = $PAGE->get_renderer('mod_quiz')->render_from_template('mod_quiz/list_of_attempts', $context);
         $this->assertStringNotContainsString('<script>', $html);
         $this->assertStringContainsString('&lt;script&gt;', $html);
+    }
+
+    /**
+     * A review window alone does not grant a user access to a review page.
+     */
+    public function test_review_link_requires_the_correct_capability_for_the_review_phase(): void {
+        $makeattempt = function (int $phase, array $granted): quiz_attempt {
+            $attempt = $this->getMockBuilder(quiz_attempt::class)
+                ->disableOriginalConstructor()
+                ->onlyMethods(['get_attempt_state', 'has_capability'])
+                ->getMock();
+            $attempt->method('get_attempt_state')->willReturn($phase);
+            $attempt->method('has_capability')->willReturnCallback(
+                static fn(string $capability): bool => in_array($capability, $granted, true));
+            return $attempt;
+        };
+
+        $immediately = display_options::IMMEDIATELY_AFTER;
+        $later = display_options::LATER_WHILE_OPEN;
+        $this->assertFalse(list_of_attempts::can_review_attempt($makeattempt($later, [])));
+        $this->assertFalse(list_of_attempts::can_review_attempt(
+            $makeattempt($later, ['mod/quiz:attempt'])));
+        $this->assertTrue(list_of_attempts::can_review_attempt(
+            $makeattempt($immediately, ['mod/quiz:attempt'])));
+        $this->assertTrue(list_of_attempts::can_review_attempt(
+            $makeattempt($later, ['mod/quiz:reviewmyattempts'])));
+        $this->assertTrue(list_of_attempts::can_review_attempt(
+            $makeattempt($later, ['mod/quiz:viewreports'])));
+        $this->assertTrue(list_of_attempts::can_review_attempt(
+            $makeattempt($later, ['mod/quiz:preview'])));
+    }
+
+    public function test_unavailable_review_does_not_render_an_empty_actions_footer(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $PAGE->set_context(\context_system::instance());
+
+        $html = $PAGE->get_renderer('mod_quiz')->render_from_template('mod_quiz/list_of_attempts', [
+            'hasattempts' => true,
+            'attempts' => [[
+                'name' => 'Attempt 1',
+                'headingid' => 'mod-quiz-history-attempt-1',
+                'statuslabel' => 'In progress',
+                'statusvariant' => 'inprogress',
+                'islatest' => false,
+                'summarydata' => ['hasitems' => false, 'items' => []],
+                'hasreviewlink' => false,
+                'reviewlink' => '',
+            ]],
+        ]);
+        $this->assertStringContainsString('mod-quiz-attempt-history__card--inprogress', $html);
+        $this->assertStringNotContainsString('mod-quiz-attempt-history__actions', $html);
+        $this->assertStringNotContainsString('review.php', $html);
     }
 
     public function test_no_attempts_renders_no_cards(): void {

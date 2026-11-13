@@ -232,8 +232,11 @@ class attempt_summary_information implements renderable, named_templatable {
         $attempt = $attemptobj->get_attempt();
         $quiz = $attemptobj->get_quiz();
         $overtime = 0;
+        // Submitted attempts already have a finish timestamp, even before grading.
+        $hasfinishdate = !empty($attempt->timefinish) && in_array(
+            $attempt->state, [quiz_attempt::FINISHED, quiz_attempt::SUBMITTED], true);
 
-        if ($attempt->state == quiz_attempt::FINISHED) {
+        if ($hasfinishdate) {
             if ($timetaken = ($attempt->timefinish - $attempt->timestart)) {
                 if ($quiz->timelimit && $timetaken > ($quiz->timelimit + 60)) {
                     $overtime = $timetaken - $quiz->timelimit;
@@ -249,7 +252,7 @@ class attempt_summary_information implements renderable, named_templatable {
 
         $summary->add_item('startedon', get_string('startedon', 'quiz'), userdate($attempt->timestart));
 
-        if ($attempt->state == quiz_attempt::FINISHED) {
+        if ($hasfinishdate) {
             $summary->add_item('completedon', get_string('completedon', 'quiz'),
                 userdate($attempt->timefinish));
             $summary->add_item('timetaken', get_string('attemptduration', 'quiz'), $timetaken);
@@ -268,9 +271,11 @@ class attempt_summary_information implements renderable, named_templatable {
         }
 
         // Feedback if there is any, and the user is allowed to see it now.
-        $feedback = $attemptobj->get_overall_feedback($grade);
-        if ($options->overallfeedback && $feedback) {
-            $summary->add_item('feedback', get_string('feedback', 'quiz'), $feedback);
+        if ($options->overallfeedback) {
+            $feedback = $attemptobj->get_overall_feedback($grade);
+            if ($feedback) {
+                $summary->add_item('feedback', get_string('feedback', 'quiz'), $feedback);
+            }
         }
 
         return $summary;

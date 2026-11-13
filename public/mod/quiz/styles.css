@@ -2150,6 +2150,10 @@ table.quizreviewsummary td.cell {
     border-top-color: var(--bs-primary);
 }
 
+#page-mod-quiz-view .mod-quiz-attempt-history__card--submitted {
+    border-top-color: var(--bs-info);
+}
+
 #page-mod-quiz-view .mod-quiz-attempt-history__card--inprogress {
     border-top-color: var(--bs-info);
 }
