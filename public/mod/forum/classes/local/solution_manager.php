@@ -205,6 +205,19 @@ final class solution_manager {
         $recordid = 0;
         try {
             $transaction = $DB->start_delegated_transaction();
+            // The access check and candidate may have changed while waiting for
+            // the lock (for example after a reply is deleted or moved).
+            $data = self::access($discussionid);
+            if (!self::can_manage($data)) {
+                throw new \required_capability_exception(
+                    $data['context'], 'mod/forum:managesolutions', 'nopermissions', '');
+            }
+            if ($postid) {
+                $candidate = $DB->get_record('forum_posts', ['id' => $postid], '*', MUST_EXIST);
+                if (!self::can_see_candidate($data, $candidate)) {
+                    throw new \invalid_parameter_exception('Ineligible forum solution.');
+                }
+            }
             $current = $DB->get_record('forum_solutions', ['discussionid' => $discussionid]);
             $previous = $current ? (int)$current->postid : 0;
             if ($previous !== $postid) {

@@ -57,6 +57,15 @@ final class solution_manager_test extends \advanced_testcase {
         return [$author, $student, $course, $forum, $discussion, $post, $generator];
     }
 
+    public function test_one_solution_per_discussion_is_enforced_by_unique_index(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $table = new \xmldb_table('forum_solutions');
+        $index = new \xmldb_index('discussionunique', XMLDB_INDEX_UNIQUE, ['discussionid']);
+        $this->assertTrue($DB->get_manager()->index_exists($table, $index));
+    }
+
     public function test_existing_forums_remain_opted_out(): void {
         $this->resetAfterTest();
         [, , , , $discussion, $post] = $this->fixture(0);

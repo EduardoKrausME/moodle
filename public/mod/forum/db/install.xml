@@ -122,6 +122,7 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
+        <INDEX NAME="discussionunique" UNIQUE="true" FIELDS="discussionid"/>
       </INDEXES>
     </TABLE>
     <TABLE NAME="forum_queue" COMMENT="For keeping track of posts that will be mailed in digest form">

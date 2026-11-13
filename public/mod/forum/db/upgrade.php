@@ -126,5 +126,16 @@ function xmldb_forum_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026111210, 'forum');
     }
 
+    if ($oldversion < 2026111300) {
+        // Guarantee a single accepted reply per discussion at the database level,
+        // including when separate workers or restore tasks write concurrently.
+        $table = new xmldb_table('forum_solutions');
+        $index = new xmldb_index('discussionunique', XMLDB_INDEX_UNIQUE, ['discussionid']);
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+        upgrade_mod_savepoint(true, 2026111300, 'forum');
+    }
+
     return true;
 }
