@@ -1248,3 +1248,6 @@ $string['quizselectionrandomhint'] = 'Choose the question bank, category and fil
 $string['quizselectioncandidatehint'] = 'The matching questions are candidates for random selection, not the questions guaranteed to appear in an attempt.';
 $string['quizselectionfilterhint'] = 'Update the matching criteria for this random-question slot.';
 $string['quizselectionprocessing'] = 'Saving the question selection...';
+$string['quizselectionselectedcount'] = '{$a} questions selected on this page';
+$string['quizselectiondestination'] = 'Add to';
+$string['quizselectionatend'] = 'End of quiz';

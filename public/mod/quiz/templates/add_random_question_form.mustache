@@ -54,6 +54,11 @@
         <div data-region="quiz-selection-status" role="status" aria-live="polite"
                 data-busy-message="{{#str}}quizselectionprocessing, mod_quiz{{/str}}"></div>
         <fieldset id="id_existingcategoryheader" class="mod-quiz-selector-form__fieldset">
+            {{#targetpage}}
+                <p class="mod-quiz-selector-form__destination">
+                    <strong>{{#str}}quizselectiondestination, quiz{{/str}}:</strong> {{targetpage}}
+                </p>
+            {{/targetpage}}
             {{^slotid}}
             <legend>{{#str}} randomfromexistingcategory, mod_quiz {{/str}}</legend>
             {{/slotid}}
@@ -61,13 +66,16 @@
             <div class="mod-quiz-selector-form__filters" data-region="quiz-selection-filters">
                 {{{questionbank}}}
             </div>
-            <p class="mod-quiz-selector-dialog__hint">{{#str}}quizselectioncandidatehint, mod_quiz{{/str}}</p>
+            <p id="quiz-random-candidate-help" class="mod-quiz-selector-dialog__hint">
+                {{#str}}quizselectioncandidatehint, mod_quiz{{/str}}
+            </p>
 
             <!-- Select number of random question -->
             {{^slotid}}
             <div class="mod-quiz-selector-form__quantity">
                 <label for="menurandomcount">{{#str}}randomnumber, mod_quiz{{/str}}</label>
-                <select id="menurandomcount" name="randomcount" class="form-control form-select">
+                <select id="menurandomcount" name="randomcount" class="form-control form-select"
+                        aria-describedby="quiz-random-candidate-help">
                     {{#randomoptions}}
                         <option value="{{value}}">{{name}}</option>
                     {{/randomoptions}}

@@ -198,8 +198,16 @@ class custom_view extends \core_question\local\bank\view {
 
         $canuseall = has_capability('moodle/question:useall', $catcontext);
 
-        echo \html_writer::start_tag('div', ['class' => 'pt-2']);
+        echo \html_writer::start_tag('div', ['class' => 'pt-2 mod-quiz-selector-bottom-controls']);
         if ($canuseall) {
+            // Count only native question checkboxes, never the select-all control.
+            echo \html_writer::span(get_string('quizselectionselectedcount', 'quiz', 0),
+                    'mod-quiz-selector-selected', [
+                        'data-region' => 'quiz-selection-selected',
+                        'data-count-template' => get_string('quizselectionselectedcount', 'quiz', '%COUNT%'),
+                        'aria-live' => 'polite',
+                        'aria-atomic' => 'true',
+                    ]);
             // Add selected questions to the quiz.
             $params = [
                 'type' => 'submit',

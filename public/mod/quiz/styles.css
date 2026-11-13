@@ -2757,6 +2757,26 @@ table.quizreviewsummary td.cell {
     min-width: 0;
     padding: 0.5rem 0;
 }
+.mod-quiz-selector-selected {
+    display: inline-block;
+    margin-inline-end: 0.75rem;
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+.mod-quiz-selector-form__destination {
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--bs-border-radius-sm, 0.25rem);
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    overflow-wrap: anywhere;
+}
+.mod-quiz-selector-bottom-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
 .mod-quiz-selector-form__quantity {
     display: grid;
     gap: 0.375rem;
