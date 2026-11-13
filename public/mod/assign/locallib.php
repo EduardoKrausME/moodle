@@ -9626,7 +9626,8 @@ class assign {
         // The native form controls workflow and grades. Only explain a lock
         // already imposed by Moodle, without adding a separate unlock button.
         $restricted = !$markerpage && $this->grading_restricted($grade ? (int)$grade->id : null, $userid);
-        if ($gradingdisabled || $restricted) {
+        if ($gradingdisabled || $restricted ||
+                ($settings->markingworkflow && $this->grading_locked($userid))) {
             $summary .= html_writer::div(
                 get_string('gradingassessmentreadonly', 'assign'),
                 'assign-assessment-readonly',
