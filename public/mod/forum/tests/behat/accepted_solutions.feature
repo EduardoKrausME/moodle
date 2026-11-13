@@ -30,6 +30,7 @@ Feature: Accepted solutions respect discussion authorship and forum settings
       | user     | parentsubject      | subject           | message          |
       | student2 | Help with an issue | Verified answer   | Try this method. |
 
+  @forum_ux_14
   Scenario: The starter can accept and remove a reply
     When I am on the "Solutions forum" "forum activity" page logged in as student1
     And I follow "Help with an issue"

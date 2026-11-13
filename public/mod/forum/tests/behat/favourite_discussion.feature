@@ -24,6 +24,7 @@ Feature: A student can favourite a discussion via the forum settings menu
       | admin    | Discussion 1  | Reply 1 to discussion 1 | Discussion contents 1, second message |
       | student1 | Discussion 1  | Reply 2 to discussion 1 | Discussion contents 1, third message  |
 
+  @forum_ux_14
   Scenario: Student can favourite a discussion from within an individual discussion
     Given I am on the "Test forum name" "forum activity" page logged in as student1
     When I open the action menu in "[data-container='discussion-tools']" "css_element"

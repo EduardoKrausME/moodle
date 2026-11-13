@@ -29,6 +29,7 @@ Feature: A user can navigate to previous and next discussions
       | student1 | G1 |
       | student2 | G2 |
 
+  @forum_ux_14
   Scenario: A user can navigate between discussions
     Given the following "activities" exist:
       | activity   | name                   | course | idnumber     | groupmode |

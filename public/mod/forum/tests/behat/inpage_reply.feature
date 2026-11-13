@@ -23,6 +23,7 @@ Feature: Students can reply to a discussion in page.
       | 0001  | C1     | teacher1 | Discussion 1 | Discussion contents 1, first message |
       | 0001  | C1     | teacher1 | Discussion 2 | Discussion contents 2, first message |
 
+  @forum_ux_14
   Scenario: Confirm inpage replies work
     Given I am on the "Course 1" course page logged in as student1
     When I reply "Discussion 2" post from "Test forum name" forum using an inpage reply with:

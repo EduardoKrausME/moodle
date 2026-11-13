@@ -31,6 +31,7 @@ Feature: Accepted answers are discoverable in native forum discussion lists
       | user     | parentsubject    | subject       | message            |
       | student2 | Answered question | Correct reply | The right method |
 
+  @forum_ux_14
   Scenario: Accepted solution link and filters only include matching discussions
     Given I am on the "Solutions forum" "forum activity" page logged in as teacher1
     Then I should see "No accepted solution yet"

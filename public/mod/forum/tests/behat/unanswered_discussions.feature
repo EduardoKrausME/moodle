@@ -31,6 +31,7 @@ Feature: Teachers can find questions requiring attention without exposing restri
       | user     | parentsubject  | subject      | message                 |
       | student2 | Answered question | Reply text | Public answer is here |
 
+  @forum_ux_14
   Scenario: A teacher can filter unresolved questions and open the native forum
     Given I am on the "Questions forum" "forum activity" page logged in as teacher1
     When I follow "Questions requiring attention"

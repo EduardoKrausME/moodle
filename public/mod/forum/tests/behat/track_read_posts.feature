@@ -19,6 +19,7 @@ Feature: A teacher can set one of 3 possible options for tracking read forum pos
       | student2 | C1     | student        |
       | teacher1 | C1     | editingteacher |
 
+  @forum_ux_14
   Scenario: Tracking forum posts off
     Given the following "activity" exists:
       | activity      | forum                           |

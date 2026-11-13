@@ -28,6 +28,7 @@ Feature: Teachers can see safe participation metrics for their forum
       | user     | parentsubject  | subject   | message          |
       | student2 | First question | An answer | Use this method |
 
+  @forum_ux_14
   Scenario: Teacher can open aggregates and the original detailed report
     Given I am on the "Discussion forum" "forum activity" page logged in as teacher1
     And "Forum participation" "link" should exist
