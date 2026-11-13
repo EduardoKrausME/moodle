@@ -240,23 +240,39 @@ jobs:
           webpid=$!
           trap 'kill "$webpid" 2>/dev/null || true; docker rm -f forum-ci-selenium >/dev/null 2>&1 || true' EXIT
 
+          ready=false
           for i in {1..90}; do
-            if curl -fsS http://127.0.0.1:4444/status | grep -q '"ready":true'; then
+            if curl -fsS http://127.0.0.1:4444/status 2>/dev/null | jq -e '.value.ready == true' >/dev/null 2>&1; then
+              ready=true
               break
             fi
             sleep 2
           done
-          curl -fsS http://127.0.0.1:4444/status | grep -q '"ready":true'
+          if [ "$ready" != true ]; then
+            echo "::error::Selenium did not report readiness."
+            docker logs forum-ci-selenium || true
+            exit 1
+          fi
 
           php public/admin/tool/behat/cli/init.php --disable-composer
           php public/admin/tool/behat/cli/run.php --profile=chrome --tags='@forum_ux_14' --stop-on-failure=1
+
+      - name: Collect browser diagnostics on failure
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p .ci-artifacts/forum-ux-14
+          if [ -d ../behatdata/behat_dump ]; then
+            cp -a ../behatdata/behat_dump .ci-artifacts/forum-ux-14/
+          fi
+          if [ -f /tmp/forum-behat-php.log ]; then
+            cp /tmp/forum-behat-php.log .ci-artifacts/forum-ux-14/php-server.log
+          fi
 
       - name: Upload browser diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v6
         with:
           name: forum-ux-14-browser-diagnostics
-          path: |
-            ../behatdata/behat_dump
-            /tmp/forum-behat-php.log
+          path: .ci-artifacts/forum-ux-14/
           if-no-files-found: ignore
