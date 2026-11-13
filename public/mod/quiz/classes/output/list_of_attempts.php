@@ -56,6 +56,25 @@ class list_of_attempts implements renderable, named_templatable {
         $this->attempts[] = $attemptobj;
     }
 
+    /**
+     * Select a safe presentation variant for one of Moodle's native attempt states.
+     *
+     * The class does not imply a passing grade: finished means submitted, not
+     * necessarily graded or passed. Never interpolate a raw state into CSS.
+     *
+     * @param string $state One of the native attempt states.
+     * @return string A fixed, presentation-only CSS suffix.
+     */
+    public static function state_variant(string $state): string {
+        return match ($state) {
+            quiz_attempt::IN_PROGRESS => 'inprogress',
+            quiz_attempt::OVERDUE => 'overdue',
+            quiz_attempt::FINISHED => 'finished',
+            quiz_attempt::ABANDONED => 'abandoned',
+            default => 'other',
+        };
+    }
+
     public function export_for_template(renderer_base $output): array {
 
         $templatecontext = [
@@ -63,10 +82,19 @@ class list_of_attempts implements renderable, named_templatable {
             'attempts' => [],
         ];
 
-        foreach ($this->attempts as $attemptobj) {
+        // view.php supplies attempts in newest-first order. The visual indicator
+        // is based on that order, not on a second query or grade comparison.
+        $multipleattempts = count($this->attempts) > 1;
+        foreach ($this->attempts as $index => $attemptobj) {
             $displayoptions = $attemptobj->get_display_options(true);
+            $state = $attemptobj->get_state();
             $templatecontext['attempts'][] = (object) [
                 'name' => get_string('attempt', 'mod_quiz', $attemptobj->get_attempt_number()),
+                'statuslabel' => quiz_attempt::state_name($state),
+                'statusvariant' => self::state_variant($state),
+                'islatest' => $multipleattempts && $index === 0,
+                // Do not duplicate review availability or expose any grade here.
+                // Both continue to be determined by the existing native objects.
                 'summarydata' => attempt_summary_information::create_for_attempt(
                         $attemptobj, $displayoptions)->export_for_template($output),
                 'reviewlink' => $attemptobj->get_access_manager($this->timenow)->make_review_link(

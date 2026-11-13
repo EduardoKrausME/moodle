@@ -24,6 +24,9 @@
         "attempts": [
             {
                 "name": "Attempt 1",
+                "statuslabel": "Finished",
+                "statusvariant": "finished",
+                "islatest": false,
                 "reviewlink": "<a href='https://qa.moodledemo.net/mod/quiz/review.php?attempt=13&cmid=30'>Review</a>",
                 "summarydata": {
                     "hasitems": true,
@@ -44,26 +47,37 @@
     }
 }}
 {{#hasattempts}}
-<h3>{{# str}}summaryofattempts, quiz{{/str}}</h3>
-
-<ul class="list-unstyled row row-cols-1 row-cols-md-2 g-0">
-
-{{#attempts}}
-<li class="col ps-0 pe-2 mb-2">
-    <div class="card h-100">
-        <div class="card-header py-2 border-bottom-0">
-            <h4 class="card-title my-0">{{name}}</h4>
-        </div>
-        {{#summarydata}}
-            {{> mod_quiz/attempt_summary_information}}
-        {{/summarydata}}
-        <div class="card-body py-2">
-            <div>{{{reviewlink}}}</div>
-        </div>
-    </div>
-</li>
-{{/attempts}}
-
+<h3 id="mod-quiz-attempt-history-heading">{{#str}} summaryofattempts, quiz {{/str}}</h3>
+<ul class="list-unstyled row row-cols-1 row-cols-md-2 g-3 mod-quiz-attempt-history"
+        aria-labelledby="mod-quiz-attempt-history-heading">
+    {{#attempts}}
+        <li class="col mod-quiz-attempt-history__item">
+            <article class="card h-100 mod-quiz-attempt-history__card
+                    mod-quiz-attempt-history__card--{{statusvariant}}">
+                <header class="card-header mod-quiz-attempt-history__header">
+                    <div class="mod-quiz-attempt-history__heading">
+                        <h4 class="card-title my-0">{{name}}</h4>
+                        {{#islatest}}
+                            <span class="mod-quiz-attempt-history__latest">
+                                {{#str}} historylatestattempt, quiz {{/str}}
+                            </span>
+                        {{/islatest}}
+                    </div>
+                    <span class="mod-quiz-attempt-history__status
+                            mod-quiz-attempt-history__status--{{statusvariant}}">
+                        {{statuslabel}}
+                    </span>
+                </header>
+                <div class="mod-quiz-attempt-history__details">
+                    {{#summarydata}}
+                        {{> mod_quiz/attempt_summary_information}}
+                    {{/summarydata}}
+                </div>
+                <footer class="card-footer mod-quiz-attempt-history__actions">
+                    {{{reviewlink}}}
+                </footer>
+            </article>
+        </li>
+    {{/attempts}}
 </ul>
-
 {{/hasattempts}}

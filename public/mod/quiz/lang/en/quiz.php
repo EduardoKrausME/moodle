@@ -1239,3 +1239,4 @@ $string['reviewcontextcomments'] = 'Marker comments';
 $string['reviewcontextflags'] = 'Question flags';
 $string['reviewcontexthistory'] = 'Question history';
 $string['reviewcontextstate'] = 'Question status';
+$string['historylatestattempt'] = 'Most recent attempt';
