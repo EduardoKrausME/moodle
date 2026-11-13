@@ -70,12 +70,6 @@ if (getenv('MOODLE_CI_BEHAT') === '1') {
         'chrome' => [
             'browser' => 'chrome',
             'wd_host' => 'http://127.0.0.1:4444/wd/hub',
-            'capabilities' => [
-                'browserName' => 'chrome',
-                'goog:chromeOptions' => [
-                    'args' => ['--no-sandbox', '--disable-dev-shm-usage'],
-                ],
-            ],
         ],
     ];
 }
