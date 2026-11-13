@@ -726,6 +726,7 @@ $string['gradingfilterworkflow'] = 'Marking state: {$a}';
 $string['gradingfiltermarker'] = 'Marker: {$a}';
 $string['gradingfiltersuspended'] = 'Including suspended participants';
 $string['gradingdiscardchanges'] = 'Discard changes';
+$string['gradingdiscardattemptquestion'] = 'Viewing another attempt replaces the current grading form. Discard unsaved changes and continue?';
 $string['gradingnochanges'] = 'No unsaved changes';
 $string['gradingpendingchanges'] = 'Unsaved changes';
 $string['gradingsavedsuccess'] = 'Changes saved';
