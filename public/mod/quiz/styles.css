@@ -2841,7 +2841,7 @@ table.quizreviewsummary td.cell {
 }
 
 /* Contextual guidance is part of the quiz settings form, not the attempt or review UI. */
-.path-mod-quiz .mod-quiz-settings-guidance {
+.mod-quiz-settings-guidance {
     margin: 0.625rem 0 1rem;
     padding: 0.75rem 0.875rem;
     border-inline-start: 3px solid var(--bs-border-color);
@@ -2851,15 +2851,15 @@ table.quizreviewsummary td.cell {
     line-height: 1.55;
     overflow-wrap: anywhere;
 }
-.path-mod-quiz .mod-quiz-settings-guidance__title {
+.mod-quiz-settings-guidance__title {
     display: block;
     margin-bottom: 0.25rem;
 }
-.path-mod-quiz .mod-quiz-settings-guidance__message {
+.mod-quiz-settings-guidance__message {
     display: block;
 }
 @media (max-width: 767.98px) {
-    .path-mod-quiz .mod-quiz-settings-guidance {
+    .mod-quiz-settings-guidance {
         width: 100%;
         min-width: 0;
         padding: 0.625rem 0.75rem;
