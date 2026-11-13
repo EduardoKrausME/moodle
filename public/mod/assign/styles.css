@@ -2639,3 +2639,104 @@ body.path-mod-assign [data-region="grade-panel"] .mform .fitem.has-popout .felem
         flex: 1 1 auto;
     }
 }
+
+/* Native assignment bulk actions: page scope, accessible confirmation and mobile footer. */
+.path-mod-assign #submissions tr.selectedrow {
+    --assign-bulk-row-background: var(--bs-primary-bg-subtle, #cfe2ff);
+    background-color: var(--assign-bulk-row-background);
+}
+
+.path-mod-assign #submissions input[name="selectedusers"]:focus-visible,
+.path-mod-assign #submissions input[name="selectall"]:focus-visible {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 3px;
+}
+
+.path-mod-assign [data-type="bulkactions"] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.path-mod-assign [data-type="bulkactions"] [data-for="bulktools"] {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.path-mod-assign [data-type="bulkactions"] [data-for="bulkactions"] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.path-mod-assign [data-type="bulkactions"] [data-action="bulkcancel"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 44px;
+}
+
+.path-mod-assign .assign-bulk-clear-label {
+    font-size: 0.875rem;
+}
+
+.path-mod-assign .assign-bulk-page-scope {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 0.825rem;
+    line-height: 1.4;
+    max-width: 24rem;
+}
+
+.path-mod-assign .assign-bulk-confirm-scope {
+    color: var(--bs-secondary-color, #6c757d);
+}
+
+.path-mod-assign .assign-bulk-confirm-count {
+    margin-block: 0.6rem;
+    font-weight: 600;
+}
+
+.path-mod-assign [data-type="bulkactions"] button:focus-visible,
+.path-mod-assign .assign-bulk-confirm-count:focus-visible {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+    .path-mod-assign [data-type="bulkactions"] {
+        width: 100%;
+        align-items: stretch;
+        gap: 0.5rem;
+        padding-inline: 0.5rem !important;
+    }
+
+    .path-mod-assign [data-type="bulkactions"] [data-for="bulktools"] {
+        flex-basis: 100%;
+        order: 1;
+    }
+
+    .path-mod-assign [data-type="bulkactions"] [data-for="bulkactions"] {
+        justify-content: stretch;
+    }
+
+    .path-mod-assign [data-type="bulkactions"] [data-for="bulkactions"] > .btn,
+    .path-mod-assign [data-type="bulkactions"] [data-for="bulkactions"] > .dropup {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .path-mod-assign [data-type="bulkactions"] .assign-bulk-page-scope {
+        flex-basis: 100%;
+        order: 2;
+    }
+
+    .path-mod-assign [data-type="bulkactions"] [data-action="bulkcancel"] {
+        justify-content: center;
+    }
+
+    .path-mod-assign [data-region="assign-bulk-confirm"] {
+        overflow-wrap: anywhere;
+    }
+}
