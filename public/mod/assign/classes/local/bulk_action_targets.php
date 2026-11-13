@@ -72,7 +72,7 @@ final class bulk_action_targets {
             'grantextension', 'addattempt', 'reverttodraft',
             'setmarkingworkflowstate', 'setmarkingallocation',
         ], true) || preg_match(
-            '/^plugingradingbatchoperation_[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/D',
+            '/^plugingradingbatchoperation_[a-zA-Z][a-zA-Z0-9]*_[a-zA-Z0-9][a-zA-Z0-9_-]*$/D',
             $operation
         ) === 1;
     }
