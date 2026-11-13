@@ -99,7 +99,7 @@ Feature: Set availability dates for an assignment
     And I log out
 
     And I am on the "Assignment name" Activity page logged in as teacher1
-    And I should see "1" in the "Submitted" "table_row"
+    And I should see "1" in the ".assign-grading-dashboard-card--submitted" "css_element"
     And I navigate to "Submissions" in current page administration
     And I should see "Submitted for grading" in the "Student 1" "table_row"
 
@@ -130,7 +130,7 @@ Feature: Set availability dates for an assignment
     And I log out
 
     And I am on the "Assignment name" Activity page logged in as teacher1
-    And I should see "1" in the "Submitted" "table_row"
+    And I should see "1" in the ".assign-grading-dashboard-card--submitted" "css_element"
     And I navigate to "Submissions" in current page administration
     And I should see "Submitted for grading" in the "Student 1" "table_row"
     And I should see "2 days 5 hours late" in the "Student 1" "table_row"
@@ -181,6 +181,7 @@ Feature: Set availability dates for an assignment
     # Set 'Due date' to 2 days 5 hours 30 minutes ago.
     And I set the field "Due date" to "##2 days 5 hours 30 minutes ago##"
     And I press "Save and display"
+    And I click on "Show original grading summary" "text"
     And I should see "5 secs" in the "Time limit" "table_row"
     And I log out
 
@@ -213,7 +214,7 @@ Feature: Set availability dates for an assignment
     And I log out
 
     And I am on the "Assignment name" Activity page logged in as teacher1
-    And I should see "0" in the "Submitted" "table_row"
+    And I should see "0" in the ".assign-grading-dashboard-card--submitted" "css_element"
     And I navigate to "Submissions" in current page administration
     And I should see "No submission" in the "Student 1" "table_row"
     And I should see "Assignment is overdue by: 2 days 5 hours" in the "Student 1" "table_row"

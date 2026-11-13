@@ -26,11 +26,15 @@ Feature: When a Teacher hides an assignment from view for students it should con
   Scenario: A teacher can view a hidden assignment
     When I am on the "Test hidden assignment" Activity page logged in as teacher1
     Then I should see "Test hidden assignment"
+    And ".assign-grading-dashboard" "css_element" should exist
+    And I click on "Show original grading summary" "text"
     And I should see "Yes" in the "Hidden from students" "table_row"
 
   Scenario: A teacher can view a visible assignment
     Given I am on the "Test visible assignment" Activity page logged in as teacher1
     Then I should see "Test visible assignment"
+    And ".assign-grading-dashboard" "css_element" should exist
+    And I click on "Show original grading summary" "text"
     And I should see "No" in the "Hidden from students" "table_row"
 
   Scenario: A student cannot view a hidden assignment

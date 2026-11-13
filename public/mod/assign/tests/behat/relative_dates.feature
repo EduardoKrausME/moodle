@@ -81,6 +81,7 @@ I should be able to create an assignment with a due date relative to the course 
 
     And I am on the "Test assignment name" Activity page logged in as teacher1
     And the activity date in "Test assignment name" should contain "after course start"
+    And I click on "Show original grading summary" "text"
     And I should see "Calculated for each student" in the "Time remaining" "table_row"
     When I navigate to "Submissions" in current page administration
     Then I should see "No submission" in the "Student 1" "table_row"
