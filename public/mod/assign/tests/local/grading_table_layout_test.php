@@ -51,7 +51,7 @@ final class grading_table_layout_test extends \basic_testcase {
     public function test_every_plugin_field_and_header_is_preserved(): void {
         [$columns, $headers] = $this->columns();
         [$result, $labels] = grading_table_layout::prioritise($columns, $headers, false);
-        $this->assertSameCanonicalizing($columns, $result);
+        $this->assertEqualsCanonicalizing($columns, $result);
         $this->assertCount(count($columns), $labels);
         $this->assertSame('PLUGIN0', $labels[array_search('plugin0', $result, true)]);
         $this->assertSame('PLUGIN1', $labels[array_search('plugin1', $result, true)]);

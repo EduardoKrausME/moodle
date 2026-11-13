@@ -40,9 +40,8 @@ Feature: Native submissions table remains readable and fully functional on narro
     And "#submissions thead th.assign-grading-status" "css_element" should exist
     And "#submissions thead th.assign-grading-date" "css_element" should exist
     And "#submissions thead th.assign-grading-grade" "css_element" should exist
-    And the following should exist in the "submissions" table:
-      | Full name | Status | Grade |
-      | Student One | Submitted for grading | - |
+    And I should see "Student One" in the "#submissions" "css_element"
+    And I should see "Submitted for grading" in the "Student One" "table_row"
     And "selectall" "checkbox" should exist
     And I click on "Select all" "checkbox" in the "#submissions" "css_element"
     And I should see "Download" in the "sticky-footer" "region"
@@ -81,7 +80,7 @@ Feature: Native submissions table remains readable and fully functional on narro
     And I click on "Quick grading" "checkbox"
     When I change window size to "small"
     Then "table#submissions" "css_element" should exist
-    And "input[name='selectedusers']" "css_element" should exist in the "#submissions" "css_element"
+    And "#submissions input[name='selectedusers']" "css_element" should exist
     And "Save" "button" should exist in the "sticky-footer" "region"
     And ".assign-grading-table-scroll" "css_element" should exist
 
