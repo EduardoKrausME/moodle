@@ -9589,6 +9589,22 @@ class assign {
             get_string('gradingassessmentdescription' . $assessmentmode, 'assign'),
             'assign-assessment-description'
         );
+        $progressattributes = [];
+        if (in_array($assessmentmode, ['rubric', 'guide'], true)) {
+            $progresskey = $assessmentmode === 'rubric' ?
+                'gradingassessmentcriteriaprogress' : 'gradingassessmentguideprogress';
+            $progressattributes['data-progress-template'] = get_string($progresskey, 'assign', (object)[
+                'completed' => '%completed%',
+                'total' => '%total%',
+            ]);
+            // Updated only from actual controls in the native advanced-grading
+            // renderer. Never calculate the grade or imply form validation.
+            $summary .= html_writer::div('', 'assign-assessment-criteria-progress', [
+                'data-region' => 'assign-assessment-criteria-progress',
+                'aria-live' => 'polite',
+                'aria-atomic' => 'true',
+            ]);
+        }
 
         // The native form controls workflow and grades. Only explain a lock
         // already imposed by Moodle, without adding a separate unlock button.
@@ -9646,7 +9662,7 @@ class assign {
             'data-region' => 'assign-assessment-summary',
             'data-assessment-mode' => $assessmentmode,
             'aria-label' => get_string('gradingassessmentoverview', 'assign'),
-        ]));
+        ] + $progressattributes));
 
         if ($markerpage) {
             $mform->addElement('header', 'gradeheader', get_string('marknoun', 'assign'));
