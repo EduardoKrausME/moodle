@@ -344,7 +344,7 @@ define([
                 // replace an unsaved grade or feedback without explicit consent.
                 str.get_strings([
                     {key: 'unsavedchanges', component: 'mod_assign'},
-                    {key: 'unsavedchangesquestion', component: 'mod_assign'},
+                    {key: 'gradingdiscardattemptquestion', component: 'mod_assign'},
                     {key: 'gradingdiscardchanges', component: 'mod_assign'},
                     {key: 'cancel', component: 'core'},
                 ]).then(function(labels) {
