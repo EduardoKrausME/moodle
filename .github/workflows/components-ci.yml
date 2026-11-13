@@ -11,6 +11,7 @@ on:
       - '.github/workflows/components-ci.yml'
       - '.github/workflows/config-template.php'
       - '.github/ci/forum-ux-14.json'
+      - '.github/ci/moodle-php-router.php'
   pull_request:
     paths:
       - 'public/mod/forum/**'
@@ -20,6 +21,7 @@ on:
       - '.github/workflows/components-ci.yml'
       - '.github/workflows/config-template.php'
       - '.github/ci/forum-ux-14.json'
+      - '.github/ci/moodle-php-router.php'
   workflow_dispatch:
 
 permissions:
@@ -236,7 +238,8 @@ jobs:
             --add-host=host.docker.internal:host-gateway \
             selenium/standalone-chrome:4.33.0
 
-          php -S 0.0.0.0:8000 -t public >/tmp/forum-behat-php.log 2>&1 &
+          php -S 0.0.0.0:8000 -t public .github/ci/moodle-php-router.php \
+            >/tmp/forum-behat-php.log 2>&1 &
           webpid=$!
           trap 'kill "$webpid" 2>/dev/null || true; docker rm -f forum-ci-selenium >/dev/null 2>&1 || true' EXIT
 
