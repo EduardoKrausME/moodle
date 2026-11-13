@@ -154,3 +154,39 @@ Feature: Teachers understand and remove native assignment grading filters withou
     When I am on the "Grading filters" Activity page logged in as student1
     Then ".assign-grading-active-filters" "css_element" should not exist
     And "#submissions.assign-responsive-grading-table" "css_element" should not exist
+
+  @javascript
+  Scenario: A suspended-participant filter is visible only when enabled by an authorised teacher
+    Given the following "permission overrides" exist:
+      | capability | permission | role | contextlevel | reference |
+      | moodle/course:viewsuspendedusers | Allow | editingteacher | Course | C1 |
+    And I am on the "Grading filters" Activity page logged in as teacher1
+    And I navigate to "Submissions" in current page administration
+    And I change window size to "large"
+    And I click on "Advanced" "button" in the ".tertiary-navigation" "css_element"
+    And I click on "Include suspended participants" "checkbox" in the ".extrafilters .dropdown-menu" "css_element"
+    When I click on "Apply" "button" in the ".extrafilters .dropdown-menu" "css_element"
+    Then ".assign-grading-filter-chip[data-filter-key='suspendedparticipantsfilter']" "css_element" should exist
+    And I should see "Including suspended participants" in the ".assign-grading-active-filters" "css_element"
+    When I click on ".assign-grading-filter-chip[data-filter-key='suspendedparticipantsfilter']" "css_element"
+    Then ".assign-grading-filter-chip[data-filter-key='suspendedparticipantsfilter']" "css_element" should not exist
+
+  @javascript
+  Scenario: Blind marking does not add student names to the active filter summary
+    Given the following "activity" exists:
+      | activity | assign |
+      | course | C1 |
+      | name | Anonymous filters |
+      | blindmarking | 1 |
+      | submissiondrafts | 0 |
+      | assignsubmission_onlinetext_enabled | 1 |
+    And the following "mod_assign > submissions" exist:
+      | assign | user | onlinetext |
+      | Anonymous filters | student1 | Anonymous answer |
+    And I am on the "Anonymous filters" Activity page logged in as teacher1
+    And I navigate to "Submissions" in current page administration
+    When I set the field "Status" to "Submitted"
+    Then ".assign-grading-active-filters" "css_element" should exist
+    And I should see "Status: Submitted" in the ".assign-grading-active-filters" "css_element"
+    And I should not see "Student One" in the ".assign-grading-active-filters" "css_element"
+    And I should not see "Student One" in the "#submissions" "css_element"
