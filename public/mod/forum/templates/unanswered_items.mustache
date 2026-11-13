@@ -1,0 +1,35 @@
+{{!
+    @template mod_forum/unanswered_items
+    Public metadata only; all user-generated strings are escaped.
+}}
+{{#items}}
+    <article class="forum-unanswered__item border rounded-3 p-3 mb-3" role="listitem"
+            data-discussion-id="{{discussionid}}">
+        <div class="d-flex align-items-start flex-wrap gap-2 justify-content-between">
+            <h3 class="h5 mb-1"><a href="{{url}}">{{subject}}</a></h3>
+            <span class="badge bg-secondary">{{statuslabel}}</span>
+        </div>
+        <p class="small text-muted mb-2">
+            <span>{{coursename}}</span>
+            <span aria-hidden="true"> · </span>
+            <span>{{forumname}}</span>
+            <span aria-hidden="true"> · </span>
+            <span>{{author}}</span>
+        </p>
+        <p class="small text-muted mb-2">
+            <span>{{created}}</span>
+            <span aria-hidden="true"> · </span>
+            <span>{{#str}}unansweredwait, mod_forum, {{waitinghours}}{{/str}}</span>
+        </p>
+        <div class="forum-unanswered__actions d-flex flex-wrap gap-2">
+            <a class="btn btn-sm btn-outline-primary" href="{{url}}">
+                {{#str}}unansweredview, mod_forum{{/str}}
+            </a>
+            {{#canreply}}
+                <a class="btn btn-sm btn-primary" href="{{replyurl}}">
+                    {{#str}}unansweredreply, mod_forum{{/str}}
+                </a>
+            {{/canreply}}
+        </div>
+    </article>
+{{/items}}

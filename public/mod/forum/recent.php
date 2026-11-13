@@ -50,6 +50,12 @@ unset($course);
 $PAGE->requires->js_call_amd('mod_forum/recent_feed', 'init', [$courseid, (bool)$unread, (bool)$following]);
 
 echo $OUTPUT->header();
+if (\mod_forum\local\unanswered_discussions::get_course_options()) {
+    echo $OUTPUT->container(\html_writer::link(
+        new \moodle_url('/mod/forum/unanswered.php'),
+        get_string('unansweredlink', 'mod_forum'), ['class' => 'btn btn-outline-secondary']),
+        'mb-3');
+}
 echo $OUTPUT->render_from_template('mod_forum/recent_feed_page', [
     'courses' => $courses,
     'courseid' => $courseid,

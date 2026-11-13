@@ -173,6 +173,18 @@ $rendererfactory = mod_forum\local\container::get_renderer_factory();
 // The elements for view action are rendered and added to the page.
 echo forum_activity_actionbar($forum, $groupid, $course, $search);
 
+// Read-only teacher queue is separate from ordinary forum navigation.
+if (has_capability('mod/forum:viewunanswered', $forum->get_context(), $USER) &&
+        has_capability('mod/forum:viewdiscussion', $forum->get_context(), $USER)) {
+    $pendingurl = new \moodle_url('/mod/forum/unanswered.php', [
+        'courseid' => $course->id,
+        'forumid' => $forum->get_id(),
+    ]);
+    echo $OUTPUT->container(\html_writer::link($pendingurl,
+        get_string('unansweredlink', 'mod_forum'), ['class' => 'btn btn-outline-secondary']),
+        'mb-3');
+}
+
 if ($sortorder) {
     set_user_preference('forum_discussionlistsortorder', $sortorder);
 }

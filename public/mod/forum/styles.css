@@ -530,3 +530,32 @@ span.unread {
     white-space: normal;
     overflow-wrap: anywhere;
 }
+
+/* Teacher's read-only question queue. */
+.forum-unanswered__filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+.forum-unanswered__item {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.forum-unanswered__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: .75rem;
+}
+.forum-unanswered__metric {
+    min-width: 0;
+}
+.forum-unanswered__item:focus-within {
+    border-color: var(--bs-primary);
+}
+@media (max-width: 575.98px) {
+    .forum-unanswered__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

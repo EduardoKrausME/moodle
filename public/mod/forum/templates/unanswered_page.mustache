@@ -1,0 +1,81 @@
+{{!
+    @template mod_forum/unanswered_page
+    Read-only server-rendered teacher queue, progressively enhanced with AJAX.
+}}
+<div class="forum-unanswered" data-region="forum-unanswered"
+     data-cursor="{{nextcursor}}" data-has-more="{{#hasmore}}1{{/hasmore}}{{^hasmore}}0{{/hasmore}}">
+    <p class="text-muted">{{#str}}unansweredsubtitle, mod_forum{{/str}}</p>
+    <form action="{{actionurl}}" method="get" data-region="unanswered-filters" class="mb-4">
+        <div class="forum-unanswered__filters">
+            <div>
+                <label for="unanswered-course" class="form-label">{{#str}}unansweredcourse, mod_forum{{/str}}</label>
+                <select class="form-select" id="unanswered-course" name="courseid">
+                    <option value="0">{{#str}}unansweredallcourses, mod_forum{{/str}}</option>
+                    {{#courses}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>{{/courses}}
+                </select>
+            </div>
+            <div>
+                <label for="unanswered-forum" class="form-label">{{#str}}unansweredforum, mod_forum{{/str}}</label>
+                <select class="form-select" id="unanswered-forum" name="forumid">
+                    <option value="0">{{#str}}unansweredallforums, mod_forum{{/str}}</option>
+                    {{#forums}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>{{/forums}}
+                </select>
+            </div>
+            <div>
+                <label for="unanswered-group" class="form-label">{{#str}}unansweredgroup, mod_forum{{/str}}</label>
+                <select class="form-select" id="unanswered-group" name="groupid" {{^hasgroups}}disabled{{/hasgroups}}>
+                    <option value="0">{{#str}}unansweredallgroups, mod_forum{{/str}}</option>
+                    {{#groups}}<option value="{{id}}" {{#selected}}selected{{/selected}}>{{name}}</option>{{/groups}}
+                </select>
+            </div>
+            <div>
+                <label for="unanswered-status" class="form-label">{{#str}}unansweredstatus, mod_forum{{/str}}</label>
+                <select class="form-select" id="unanswered-status" name="status">
+                    {{#statuses}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/statuses}}
+                </select>
+            </div>
+            <div>
+                <label for="unanswered-sort" class="form-label">{{#str}}unansweredsort, mod_forum{{/str}}</label>
+                <select class="form-select" id="unanswered-sort" name="sort">
+                    {{#sorts}}<option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>{{/sorts}}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">{{#str}}unansweredapply, mod_forum{{/str}}</button>
+        </div>
+        <p class="small text-muted mt-2">{{#str}}unansweredfilterhelp, mod_forum{{/str}}</p>
+    </form>
+    <div class="forum-unanswered__metrics mb-3">
+        <div class="forum-unanswered__metric border rounded-3 p-3">
+            <strong class="h4 d-block" data-region="unanswered-count-unanswered">{{counts.unanswered}}</strong>
+            <span class="small">{{#str}}unansweredstatus_unanswered, mod_forum{{/str}}</span>
+        </div>
+        <div class="forum-unanswered__metric border rounded-3 p-3">
+            <strong class="h4 d-block" data-region="unanswered-count-awaiting">{{counts.awaiting}}</strong>
+            <span class="small">{{#str}}unansweredstatus_awaiting, mod_forum{{/str}}</span>
+        </div>
+        <div class="forum-unanswered__metric border rounded-3 p-3">
+            <strong class="h4 d-block" data-region="unanswered-count-accepted">{{counts.accepted}}</strong>
+            <span class="small">{{#str}}unansweredstatus_accepted, mod_forum{{/str}}</span>
+        </div>
+        <div class="forum-unanswered__metric border rounded-3 p-3">
+            <strong class="h4 d-block" data-region="unanswered-count-answered">{{counts.answered}}</strong>
+            <span class="small">{{#str}}unansweredstatus_answered, mod_forum{{/str}}</span>
+        </div>
+    </div>
+    <p class="small text-muted">{{#str}}unansweredcountnotice, mod_forum{{/str}}</p>
+    <div role="list" data-region="unanswered-items"
+         aria-label="{{#str}}unansweredresults, mod_forum{{/str}}">
+        {{> mod_forum/unanswered_items}}
+    </div>
+    <p role="status" aria-live="polite" aria-atomic="true" tabindex="-1"
+       class="small text-muted" data-region="unanswered-feedback">
+       {{#str}}unansweredpagecount, mod_forum, {{count}}{{/str}}
+    </p>
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-primary" data-action="unanswered-more"
+                {{^hasmore}}hidden{{/hasmore}}>{{#str}}unansweredmore, mod_forum{{/str}}</button>
+        <button type="button" class="btn btn-outline-secondary" data-action="unanswered-retry" hidden>
+            {{#str}}unansweredretry, mod_forum{{/str}}
+        </button>
+    </div>
+</div>
