@@ -22,8 +22,9 @@
  * @since      3.1
  */
 define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
-        'core/ajax', 'core_user/repository', 'mod_assign/grading_form_change_checker'],
-       function($, notification, str, autocomplete, ajax, UserRepository, checker) {
+        'core/ajax', 'core_user/repository', 'mod_assign/grading_form_change_checker',
+         'core/modal', 'core/modal_events'],
+       function($, notification, str, autocomplete, ajax, UserRepository, checker, Modal, ModalEvents) {
 
     /**
      * GradingNavigation class.
@@ -40,6 +41,8 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
         this._lastXofYUpdate = 0;
         this._firstLoadUsers = true;
         this._isMarking = false;
+        this._isSaving = false;
+        this._navigationModalOpen = false;
 
         let url = new URL(window.location);
         if (parseInt(url.searchParams.get('treset')) > 0) {
@@ -64,6 +67,21 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
         $(document).on('user-changed', this._refreshSelector.bind(this));
         $(document).on('reset-table', this._toggleResetTable.bind(this));
         $(document).on('done-saving-show-next', this._handleNextUser.bind(this));
+        $(document).on('assign-grading-save-start', function() {
+            this._isSaving = true;
+        }.bind(this));
+        $(document).on('assign-grading-save-success assign-grading-save-failed', function() {
+            this._isSaving = false;
+        }.bind(this));
+
+        // The browser owns its leave-page dialogue. Do not present a false
+        // promise that the app can save a grade during tab close or refresh.
+        window.addEventListener('beforeunload', function(event) {
+            if (this._isSaving || checker.checkFormForChanges('[data-region="grade-panel"] .gradeform')) {
+                event.preventDefault();
+                event.returnValue = '';
+            }
+        }.bind(this));
 
         // Position the configure filters panel under the link that expands it.
         var toggleLink = this._region.find('[data-region="user-filters"]');
@@ -115,6 +133,9 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
      * @return {Boolean} True if the user list was fetched.
      */
     GradingNavigation.prototype._loadAllUsers = function() {
+        if (this._isSaving) {
+            return false;
+        }
         var select = this._region.find('[data-action=change-user]');
         var assignmentid = select.attr('data-assignmentid');
         var groupid = select.attr('data-groupid');
@@ -291,66 +312,118 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
      * @method _selectNoUser
      */
     GradingNavigation.prototype._selectNoUser = function() {
-        // Detect unsaved changes, and offer to save them - otherwise change user right now.
-        if (this._isLoading) {
+        this._requestNavigation(-1);
+    };
+
+    /**
+     * Select the participant only after checking the native form.
+     *
+     * @param {Number} userid Requested participant ID.
+     */
+    GradingNavigation.prototype._selectUserById = function(userid) {
+        this._requestNavigation(parseInt(userid, 10));
+    };
+
+    /**
+     * Navigate only when the current form is confirmed safe to leave.
+     *
+     * @param {Number} userid User to open or -1 for an empty filtered list.
+     */
+    GradingNavigation.prototype._requestNavigation = function(userid) {
+        if (this._isLoading || this._isSaving || this._navigationModalOpen) {
             return;
         }
-
-        $('[data-region="grade-panel"]').hide();
-        $('[data-region="grade-actions-panel"]').hide();
-
+        const target = parseInt(userid, 10);
+        if (isNaN(target) || target === 0) {
+            return;
+        }
+        const select = this._region.find('[data-action=change-user]');
+        const current = parseInt(select.attr('data-selected'), 10);
+        if (target === current) {
+            return;
+        }
         if (checker.checkFormForChanges('[data-region="grade-panel"] .gradeform')) {
-            // Form has changes, so we need to confirm before switching users.
-            str.get_strings([
-                {key: 'unsavedchanges', component: 'mod_assign'},
-                {key: 'unsavedchangesquestion', component: 'mod_assign'},
-                {key: 'saveandcontinue', component: 'mod_assign'},
-                {key: 'cancel', component: 'core'},
-            ]).done(function(strs) {
-                notification.confirm(strs[0], strs[1], strs[2], strs[3], function() {
-                    $(document).trigger('save-changes', -1);
-                });
-            });
+            // Do not mutate data-selected until the grader has chosen an action.
+            this._confirmUnsavedNavigation(target);
         } else {
-            $(document).trigger('user-changed', -1);
+            this._navigateDirectly(target);
         }
     };
 
     /**
-     * Select the specified user by id.
+     * A selection switch is a presentation action, never a grade write.
      *
-     * @private
-     * @method _selectUserById
-     * @param {Number} userid
+     * @param {Number} target Authorised participant provided by native selector.
      */
-    GradingNavigation.prototype._selectUserById = function(userid) {
-        var select = this._region.find('[data-action=change-user]');
-        var useridnumber = parseInt(userid, 10);
-
-        // Detect unsaved changes, and offer to save them - otherwise change user right now.
-        if (this._isLoading) {
+    GradingNavigation.prototype._navigateDirectly = function(target) {
+        if (this._isSaving) {
             return;
         }
-        if (checker.checkFormForChanges('[data-region="grade-panel"] .gradeform')) {
-            // Form has changes, so we need to confirm before switching users.
-            str.get_strings([
-                {key: 'unsavedchanges', component: 'mod_assign'},
-                {key: 'unsavedchangesquestion', component: 'mod_assign'},
-                {key: 'saveandcontinue', component: 'mod_assign'},
-                {key: 'cancel', component: 'core'},
-            ]).done(function(strs) {
-                notification.confirm(strs[0], strs[1], strs[2], strs[3], function() {
-                    $(document).trigger('save-changes', useridnumber);
-                });
-            });
-        } else {
-            select.attr('data-selected', userid);
-
-            // If we have some filtered users, and userid is specified, then trigger change.
-            if (this._filteredUsers.length > 0 && !isNaN(useridnumber) && useridnumber > 0) {
-                $(document).trigger('user-changed', useridnumber);
-            }
+        const select = this._region.find('[data-action=change-user]');
+        if (target > 0) {
+            select.attr('data-selected', target);
         }
+        $(document).trigger('user-changed', target);
+    };
+
+    /**
+     * Three accessible actions: save then navigate, explicitly discard,
+     * or keep grading. Moodle's native modal provides focus trapping.
+     *
+     * @param {Number} target Participant selected before the dialog opened.
+     */
+    GradingNavigation.prototype._confirmUnsavedNavigation = function(target) {
+        if (this._navigationModalOpen) {
+            return;
+        }
+        this._navigationModalOpen = true;
+        str.get_strings([
+            {key: 'unsavedchanges', component: 'mod_assign'},
+            {key: 'unsavedchangesquestion', component: 'mod_assign'},
+            {key: 'saveandcontinue', component: 'mod_assign'},
+            {key: 'gradingdiscardchanges', component: 'mod_assign'},
+            {key: 'cancel', component: 'core'},
+        ]).then(async strings => {
+            const footer = document.createElement('div');
+            footer.className = 'assign-grading-unsaved-actions';
+            const actions = [
+                ['save', strings[2], 'btn btn-primary'],
+                ['discard', strings[3], 'btn btn-danger'],
+                ['cancel', strings[4], 'btn btn-secondary'],
+            ];
+            actions.forEach(([action, label, classes]) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = classes;
+                button.dataset.action = 'assign-grading-' + action;
+                button.textContent = label;
+                footer.appendChild(button);
+            });
+            const modal = await Modal.create({
+                title: strings[0],
+                body: strings[1],
+                footer: footer.outerHTML,
+                removeOnClose: true,
+            });
+            const close = () => modal.hide();
+            modal.getRoot().on(ModalEvents.hidden, () => {
+                this._navigationModalOpen = false;
+            });
+            modal.getFooter().on('click', '[data-action="assign-grading-save"]', () => {
+                close();
+                $(document).trigger('save-changes', [target]);
+            });
+            modal.getFooter().on('click', '[data-action="assign-grading-discard"]', () => {
+                close();
+                this._navigateDirectly(target);
+            });
+            modal.getFooter().on('click', '[data-action="assign-grading-cancel"]', close);
+            modal.show();
+            return modal;
+        }).catch(error => {
+            this._navigationModalOpen = false;
+            notification.exception(error);
+        });
     };
 
     /**
@@ -401,6 +474,9 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
      */
     GradingNavigation.prototype._handlePreviousUser = function(e) {
         e.preventDefault();
+        if (this._isSaving || this._navigationModalOpen) {
+            return;
+        }
         var select = this._region.find('[data-action=change-user]');
         var currentUserId = select.attr('data-selected');
         var i = 0;
@@ -432,6 +508,9 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
      */
     GradingNavigation.prototype._handleNextUser = function(e, saved) {
         e.preventDefault();
+        if (this._isSaving || this._navigationModalOpen) {
+            return;
+        }
         var select = this._region.find('[data-action=change-user]');
         var currentUserId = select.attr('data-selected');
         var i = 0;
@@ -445,7 +524,13 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
         }
 
         var count = this._filteredUsers.length;
-        var newIndex = (currentIndex + 1) % count;
+        // Save-and-next is a linear workflow; unlike manual next, it must not
+        // wrap silently to the first participant at the end of the list.
+        if (saved && count && currentIndex === count - 1) {
+            $(document).trigger('assign-grading-sequence-complete');
+            return;
+        }
+        var newIndex = count ? (currentIndex + 1) % count : 0;
 
         if (saved && count) {
             // If we've already saved the grade, skip checking if we've made any changes.
@@ -564,32 +649,14 @@ define(['jquery', 'core/notification', 'core/str', 'core/form-autocomplete',
      * @method _handleChangeUser
      */
     GradingNavigation.prototype._handleChangeUser = function() {
-        var select = this._region.find('[data-action=change-user]');
-        var userid = parseInt(select.val(), 10);
-
-        if (this._isLoading) {
+        const select = this._region.find('[data-action=change-user]');
+        const userid = parseInt(select.val(), 10);
+        if (this._isLoading || this._isSaving || this._navigationModalOpen) {
             return;
         }
-        if (checker.checkFormForChanges('[data-region="grade-panel"] .gradeform')) {
-            // Form has changes, so we need to confirm before switching users.
-            str.get_strings([
-                {key: 'unsavedchanges', component: 'mod_assign'},
-                {key: 'unsavedchangesquestion', component: 'mod_assign'},
-                {key: 'saveandcontinue', component: 'mod_assign'},
-                {key: 'cancel', component: 'core'},
-            ]).done(function(strs) {
-                notification.confirm(strs[0], strs[1], strs[2], strs[3], function() {
-                    $(document).trigger('save-changes', userid);
-                });
-            });
-        } else {
-            if (!isNaN(userid) && userid > 0) {
-                select.attr('data-selected', userid);
-
-                $(document).trigger('user-changed', userid);
-            }
-        }
+        this._requestNavigation(userid);
     };
 
+    /** @private */
     return GradingNavigation;
 });
