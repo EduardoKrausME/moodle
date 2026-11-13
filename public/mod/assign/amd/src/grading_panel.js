@@ -30,6 +30,7 @@ define([
     'core/ajax',
     'core/str',
     'mod_assign/grading_form_change_checker',
+    'mod_assign/grading_save_state',
     'mod_assign/grading_events',
     'mod_assign/optional_marker',
     'core_form/events',
@@ -44,6 +45,7 @@ define([
     ajax,
     str,
     checker,
+    GradingSaveState,
     GradingEvents,
     OptionalMarker,
     FormEvents,
@@ -61,6 +63,8 @@ define([
         this._regionSelector = selector;
         this._region = $(selector);
         this._userCache = [];
+        this._saveState = new GradingSaveState();
+        this._confirmingOptionalMarker = false;
 
         this.registerEventListeners();
     };
@@ -128,16 +132,34 @@ define([
      * @fires event:formSubmittedByJavascript
      */
     GradingPanel.prototype._submitForm = function(event, nextUserId, nextUser) {
-        // Warn the user if enabling an optional marker would clear an existing grade.
+        // Never queue a second write or open multiple optional-marker prompts.
+        if (this._saveState.isBusy() || this._confirmingOptionalMarker ||
+                this._lastUserId <= 0 || !this._region.find('form.gradeform').length) {
+            return;
+        }
+
+        // The existing optional marker confirmation remains authoritative.
         if (OptionalMarker.shouldConfirmSubmit()) {
+            this._confirmingOptionalMarker = true;
             OptionalMarker.showConfirm(true).then(function(confirmed) {
+                this._confirmingOptionalMarker = false;
                 if (confirmed) {
                     OptionalMarker.saveEnabledState();
                     this._submitForm(event, nextUserId, nextUser);
                 }
-            }.bind(this)).catch(notification.exception);
+                return confirmed;
+            }.bind(this)).catch(function(error) {
+                this._confirmingOptionalMarker = false;
+                notification.exception(error);
+            }.bind(this));
             return;
         }
+
+        const request = this._saveState.begin(this._lastUserId, this._lastAttemptNumber);
+        if (!request) {
+            return;
+        }
+        $(document).trigger('assign-grading-save-start', [request.userId]);
 
         // If the form has data in comment-area, then we need to save that comment
         var commentAreaElement = document.querySelector('.comment-area');
@@ -154,8 +176,8 @@ define([
 
         $('[data-region="overlay"]').show();
 
-        // Mark the form as submitted in the change checker.
-        FormChangeChecker.markFormSubmitted(form[0]);
+        // Do not mark the form submitted until the server confirms success.
+        // A failed or timed-out request must keep the dirty-form warning active.
 
         // We call this, so other modules can update the form with the latest state.
         form.trigger('save-form-state');
@@ -174,8 +196,8 @@ define([
         ajax.call([{
             methodname: 'mod_assign_submit_grading_form',
             args: {assignmentid: assignmentid, userid: this._lastUserId, marker: marker, jsonformdata: JSON.stringify(data)},
-            done: this._handleFormSubmissionResponse.bind(this, data, nextUserId, nextUser),
-            fail: notification.exception
+            done: this._handleFormSubmissionResponse.bind(this, request, data, nextUserId, nextUser),
+            fail: this._handleSaveError.bind(this, request)
         }]);
     };
 
@@ -189,11 +211,16 @@ define([
      * @param {Boolean} [nextUser] - Whether to switch to next user in the grading list.
      * @param {Array} response List of errors.
      */
-    GradingPanel.prototype._handleFormSubmissionResponse = function(formdata, nextUserId, nextUser, response) {
-        if (typeof nextUserId === "undefined") {
-            nextUserId = this._lastUserId;
+    GradingPanel.prototype._handleFormSubmissionResponse = function(request, formdata, nextUserId, nextUser, response) {
+        if (!this._saveState.finish(request)) {
+            return;
         }
-        if (response.length) {
+        $('[data-region="overlay"]').hide();
+        if (typeof nextUserId === "undefined") {
+            nextUserId = request.userId;
+        }
+        if (!Array.isArray(response) || response.length) {
+            $(document).trigger('assign-grading-save-failed', ['validation']);
             str.get_string('errorgradechangessaveddetail', 'mod_assign')
                 .then(function(str) {
                     Toast.add(str, {type: 'danger', delay: 4000});
@@ -212,11 +239,19 @@ define([
             })
             .catch(notification.exception);
 
-            // Reset the form state.
+            // The save is confirmed, but plugins or editors may have changed
+            // fields after the request snapshot. Never navigate in that case.
             var form = $(this._region.find('form.gradeform'));
+            form.trigger('save-form-state');
+            if (form.serialize() !== formdata) {
+                $(document).trigger('assign-grading-save-failed', ['newchanges']);
+                return;
+            }
+            FormChangeChecker.markFormSubmitted(form[0]);
             FormChangeChecker.resetFormDirtyState(form[0]);
+            $(document).trigger('assign-grading-save-success', [request.userId]);
 
-            if (nextUserId == this._lastUserId) {
+            if (nextUserId == request.userId || (!nextUser && (nextUserId === null || nextUserId <= 0))) {
                 $(document).trigger('reset', nextUserId);
             } else if (nextUser) {
                 $(document).trigger('done-saving-show-next', true);
@@ -224,7 +259,24 @@ define([
                 $(document).trigger('user-changed', nextUserId);
             }
         }
+    };
+
+    /**
+     * Recover a failed AJAX request without discarding the native form.
+     *
+     * @param {Object} request Request-local save state.
+     * @param {Error} error The original AJAX failure.
+     */
+    GradingPanel.prototype._handleSaveError = function(request, error) {
+        if (!this._saveState.finish(request)) {
+            return;
+        }
         $('[data-region="overlay"]').hide();
+        // A transport failure is not proof that the server did not commit.
+        // Preserve the current form and require the grader to verify/retry.
+        this._region.find('form.gradeform').data('unresolved-error', true);
+        $(document).trigger('assign-grading-save-failed', ['network']);
+        notification.exception(error);
     };
 
     /**
@@ -238,6 +290,9 @@ define([
      * @param {Boolean} unresolvederror
      */
     GradingPanel.prototype._resetForm = function(e, userid, formdata, unresolvederror) {
+        if (this._saveState.isBusy()) {
+            return;
+        }
         // The form was cancelled - refresh with default values.
         var event = $.Event("custom");
         if (typeof userid == "undefined") {
@@ -327,6 +382,9 @@ define([
      * @param {Boolean} unresolvederror
      */
     GradingPanel.prototype._refreshGradingPanel = function(event, userid, submissiondata, attemptnumber, unresolvederror) {
+        if (this._saveState.isBusy()) {
+            return;
+        }
         var contextid = this._region.attr('data-contextid');
         if (typeof submissiondata === 'undefined') {
             submissiondata = '';
