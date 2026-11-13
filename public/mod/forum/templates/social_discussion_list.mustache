@@ -37,6 +37,17 @@
        {{#posts}}
            {{< mod_forum/forum_discussion_post }}
                {{$footer}}
+                   {{#solutioninfo}}
+                       <div class="forum-solution-list-state mb-2">
+                           {{#accepted}}
+                               <span class="badge bg-success">{{#str}}acceptedsolution, mod_forum{{/str}}</span>
+                               <a href="{{url}}" class="ms-2">{{#str}}viewsolution, mod_forum{{/str}}</a>
+                           {{/accepted}}
+                           {{#unaccepted}}
+                               <span class="badge bg-secondary">{{#str}}solutionnotaccepted, mod_forum{{/str}}</span>
+                           {{/unaccepted}}
+                       </div>
+                   {{/solutioninfo}}
                    <div class="link text-end">
                        <a href="{{urls.discuss}}"
                           aria-label="{{#str}} discusstopicname, forum, {{subject}} {{/str}}">

@@ -157,7 +157,8 @@ class discussion_list {
         ?int $pageno,
         ?int $pagesize,
         ?int $displaymode = null,
-        bool $enablediscussioncreation = true
+        bool $enablediscussioncreation = true,
+        string $solutionfilter = 'all'
     ): string {
         global $PAGE;
 
@@ -173,11 +174,22 @@ class discussion_list {
         $pagesize = $this->get_page_size($pagesize);
         $pageno = $this->get_page_number($pageno);
 
-        // Count all forum discussion posts.
-        $alldiscussionscount = mod_forum_count_all_discussions($forum, $user, $groupid);
+        $solutionsenabled = !empty($this->forumrecord->allowsolutions);
+        $solutionfilter = $solutionsenabled &&
+            in_array($solutionfilter, ['all', 'accepted', 'unaccepted'], true) ?
+            $solutionfilter : 'all';
 
-        // Get all forum discussion summaries.
-        $discussions = mod_forum_get_discussion_summaries($forum, $user, $groupid, $sortorder, $pageno, $pagesize);
+        if ($solutionfilter !== 'all') {
+            // A rendered-row filter would break the native pagination and counters.
+            $filtered = \mod_forum\local\solution_listing::get_filtered_page(
+                $forum, $user, $groupid, $sortorder, $pageno, $pagesize, $solutionfilter);
+            $discussions = $filtered['discussions'];
+            $alldiscussionscount = $filtered['total'];
+        } else {
+            $alldiscussionscount = mod_forum_count_all_discussions($forum, $user, $groupid);
+            $discussions = mod_forum_get_discussion_summaries(
+                $forum, $user, $groupid, $sortorder, $pageno, $pagesize);
+        }
 
         $capabilitymanager = $this->capabilitymanager;
         $hasanyactions = false;
@@ -185,7 +197,26 @@ class discussion_list {
         $hasanyactions = $hasanyactions || $capabilitymanager->can_pin_discussions($user);
         $hasanyactions = $hasanyactions || $capabilitymanager->can_manage_forum($user);
 
+        $filteroptions = [];
+        if ($solutionsenabled) {
+            foreach (['all', 'accepted', 'unaccepted'] as $value) {
+                $link = new \moodle_url($PAGE->url, [
+                    'solutionfilter' => $value,
+                    'p' => 0,
+                    'o' => $sortorder,
+                    's' => $pagesize,
+                ]);
+                $filteroptions[] = [
+                    'label' => get_string('solutionfilter_' . $value, 'forum'),
+                    'url' => $link->out(false),
+                    'selected' => $solutionfilter === $value,
+                ];
+            }
+        }
+
         $forumview = [
+            'solutionfilterenabled' => $solutionsenabled,
+            'solutionfilters' => $filteroptions,
             'forum' => (array) $forumexporter->export($this->renderer),
             'contextid' => $forum->get_context()->id,
             'cmid' => $cm->id,
@@ -225,9 +256,25 @@ class discussion_list {
             return $this->renderer->render_from_template($this->template, $forumview);
         }
 
+        $exportedposts = [];
         if ($this->postprocessfortemplate !== null) {
-            // We've got some post processing to do!
             $exportedposts = ($this->postprocessfortemplate) ($discussions, $user, $forum);
+        }
+        if ($solutionsenabled) {
+            $visible = \mod_forum\local\solution_listing::visible_for_summaries($forum, $user, $discussions);
+            foreach (['summaries', 'posts'] as $key) {
+                if (empty($exportedposts[$key])) {
+                    continue;
+                }
+                foreach ($exportedposts[$key] as $entry) {
+                    $id = $key === 'summaries' ? (int)$entry->id : (int)$entry->discussionid;
+                    $entry->solutioninfo = [
+                        'accepted' => isset($visible[$id]),
+                        'unaccepted' => !isset($visible[$id]),
+                        'url' => $visible[$id]['url'] ?? '',
+                    ];
+                }
+            }
         }
 
         $baseurl = new \moodle_url($PAGE->url, ['o' => $sortorder, 's' => $pagesize]);

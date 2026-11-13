@@ -43,6 +43,10 @@ $search = optional_param('search', '', PARAM_CLEAN);
 $pageno = optional_param('p', $pageno, PARAM_INT);
 $pagesize = optional_param('s', $CFG->forum_manydiscussions ?? 0, PARAM_INT);
 $sortorder = optional_param('o', null, PARAM_INT);
+$solutionfilter = optional_param('solutionfilter', 'all', PARAM_ALPHA);
+if (!in_array($solutionfilter, ['all', 'accepted', 'unaccepted'], true)) {
+    throw new \invalid_parameter_exception('Invalid accepted solution filter.');
+}
 
 if (!$cmid && !$forumid) {
     throw new \moodle_exception('missingparameter');
@@ -70,7 +74,8 @@ $urlfactory = mod_forum\local\container::get_url_factory();
 $capabilitymanager = $managerfactory->get_capability_manager($forum);
 
 $url = $urlfactory->get_forum_view_url_from_forum($forum);
-$PAGE->set_url($url);
+$PAGE->set_url($solutionfilter === 'all' ? $url :
+    new \moodle_url($url, ['solutionfilter' => $solutionfilter]));
 
 $course = $forum->get_course_record();
 $coursemodule = $forum->get_course_module_record();
@@ -256,7 +261,7 @@ switch ($forum->get_type()) {
         $discussionsrenderer = $rendererfactory->get_blog_discussion_list_renderer($forum);
         // Blog forums always show discussions newest first.
         echo $discussionsrenderer->render($USER, $cm, $groupid, $discussionlistvault::SORTORDER_CREATED_DESC,
-            $pageno, $pagesize, null, false);
+            $pageno, $pagesize, null, false, $solutionfilter);
 
         if (!$CFG->forum_usermarksread && forum_tp_is_tracked($forumrecord, $USER)) {
             $discussions = mod_forum_get_discussion_summaries($forum, $USER, $groupid, null, $pageno, $pagesize);
@@ -268,7 +273,8 @@ switch ($forum->get_type()) {
         break;
     default:
         $discussionsrenderer = $rendererfactory->get_discussion_list_renderer($forum);
-        echo $discussionsrenderer->render($USER, $cm, $groupid, $sortorder, $pageno, $pagesize, $displaymode, false);
+        echo $discussionsrenderer->render($USER, $cm, $groupid, $sortorder, $pageno,
+            $pagesize, $displaymode, false, $solutionfilter);
 }
 
 echo $OUTPUT->footer();

@@ -88,6 +88,17 @@
         </div>
     {{/forum.capabilities.create}}
 
+    {{#solutionfilterenabled}}
+        <nav class="forum-solution-filters mb-3" aria-label="{{#str}}solutionfilters, mod_forum{{/str}}">
+            <span class="form-label d-block">{{#str}}solutionfilters, mod_forum{{/str}}</span>
+            <div class="d-flex gap-2 flex-wrap">
+                {{#solutionfilters}}
+                    <a href="{{url}}" class="btn btn-sm {{#selected}}btn-primary{{/selected}}{{^selected}}btn-outline-secondary{{/selected}}"
+                       {{#selected}}aria-current="page"{{/selected}}>{{label}}</a>
+                {{/solutionfilters}}
+            </div>
+        </nav>
+    {{/solutionfilterenabled}}
     {{#state.hasdiscussions}}
         {{$discussion_top_pagination}}
             {{{ pagination }}}
@@ -228,6 +239,17 @@
                                         </span>
                                         {{/discussion.timed.istimed}}
                                     </div>
+                                    {{#solutioninfo}}
+                                        <div class="forum-solution-list-state mt-2">
+                                            {{#accepted}}
+                                                <span class="badge bg-success">{{#str}}acceptedsolution, mod_forum{{/str}}</span>
+                                                <a href="{{url}}" class="small ms-2">{{#str}}viewsolution, mod_forum{{/str}}</a>
+                                            {{/accepted}}
+                                            {{#unaccepted}}
+                                                <span class="badge bg-secondary">{{#str}}solutionnotaccepted, mod_forum{{/str}}</span>
+                                            {{/unaccepted}}
+                                        </div>
+                                    {{/solutioninfo}}
                                 </div>
                             </th>
                             {{#forum.state.groupmode}}
