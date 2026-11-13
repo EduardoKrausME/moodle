@@ -2740,3 +2740,161 @@ body.path-mod-assign [data-region="grade-panel"] .mform .fitem.has-popout .felem
         overflow-wrap: anywhere;
     }
 }
+
+
+/* Native grading instruments: presentation only, never duplicate their input controls. */
+.path-mod-assign [data-region="grade-panel"] .assign-assessment-summary {
+    display: grid;
+    gap: 0.35rem;
+    margin-block: 0 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-inline-start: 4px solid var(--bs-primary, #0d6efd);
+    border-radius: var(--bs-border-radius, 0.375rem);
+    background: var(--bs-secondary-bg, #f8f9fa);
+    color: var(--bs-body-color, #212529);
+}
+
+.path-mod-assign .assign-assessment-mode {
+    font-size: 1rem;
+    font-weight: 650;
+}
+
+.path-mod-assign .assign-assessment-description,
+.path-mod-assign .assign-assessment-progress,
+.path-mod-assign .assign-assessment-criteria-progress {
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.path-mod-assign .assign-assessment-readonly {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.path-mod-assign .assign-assessment-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: 0.35rem 0.75rem;
+    list-style: none;
+    padding: 0;
+    margin: 0.25rem 0 0;
+}
+
+.path-mod-assign .assign-assessment-slot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: var(--bs-border-radius-sm, 0.25rem);
+}
+
+.path-mod-assign .assign-assessment-position-state {
+    font-size: 0.825rem;
+    color: var(--bs-secondary-color, #6c757d);
+}
+
+/* Respect the rubric and marking-guide renderer's semantic tables, radio
+   groups, input names, scripts and permission-dependent frozen controls. */
+.path-mod-assign [data-region="grade-panel"] .gradeform .gradingform_rubric.evaluate,
+.path-mod-assign [data-region="grade-panel"] .gradeform .gradingform_guide.evaluate {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-wrap: anywhere;
+}
+
+.path-mod-assign [data-region="grade-panel"] .gradeform .gradingform_rubric.evaluate .criterion,
+.path-mod-assign [data-region="grade-panel"] .gradeform .gradingform_guide.evaluate .criterion {
+    border-color: var(--bs-border-color, #dee2e6);
+}
+
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    :is(.gradingform_rubric.evaluate, .gradingform_guide.evaluate) .criterion
+    :is(.description, .remark, .levels, .score) {
+    color: var(--bs-body-color, #212529);
+}
+
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    :is(.gradingform_rubric.evaluate, .gradingform_guide.evaluate) .criterion
+    :is(.description, .remark, .levels) {
+    padding: 0.65rem;
+}
+
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    .gradingform_rubric.evaluate .criterion .level-wrapper {
+    min-width: min(12rem, 75vw);
+    padding: 0.5rem;
+}
+
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    .gradingform_rubric.evaluate .criterion .level[aria-checked="true"],
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    .gradingform_rubric.evaluate .criterion .level.checked {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: -2px;
+}
+
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    .gradingform_guide.evaluate textarea,
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    .gradingform_rubric.evaluate textarea {
+    max-width: 100%;
+    min-height: 5rem;
+}
+
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    .gradingform_guide.evaluate input[name$="[score]"] {
+    min-width: 5rem;
+    max-width: 100%;
+}
+
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    .assign-assessment-criterion-pending {
+    border-inline-start: 3px solid var(--bs-warning-border-subtle, #ffe69c);
+}
+
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    .assign-assessment-criterion-complete {
+    border-inline-start: 3px solid var(--bs-success, #198754);
+}
+
+.path-mod-assign [data-region="grade-panel"] .gradeform
+    :is(.gradingform_rubric.evaluate, .gradingform_guide.evaluate)
+    :is(input, textarea, button, [role="radio"]):focus-visible {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+    .path-mod-assign [data-region="grade-panel"] .assign-assessment-summary {
+        padding: 0.65rem;
+    }
+
+    .path-mod-assign [data-region="grade-panel"] .gradeform
+        :is(.gradingform_rubric.evaluate, .gradingform_guide.evaluate) .criteria {
+        max-width: 100%;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+    }
+
+    .path-mod-assign [data-region="grade-panel"] .gradeform
+        :is(.gradingform_rubric.evaluate, .gradingform_guide.evaluate)
+        .criterion :is(.description, .remark) {
+        min-width: min(10rem, 70vw);
+    }
+
+    .path-mod-assign [data-region="grade-panel"] .gradeform
+        .gradingform_guide.evaluate .criterion textarea {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .path-mod-assign [data-region="grade-panel"] .gradeform
+        :is(.gradingform_rubric.evaluate, .gradingform_guide.evaluate) * {
+        scroll-behavior: auto;
+        transition: none;
+    }
+}
