@@ -154,7 +154,7 @@ define(['core/str'], function(Str) {
         const button = event.target.closest('.modal-footer button');
         const modal = button?.closest('.modal');
         if (!modal || !modal.querySelector(modalSelector) ||
-                button.matches('[data-action="cancel"], .btn-secondary, .btn-close')) {
+                !button.matches('[data-action="save"], [data-action="delete"]')) {
             return;
         }
         if (modal.dataset.assignBulkSubmitting === '1') {
