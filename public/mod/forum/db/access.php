@@ -424,6 +424,15 @@ $capabilities = array(
         )
     ),
 
+    'mod/forum:viewunanswered' => [
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => [
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+    ],
     'mod/forum:managesolutions' => [
         'captype' => 'write',
         'contextlevel' => CONTEXT_MODULE,

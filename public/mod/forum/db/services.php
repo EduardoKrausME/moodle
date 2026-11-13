@@ -265,6 +265,14 @@ $functions = array(
         'ajax' => true,
     ],
 
+    'mod_forum_get_unanswered_discussions' => [
+        'classname' => 'mod_forum\\external\\get_unanswered_discussions',
+        'methodname' => 'execute',
+        'description' => 'Read permission-checked pending questions from accessible forums.',
+        'type' => 'read',
+        'ajax' => true,
+        'capabilities' => 'mod/forum:viewunanswered',
+    ],
     'mod_forum_get_recent_feed' => [
         'classname' => 'mod_forum\\external\\get_recent_feed',
         'methodname' => 'execute',
