@@ -40,6 +40,13 @@ Feature: Responsive presentation of the quiz question editor
     And "#page-2.mod-quiz-edit-page" "css_element" should exist
     And ".mod-quiz-edit-slot" "css_element" should exist
     And ".mod-quiz-edit-question__content" "css_element" should exist
+    And ".mod-quiz-edit-slot[aria-labelledby^='mod-quiz-edit-question-name-']" "css_element" should exist
+    And "h5.mod-quiz-edit-question__name" "css_element" should exist
+    And ".mod-quiz-edit-question__metadata .mod-quiz-edit-question__kind" "css_element" should exist
+    And ".mod-quiz-edit-question__version-control .mod-quiz-edit-question__version-label" "css_element" should exist
+    And ".mod-quiz-edit-question__actions .mod-quiz-edit-question__mark-label" "css_element" should exist
+    And ".mod-quiz-edit-question__actions a.preview" "css_element" should exist
+    And ".mod-quiz-edit-question__actions a.editing_delete" "css_element" should exist
     And ".mod-quiz-edit-question__actions" "css_element" should exist
     And ".mod-quiz-edit-slot .version-selection[data-action='mod_quiz-select_slot']" "css_element" should exist
     And ".mod-quiz-edit-slot .editing_move[data-action='move']" "css_element" should exist
@@ -64,6 +71,7 @@ Feature: Responsive presentation of the quiz question editor
     Then ".mod-quiz-edit-question--random" "css_element" should exist
     And I should see "Random question" in ".mod-quiz-edit-question__kind" "css_element"
     And ".mod-quiz-edit-question--random .version-selection" "css_element" should not exist
+    And ".mod-quiz-edit-question--random .mod-quiz-edit-question__kind" "css_element" should exist
     And ".mod-quiz-edit-slot .mod_quiz_random_qbank_link" "css_element" should exist
 
   @javascript
@@ -78,6 +86,9 @@ Feature: Responsive presentation of the quiz question editor
     And "#selectmultiplecommand[disabled]" "css_element" should exist
     And "#inputmaxgrade" "css_element" should exist
     And ".mod-quiz-edit-slot .editing_move" "css_element" should not exist
+    And ".mod-quiz-edit-slot .editing_delete" "css_element" should not exist
+    And ".mod-quiz-edit-slot .mod-quiz-edit-question__mark-label" "css_element" should exist
+    And ".mod-quiz-edit-slot .mod-quiz-edit-question__version-control" "css_element" should exist
 
   Scenario: Rendering is readable without JavaScript
     Given I am on the "Quiz 1" "mod_quiz > Edit" page logged in as "teacher1"
@@ -93,3 +104,20 @@ Feature: Responsive presentation of the quiz question editor
     Then I should see "First Q"
     And ".mod-quiz-edit-question__actions[role='group']" "css_element" should exist
     And the page should meet accessibility standards
+
+  @javascript
+  Scenario: The visual hierarchy preserves native multiple selection controls
+    Given I am on the "Quiz 1" "mod_quiz > Edit" page logged in as "teacher1"
+    When I click on "Select multiple items" "button"
+    Then ".mod-quiz-edit-slot .select-multiple-checkbox" "css_element" should exist
+    And "#selectmultipledeletecommand[disabled]" "css_element" should exist
+    And "#selectmultiplecancelcommand" "css_element" should exist
+
+  @javascript
+  Scenario: Question details remain present with a mobile viewport
+    Given I am on the "Quiz 1" "mod_quiz > Edit" page logged in as "teacher1"
+    When I change window size to "small"
+    Then "h5.mod-quiz-edit-question__name" "css_element" should exist
+    And ".mod-quiz-edit-question__version-control .version-selection" "css_element" should exist
+    And ".mod-quiz-edit-question__actions .editing_maxmark" "css_element" should exist
+    And ".mod-quiz-edit-slot .editing_move" "css_element" should exist

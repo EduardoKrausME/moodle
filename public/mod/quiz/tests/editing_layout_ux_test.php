@@ -49,6 +49,7 @@ final class editing_layout_ux_test extends \advanced_testcase {
             'checkbox' => '<input type="checkbox" id="selectquestion-123" class="select-multiple-checkbox">',
             'questionnumber' => '<span class="slotnumber">Question 1</span>',
             'questionname' => '<a class="native-question" href="/question/edit.php">Sample question</a>',
+            'questiontype' => 'True/False',
             'questionicons' => '<a data-action="delete" class="editing_delete" href="#">Delete</a>',
             'questiondependencyicon' => '<span class="question_dependency_wrapper">Dependency</span>',
             'versionselection' => true,
@@ -70,6 +71,9 @@ final class editing_layout_ux_test extends \advanced_testcase {
         $html = $this->render_slot();
         $this->assertStringContainsString('id="mod-indent-outer-slot-123"', $html);
         $this->assertStringContainsString('mod-quiz-edit-question__content', $html);
+        $this->assertStringContainsString('id="mod-quiz-edit-question-name-123"', $html);
+        $this->assertStringContainsString('mod-quiz-edit-question__metadata', $html);
+        $this->assertStringContainsString('mod-quiz-edit-question__kind">True/False', $html);
         $this->assertStringContainsString('id="selectquestion-123"', $html);
         $this->assertStringContainsString('class="slotnumber"', $html);
         $this->assertStringContainsString('class="native-question"', $html);
@@ -78,13 +82,18 @@ final class editing_layout_ux_test extends \advanced_testcase {
         $this->assertStringContainsString('id="version-123"', $html);
         $this->assertStringContainsString('data-action="mod_quiz-select_slot"', $html);
         $this->assertStringContainsString('data-slot-id="123"', $html);
+        $this->assertStringContainsString('class="mod-quiz-edit-question__version-label"', $html);
         $this->assertStringContainsString('question_dependency_wrapper', $html);
         $this->assertStringContainsString('role="group"', $html);
         $this->assertStringContainsString('aria-label="Actions for question 1"', $html);
     }
 
     public function test_random_slot_has_distinct_layout_without_version_selector(): void {
-        $html = $this->render_slot(['israndom' => true, 'versionselection' => false]);
+        $html = $this->render_slot([
+            'israndom' => true,
+            'versionselection' => false,
+            'questiontype' => get_string('randomquestion', 'quiz'),
+        ]);
         $this->assertStringContainsString('mod-quiz-edit-question--random', $html);
         $this->assertStringContainsString('mod-quiz-edit-question__kind', $html);
         $this->assertStringContainsString(get_string('randomquestion', 'quiz'), $html);
@@ -93,8 +102,9 @@ final class editing_layout_ux_test extends \advanced_testcase {
 
     public function test_information_slot_has_no_invented_mark_or_version(): void {
         $html = $this->render_slot(['isinfo' => true, 'versionselection' => false,
-            'questionicons' => '']);
+            'questiontype' => 'Description', 'questionicons' => '']);
         $this->assertStringContainsString('mod-quiz-edit-question--info', $html);
+        $this->assertStringContainsString('mod-quiz-edit-question__kind">Description', $html);
         $this->assertStringNotContainsString('mod-quiz-edit-question--random', $html);
         $this->assertStringNotContainsString('id="version-123"', $html);
         $this->assertStringNotContainsString('instancemaxmark', $html);
@@ -149,6 +159,68 @@ final class editing_layout_ux_test extends \advanced_testcase {
         $this->assertStringContainsString('qtype_multichoice', $html);
         $this->assertStringContainsString('mod-quiz-edit-slot', $html);
         $this->assertStringContainsString('data-canfinish=', $html);
+        $this->assertStringContainsString('aria-labelledby="mod-quiz-edit-question-name-123"', $html);
         $this->assertStringContainsString('stub-question', $html);
+    }
+
+    public function test_slot_headings_are_unique_and_question_type_is_escaped(): void {
+        $first = $this->render_slot(['questiontype' => '<script>alert(1)</script>']);
+        $second = $this->render_slot(['slotid' => 456]);
+        $this->assertStringContainsString('id="mod-quiz-edit-question-name-123"', $first);
+        $this->assertStringContainsString('id="mod-quiz-edit-question-name-456"', $second);
+        $this->assertStringNotContainsString('id="mod-quiz-edit-question-name-123"', $second);
+        $this->assertStringNotContainsString('<script>', $first);
+        $this->assertStringContainsString('&lt;script&gt;', $first);
+    }
+
+    public function test_max_mark_preserves_yui_controls_and_has_a_visible_label(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $PAGE->set_context(\context_system::instance());
+
+        $structure = $this->getMockBuilder(structure::class)->disableOriginalConstructor()
+            ->onlyMethods(['is_real_question', 'get_decimal_places_for_question_marks',
+                'formatted_question_grade'])->getMock();
+        $structure->method('is_real_question')->willReturn(true);
+        $structure->method('get_decimal_places_for_question_marks')->willReturn(2);
+        $structure->method('formatted_question_grade')->willReturn('2.00');
+
+        $html = $PAGE->get_renderer('mod_quiz', 'edit')->marked_out_of_field($structure, 1);
+        $this->assertStringContainsString('mod-quiz-edit-question__mark-label', $html);
+        $this->assertStringContainsString('instancemaxmarkcontainer mod-quiz-edit-question__mark', $html);
+        $this->assertStringContainsString('instancemaxmark decimalplaces_2', $html);
+        $this->assertStringContainsString('2.00', $html);
+        $this->assertStringContainsString('data-action="editmaxmark"', $html);
+    }
+
+    public function test_description_keeps_hidden_mark_placeholder(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $PAGE->set_context(\context_system::instance());
+
+        $structure = $this->getMockBuilder(structure::class)->disableOriginalConstructor()
+            ->onlyMethods(['is_real_question', 'get_decimal_places_for_question_marks'])->getMock();
+        $structure->method('is_real_question')->willReturn(false);
+        $structure->method('get_decimal_places_for_question_marks')->willReturn(2);
+
+        $html = $PAGE->get_renderer('mod_quiz', 'edit')->marked_out_of_field($structure, 1);
+        $this->assertStringContainsString('instancemaxmarkcontainer infoitem', $html);
+        $this->assertStringNotContainsString('mod-quiz-edit-question__mark-label', $html);
+    }
+
+    public function test_delete_action_keeps_yui_selector_and_sesskey(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $PAGE->set_context(\context_system::instance());
+
+        $structure = $this->getMockBuilder(structure::class)->disableOriginalConstructor()->getMock();
+        $html = $PAGE->get_renderer('mod_quiz', 'edit')->question_remove_icon(
+            $structure, 1, new \moodle_url('/mod/quiz/edit.php', ['cmid' => 5]));
+        $this->assertStringContainsString('mod-quiz-edit-question__action-label', $html);
+        $this->assertStringContainsString('data-action="delete"', $html);
+        $this->assertStringContainsString('sesskey=', $html);
     }
 }
