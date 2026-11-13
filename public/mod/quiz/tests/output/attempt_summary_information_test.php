@@ -203,4 +203,58 @@ final class attempt_summary_information_test extends advanced_testcase {
             $data['items'],
         );
     }
+
+    /**
+     * A submitted attempt has a finish timestamp even when grading has not finished.
+     * Its summary must not calculate or print hidden grade feedback.
+     */
+    public function test_submitted_attempt_has_completion_date_but_no_hidden_grade_or_feedback(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $PAGE->set_context(\context_system::instance());
+
+        $attemptdata = (object) [
+            'state' => \mod_quiz\quiz_attempt::SUBMITTED,
+            'timestart' => 10000,
+            'timefinish' => 10600,
+        ];
+        $quiz = (object) [
+            'showuserpicture' => true,
+            'timelimit' => 0,
+            'sumgrades' => 10,
+            'grade' => 10,
+        ];
+        $attemptobj = $this->getMockBuilder(\mod_quiz\quiz_attempt::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods([
+                'get_quiz',
+                'get_attempt',
+                'get_attempt_number',
+                'get_sum_marks',
+                'get_additional_summary_data',
+                'get_overall_feedback',
+            ])
+            ->getMock();
+        $attemptobj->method('get_quiz')->willReturn($quiz);
+        $attemptobj->method('get_attempt')->willReturn($attemptdata);
+        $attemptobj->method('get_attempt_number')->willReturn(1);
+        $attemptobj->method('get_sum_marks')->willReturn(7.0);
+        $attemptobj->method('get_additional_summary_data')->willReturn([]);
+        $attemptobj->expects($this->never())->method('get_overall_feedback');
+
+        $options = new \mod_quiz\question\display_options();
+        $options->marks = \question_display_options::HIDDEN;
+        $options->overallfeedback = \question_display_options::HIDDEN;
+
+        $summary = attempt_summary_information::create_for_attempt($attemptobj, $options);
+        $data = $summary->export_for_template($PAGE->get_renderer('mod_quiz'));
+        $titles = array_column($data['items'], 'title');
+        $this->assertContains(get_string('startedon', 'quiz'), $titles);
+        $this->assertContains(get_string('completedon', 'quiz'), $titles);
+        $this->assertContains(get_string('attemptduration', 'quiz'), $titles);
+        $this->assertNotContains(get_string('gradenoun'), $titles);
+        $this->assertNotContains(get_string('feedback', 'quiz'), $titles);
+        $this->assertContains(userdate(10600), array_column($data['items'], 'content'));
+    }
 }
