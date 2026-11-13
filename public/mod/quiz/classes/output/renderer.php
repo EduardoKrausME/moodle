@@ -71,6 +71,10 @@ class renderer extends plugin_renderer_base {
         $output = '';
         $output .= $this->header();
         $output .= $this->review_attempt_summary($summarydata, $page);
+        // The overview is intentionally shown once, not repeated on later pages.
+        if ($page == 0 || $showall) {
+            $output .= $this->review_context($displayoptions);
+        }
         $output .= $this->review_form($page, $showall, $displayoptions,
                 $this->questions($attemptobj, true, $slots, $page, $showall, $displayoptions),
                 $attemptobj);
@@ -103,6 +107,13 @@ class renderer extends plugin_renderer_base {
         $output .= $this->header();
         $output .= html_writer::div($this->render($summarydata), 'mb-3');
 
+        // An historical step is rendered by the question engine. Do not apply
+        // the current question's correctness or state to a previous step.
+        if ($seq === null && $attemptobj->is_real_question($slot) &&
+                !$attemptobj->is_blocked_by_previous_question($slot)) {
+            $output .= $this->review_context($displayoptions, true, $attemptobj->get_question_attempt($slot));
+        }
+
         if (!is_null($seq)) {
             $output .= $attemptobj->render_question_at_step($slot, $seq, true, $this);
         } else {
@@ -112,6 +123,26 @@ class renderer extends plugin_renderer_base {
         $output .= $this->close_window_button();
         $output .= $this->footer();
         return $output;
+    }
+
+    /**
+     * Render only the review information categories permitted by the quiz.
+     *
+     * The native question engine alone renders any actual response, mark,
+     * feedback or correct answer. Context data is filtered server-side.
+     *
+     * @param display_options $displayoptions Effective options for this review.
+     * @param bool $question Whether the context is specific to one question.
+     * @param \question_attempt|null $qa The native question attempt, if any.
+     * @return string Context HTML, or empty if no category may be displayed.
+     */
+    public function review_context(display_options $displayoptions, bool $question = false,
+            ?\question_attempt $qa = null): string {
+        $context = review_context::for_review($displayoptions, $question, $qa);
+        if (!$context['show']) {
+            return '';
+        }
+        return $this->render_from_template('mod_quiz/review_context', $context);
     }
 
     /**
@@ -217,8 +248,24 @@ class renderer extends plugin_renderer_base {
             display_options $displayoptions) {
         $output = '';
         foreach ($slots as $slot) {
-            $output .= $attemptobj->render_question($slot, $reviewing, $this,
+            $questionhtml = $attemptobj->render_question($slot, $reviewing, $this,
                     $attemptobj->review_url($slot, $page, $showall));
+
+            // Do not wrap information items or native dependent-question
+            // placeholders in a fabricated question-status context.
+            if ($reviewing && $attemptobj->is_real_question($slot) &&
+                    !$attemptobj->is_blocked_by_previous_question($slot)) {
+                $context = $this->review_context($displayoptions, true, $attemptobj->get_question_attempt($slot));
+                if ($context !== '') {
+                    $output .= html_writer::tag('section', $context . $questionhtml, [
+                        'class' => 'mod-quiz-review-question-section',
+                        'aria-label' => get_string('reviewcontextquestionlabel', 'quiz',
+                                $attemptobj->get_question_number($slot)),
+                    ]);
+                    continue;
+                }
+            }
+            $output .= $questionhtml;
         }
         return $output;
     }

@@ -1,0 +1,52 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle. If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_quiz/review_context
+
+    Shows only categories allowed by the effective quiz review options.
+    Content, correct answers and marks are still rendered by the question engine.
+
+    Example context (json):
+    {
+        "show": true,
+        "question": true,
+        "heading": "Review information for this question",
+        "items": [{"label": "Correction status"}, {"label": "Specific feedback"}],
+        "hasstate": true,
+        "state": "Correct"
+    }
+}}
+{{#show}}
+<div class="mod-quiz-review-context {{#question}}mod-quiz-review-context-question{{/question}}"
+        role="note">
+    <h4 class="mod-quiz-review-context-heading">{{heading}}</h4>
+    <p class="mod-quiz-review-context-description">
+        {{#str}} reviewcontextdescription, mod_quiz {{/str}}
+    </p>
+    <ul class="mod-quiz-review-context-items">
+        {{#items}}
+            <li class="mod-quiz-review-context-item">{{label}}</li>
+        {{/items}}
+    </ul>
+    {{#hasstate}}
+        <p class="mod-quiz-review-context-state">
+            <strong>{{#str}} reviewcontextstate, mod_quiz {{/str}}:</strong>
+            <span>{{state}}</span>
+        </p>
+    {{/hasstate}}
+</div>
+{{/show}}
