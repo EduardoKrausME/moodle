@@ -90,9 +90,7 @@ export default class ModalAddRandomQuestion extends Modal {
             }
             e.preventDefault();
 
-            if (trigger.dataset.slotid) {
-                showNewCategory = false;
-            }
+            const canShowNewCategory = showNewCategory && !trigger.dataset.slotid;
 
             ModalAddRandomQuestion.create({
                 contextId,
@@ -100,12 +98,12 @@ export default class ModalAddRandomQuestion extends Modal {
                 category,
                 returnUrl,
                 quizCmId,
-                showNewCategory,
+                showNewCategory: canShowNewCategory,
                 title: trigger.dataset.header,
                 addOnPage: trigger.dataset.addonpage,
                 slotId: trigger.dataset.slotid,
                 templateContext: {
-                    hidden: showNewCategory,
+                    hidden: canShowNewCategory,
                 },
                 courseId,
             });
@@ -327,7 +325,7 @@ export default class ModalAddRandomQuestion extends Modal {
         const requestId = ++this.formRequestId;
         const addonpage = this.getAddOnPageId();
         const quizcmid = this.quizCmId;
-        const lastBankCmid = window.sessionStorage.getItem('lastBankCmid');
+        const lastBankCmid = window.sessionStorage.getItem('mod_quiz:lastBankCmid:' + this.quizCmId);
         const savedfiltercondition = this.getSavedFilterCondition();
         this.setSavedFilterCondition(null);
 
@@ -336,7 +334,7 @@ export default class ModalAddRandomQuestion extends Modal {
             .catch((ex) => {
                 if (lastBankCmid && (ex.errorcode === 'nopermissions' || ex.errorcode === 'invalidcoursemodule')) {
                     // The user has lost access to their last accessed bank, try again with the current bank.
-                    window.sessionStorage.removeItem('lastBankCmid');
+                    window.sessionStorage.removeItem('mod_quiz:lastBankCmid:' + this.quizCmId);
                     bankcmid = this.bankCmId;
                     return this.loadFormFragment(bankcmid, savedfiltercondition);
                 }
@@ -388,14 +386,14 @@ export default class ModalAddRandomQuestion extends Modal {
                         return;
                     }
 
-                    // Intercept the submission to adjust the POST params so that the quiz mod id is set and not the bank module id.
-                    document.querySelector('#questionscontainer input[name="cmid"]').setAttribute('name', this.quizCmId);
+                    // Use the quiz cmid already passed to the native service; do not rename bank fields.
+                    
 
                     // Add Random questions if the add random button was clicked.
                     const addRandomButton = e.target.closest(SELECTORS.ADD_RANDOM_BUTTON);
                     if (addRandomButton) {
-                        const randomcount = document.querySelector(SELECTORS.SELECT_NUMBER_TO_ADD).value;
-                        const filtercondition = document.querySelector(SELECTORS.FILTER_CONDITION_ELEMENT).dataset?.filtercondition;
+                        const randomcount = this.getBody().get(0).querySelector(SELECTORS.SELECT_NUMBER_TO_ADD).value;
+                        const filtercondition = this.getBody().get(0).querySelector(SELECTORS.FILTER_CONDITION_ELEMENT).dataset?.filtercondition;
 
                         this.addQuestions(quizcmid, addonpage, randomcount, filtercondition, '', '');
                         return;
@@ -403,7 +401,7 @@ export default class ModalAddRandomQuestion extends Modal {
                     // Update the filter condition for the slot if the update button was clicked.
                     const updateFilterButton = e.target.closest(SELECTORS.UPDATE_FILTER_BUTTON);
                     if (updateFilterButton) {
-                        const filtercondition = document.querySelector(SELECTORS.FILTER_CONDITION_ELEMENT).dataset?.filtercondition;
+                        const filtercondition = this.getBody().get(0).querySelector(SELECTORS.FILTER_CONDITION_ELEMENT).dataset?.filtercondition;
                         this.updateFilterCondition(quizcmid, this.getSlotId(), filtercondition);
                         return;
                     }
@@ -415,8 +413,8 @@ export default class ModalAddRandomQuestion extends Modal {
                             addonpage,
                             1,
                             '',
-                            document.querySelector(SELECTORS.NEW_CATEGORY_ELEMENT).value,
-                            document.querySelector(SELECTORS.PARENT_CATEGORY_ELEMENT).value
+                            this.getBody().get(0).querySelector(SELECTORS.NEW_CATEGORY_ELEMENT).value,
+                            this.getBody().get(0).querySelector(SELECTORS.PARENT_CATEGORY_ELEMENT).value
                         );
                         return;
                     }
@@ -439,7 +437,7 @@ export default class ModalAddRandomQuestion extends Modal {
                 const switcher = new BankSwitcher();
                 this.getModal().on('click', SELECTORS.SWITCH_TO_OTHER_BANK, () => {
                     this.setSavedFilterCondition(
-                        document.querySelector(SELECTORS.FILTER_CONDITION_ELEMENT).dataset?.filtercondition
+                        this.getBody().get(0).querySelector(SELECTORS.FILTER_CONDITION_ELEMENT).dataset?.filtercondition
                     );
                     try {
                         switcher.show(this, this.courseId, this.getContextId(), this.bankCmId, this.quizCmId);
@@ -462,11 +460,11 @@ export default class ModalAddRandomQuestion extends Modal {
                             'slotId': this.getSlotId(),
                             'courseId': this.getCourseId(),
                         };
-                        if (e.detail.cmid === bankcmid) {
+                        if (Number(e.detail.cmid) === Number(bankcmid)) {
                             // We're displaying the same bank as before, keep the current filters.
                             modalConfig.savedFilterCondition = this.getSavedFilterCondition();
                         } else {
-                            window.sessionStorage.setItem('lastBankCmid', e.detail.cmid);
+                            window.sessionStorage.setItem('mod_quiz:lastBankCmid:' + this.quizCmId, e.detail.cmid);
                         }
                         try {
                             await ModalAddRandomQuestion.create(modalConfig);
@@ -480,7 +478,8 @@ export default class ModalAddRandomQuestion extends Modal {
             .catch((error) => {
                 if (requestId === this.formRequestId) {
                     this.loadedForm = false;
-                    Notification.exception(error);
+this.setSavedFilterCondition(savedfiltercondition);
+Notification.exception(error);
                 }
             });
     }
