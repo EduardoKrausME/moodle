@@ -1,0 +1,78 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+}}
+{{!
+    @template mod_assign/student_feedback_overview
+
+    Student-facing presentation of feedback already authorised by the native
+    assignment renderable. HTML values are provided only by Moodle renderers.
+
+    Example context (json):
+    {
+        "hascontent": true,
+        "hasgrade": true,
+        "gradehtml": "8.50 / 10.00",
+        "hasgradeddate": true,
+        "gradeddateformatted": "12 November 2026",
+        "gradeddateiso": "2026-11-12T12:00:00+00:00",
+        "hasgrader": false,
+        "graderhtml": "",
+        "hasplugins": true,
+        "plugins": [{"label": "Feedback comments", "html": "<p>Well done.</p>"}],
+        "hascriteria": false,
+        "criteriahtml": ""
+    }
+}}
+<section class="assign-student-feedback" data-region="assign-student-feedback"
+         aria-labelledby="assign-student-feedback-heading">
+    <h2 id="assign-student-feedback-heading" class="h4 assign-student-feedback-heading">
+        {{#str}}feedback, mod_assign{{/str}}
+    </h2>
+    {{^hascontent}}
+        <p class="assign-student-feedback-pending">{{#str}}studentfeedbackpending, mod_assign{{/str}}</p>
+    {{/hascontent}}
+    {{#hasgrade}}
+        <div class="assign-student-feedback-grade">
+            <dl>
+                <div>
+                    <dt>{{#str}}gradenoun{{/str}}</dt>
+                    <dd class="assign-student-feedback-gradevalue">{{{gradehtml}}}</dd>
+                </div>
+                {{#hasgradeddate}}
+                    <div>
+                        <dt>{{#str}}gradedon, mod_assign{{/str}}</dt>
+                        <dd><time datetime="{{gradeddateiso}}">{{gradeddateformatted}}</time></dd>
+                    </div>
+                {{/hasgradeddate}}
+            </dl>
+        </div>
+    {{/hasgrade}}
+    {{#hasgrader}}
+        <div class="assign-student-feedback-grader">
+            <h3 class="h5">{{#str}}gradedby, mod_assign{{/str}}</h3>
+            <div class="assign-student-feedback-grader-list">{{{graderhtml}}}</div>
+        </div>
+    {{/hasgrader}}
+    {{#hasplugins}}
+        {{#plugins}}
+            <section class="assign-student-feedback-plugin">
+                <h3 class="h5">{{label}}</h3>
+                <div class="assign-student-feedback-plugin-content">{{{html}}}</div>
+            </section>
+        {{/plugins}}
+    {{/hasplugins}}
+    {{#hascriteria}}
+        <details class="assign-student-feedback-criteria">
+            <summary>{{#str}}gradebreakdown, mod_assign{{/str}}</summary>
+            <div class="assign-student-feedback-criteria-content">{{{criteriahtml}}}</div>
+        </details>
+    {{/hascriteria}}
+</section>

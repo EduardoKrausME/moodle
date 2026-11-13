@@ -445,6 +445,74 @@ class renderer extends \plugin_renderer_base {
     }
 
     /**
+     * Render the already-authorised feedback on the student's assignment landing page.
+     *
+     * The native feedback renderable, plugin summaries and grading controller remain the
+     * source of every value. No independent gradebook, workflow or capability checks
+     * are performed here, and no hidden values are added to the template context.
+     *
+     * @param \assign_feedback_status|null $status Feedback authorised by the native assignment code.
+     * @return string
+     */
+    public function render_student_feedback_overview(?\assign_feedback_status $status): string {
+        $plugins = [];
+        $graderhtml = '';
+        $gradehtml = null;
+        $gradeddate = 0;
+        $criteriahtml = '';
+
+        if ($status !== null) {
+            $gradehtml = $status->gradefordisplay ?? null;
+            $gradeddate = (int) ($status->gradeddate ?? 0);
+            $criteriahtml = (string) ($status->gradingcontrollergrade ?? '');
+
+            // Identical eligibility and rendering contract to render_assign_feedback_status().
+            foreach ($status->feedbackplugins as $plugin) {
+                if (!$plugin->is_enabled() || !$plugin->is_visible() || !$plugin->has_user_summary() ||
+                        empty($status->grade) || $plugin->is_empty($status->grade)) {
+                    continue;
+                }
+                $feedback = new \assign_feedback_plugin_feedback(
+                    $plugin,
+                    $status->grade,
+                    \assign_feedback_plugin_feedback::SUMMARY,
+                    $status->coursemoduleid,
+                    $status->returnaction,
+                    $status->returnparams
+                );
+                $plugins[] = [
+                    'label' => $plugin->get_name(),
+                    'html' => $this->render($feedback),
+                ];
+            }
+
+            // Grader identities have already been filtered for hide-grader, workflow
+            // release and the viewer's capabilities by the native renderable factory.
+            $people = [];
+            if ($status->grader) {
+                $people[] = $this->output->user_picture($status->grader) .
+                    fullname($status->grader, $status->canviewfullnames);
+            }
+            foreach ($status->markers as $marker) {
+                if ($status->grader && $marker->id == $status->grader->id) {
+                    continue;
+                }
+                $people[] = $this->output->user_picture($marker) .
+                    fullname($marker, $status->canviewfullnames);
+            }
+            $graderhtml = implode(html_writer::empty_tag('br'), $people);
+        }
+
+        $data = \mod_assign\local\feedback_overview::describe(
+            $gradehtml, $gradeddate, $plugins, $criteriahtml, $graderhtml
+        );
+        $data['gradeddateformatted'] = $data['hasgradeddate'] ? userdate($gradeddate) : '';
+        $data['gradeddateiso'] = $data['hasgradeddate'] ? gmdate('c', $gradeddate) : '';
+
+        return $this->render_from_template('mod_assign/student_feedback_overview', $data);
+    }
+
+    /**
      * Render a table containing all the current grades and feedback.
      *
      * @param \assign_feedback_status $status

@@ -1991,3 +1991,101 @@ body.path-mod-assign [data-region="grade-panel"] .mform .fitem.has-popout .felem
         overflow-x: auto;
     }
 }
+
+/* Student-facing feedback overview. Native feedback plugin output is unchanged. */
+.path-mod-assign .assign-student-feedback {
+    margin-block: 1.5rem;
+    padding: clamp(1rem, 2vw, 1.5rem);
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 0.85rem;
+    background: var(--bs-body-bg, #fff);
+    color: var(--bs-body-color, #212529);
+}
+
+.path-mod-assign .assign-student-feedback-heading {
+    margin-block-end: 1rem;
+}
+
+.path-mod-assign .assign-student-feedback-grade {
+    padding: 1rem;
+    border-radius: 0.65rem;
+    background: var(--bs-secondary-bg, #e9ecef);
+}
+
+.path-mod-assign .assign-student-feedback-grade dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2rem;
+    align-items: start;
+    margin: 0;
+}
+
+.path-mod-assign .assign-student-feedback-grade dt {
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color, #6c757d);
+}
+
+.path-mod-assign .assign-student-feedback-grade dd {
+    margin: 0.25rem 0 0;
+}
+
+.path-mod-assign .assign-student-feedback-gradevalue {
+    font-size: clamp(1.5rem, 2.8vw, 2.25rem);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.path-mod-assign .assign-student-feedback-grader,
+.path-mod-assign .assign-student-feedback-plugin,
+.path-mod-assign .assign-student-feedback-criteria {
+    padding-block-start: 1rem;
+    margin-block-start: 1rem;
+    border-top: 1px solid var(--bs-border-color, #dee2e6);
+}
+
+.path-mod-assign .assign-student-feedback-grader-list,
+.path-mod-assign .assign-student-feedback-plugin-content,
+.path-mod-assign .assign-student-feedback-criteria-content {
+    margin-block-start: 0.75rem;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.path-mod-assign .assign-student-feedback-plugin-content .plugincontentsummary {
+    margin-inline: 0;
+    max-width: 100%;
+}
+
+.path-mod-assign .assign-student-feedback-plugin-content img,
+.path-mod-assign .assign-student-feedback-criteria-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.path-mod-assign .assign-student-feedback-criteria summary {
+    cursor: pointer;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.path-mod-assign .assign-student-feedback-criteria summary:focus-visible {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 3px;
+}
+
+.path-mod-assign .assign-student-feedback-criteria-content {
+    overflow-x: auto;
+}
+
+.path-mod-assign .assign-student-feedback-pending {
+    margin: 0;
+    color: var(--bs-secondary-color, #6c757d);
+}
+
+@media (max-width: 575.98px) {
+    .path-mod-assign .assign-student-feedback-grade dl {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+}

@@ -715,6 +715,7 @@ $string['settingssectionstitle'] = 'Assignment settings sections';
 $string['settingssubmissionshint'] = 'Choose how students save drafts, confirm submissions and make additional attempts.';
 $string['showrecentsubmissions'] = 'Show recent submissions';
 $string['status'] = 'Status';
+$string['studentfeedbackpending'] = 'Feedback is not available yet.';
 $string['studentnotificationworkflowstateerror'] = 'Marking workflow state must be \'Released\' to notify students.';
 $string['submissionformdirectnotice'] = 'Saving changes submits the work for grading when no separate final confirmation is required.';
 $string['submissionformdraftnotice'] = 'Saving changes keeps your work as a draft. When ready, use the assignment\'s final Submit button.';

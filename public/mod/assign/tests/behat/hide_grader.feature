@@ -55,7 +55,7 @@ Feature: Hide grader identities identity from students
     Given I am on the "Test assignment name" Activity page logged in as student1
     Then I should see "Graded" in the "Grading status" "table_row"
     And I should see "Catch for us the foxes."
-    And I should see "Teacher" in the "Graded by" "table_row"
+    And I should see "Teacher" in the ".assign-student-feedback" "css_element"
 
   @javascript
   Scenario: Hidden grading is enabled.
@@ -81,4 +81,4 @@ Feature: Hide grader identities identity from students
     When I am on the "Test assignment name" Activity page logged in as student1
     And I should see "Graded" in the "Grading status" "table_row"
     And I should see "Catch for us the foxes."
-    And I should see "Teacher" in the "Graded by" "table_row"
+    And I should see "Teacher" in the ".assign-student-feedback" "css_element"

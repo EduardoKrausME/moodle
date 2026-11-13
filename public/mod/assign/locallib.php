@@ -6339,8 +6339,15 @@ class assign {
                 $o .= $actionbar;
             }
 
-            // Retain the native gradebook visibility rules and feedback plugin renderers.
-            if ($feedbackstatus) {
+            // Use the new layout only on the learner's own activity landing page.
+            // Teachers, previews and other consumers keep the native renderer.
+            $modernfeedback = $actionbar !== '' &&
+                (int) $user->id === (int) $USER->id &&
+                !has_capability('mod/assign:grade', $this->get_context());
+            if ($modernfeedback) {
+                // The factory above already applied gradebook, workflow and plugin visibility.
+                $o .= $this->get_renderer()->render_student_feedback_overview($feedbackstatus);
+            } else if ($feedbackstatus) {
                 $o .= $this->get_renderer()->render($feedbackstatus);
             }
 
