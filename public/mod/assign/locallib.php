@@ -6691,8 +6691,8 @@ class assign {
      * Prepare aggregate-only data for the teacher dashboard.
      *
      * Permissions and active group scope are checked by view_submission_page().
-     * Existing summary counts are reused. Team grading is counted per actual
-     * team and current attempt, rather than using the individual-only counter.
+     * Individual counters reuse the native summary. Team counters are restricted
+     * to enrolled members of actual teams in the current attempt.
      *
      * @param \assign_grading_summary $summary Already-scoped native summary.
      * @param int $activitygroup Native active activity group.
@@ -6701,8 +6701,15 @@ class assign {
     protected function get_grading_dashboard_data(\assign_grading_summary $summary, int $activitygroup): array {
         $instance = $this->get_instance();
         $teams = (bool) $instance->teamsubmission;
-        $pending = $teams ? $this->count_dashboard_pending_teams($activitygroup) :
-            (int) $summary->submissionsneedgradingcount;
+        $submitted = (int) $summary->submissionssubmittedcount;
+        $drafts = (int) $summary->submissiondraftscount;
+        $pending = (int) $summary->submissionsneedgradingcount;
+        if ($teams && $summary->submissionsenabled) {
+            $teamcounts = $this->get_dashboard_team_counts($activitygroup);
+            $submitted = $teamcounts['submitted'];
+            $drafts = $teamcounts['drafts'];
+            $pending = $teamcounts['pending'];
+        }
 
         $base = [
             'id' => $this->get_course_module()->id,
@@ -6728,8 +6735,8 @@ class assign {
 
         return \mod_assign\local\grading_dashboard::describe(
             (int) $summary->participantcount,
-            (int) $summary->submissionssubmittedcount,
-            (int) $summary->submissiondraftscount,
+            $submitted,
+            $drafts,
             $pending,
             $teams,
             (bool) $summary->submissionsenabled,
@@ -6740,22 +6747,23 @@ class assign {
     }
 
     /**
-     * Count distinct submitted teams with at least one eligible ungraded member.
+     * Count current submitted and draft teams inside the authorised participant scope.
      *
-     * This intentionally does not call count_submissions_need_grading(), which
-     * returns zero for group submissions. The older group counter can also count
-     * groups outside a selected grouping; constrain team IDs to native participants.
-     * Members must have a valid current-attempt grade newer than the team submission.
+     * The standard individual grading counter always returns zero for teams.
+     * Filtering here uses the exact enrolled participant set and selected grouping,
+     * including the default team when it is allowed. Historical team attempts and
+     * orphaned teams never contribute to the new dashboard.
      *
      * @param int $activitygroup Authorised native activity group.
-     * @return int Number of teams still requiring grading.
+     * @return array Counters keyed by submitted, drafts and pending.
      */
-    protected function count_dashboard_pending_teams(int $activitygroup): int {
+    protected function get_dashboard_team_counts(int $activitygroup): array {
         global $DB;
 
+        $counts = ['submitted' => 0, 'drafts' => 0, 'pending' => 0];
         $participants = $this->list_participants($activitygroup, true);
         if (!$participants) {
-            return 0;
+            return $counts;
         }
         $instance = $this->get_instance();
         $groups = groups_get_all_groups(
@@ -6764,7 +6772,6 @@ class assign {
             $instance->teamsubmissiongroupingid,
             'DISTINCT g.id, g.name'
         );
-        $pending = 0;
 
         if ($groups) {
             [$groupsql, $groupparams] = $DB->get_in_or_equal(array_keys($groups), SQL_PARAMS_NAMED, 'dashgroup');
@@ -6777,10 +6784,11 @@ class assign {
             $params = array_merge([
                 'assignmentid' => $instance->id,
                 'submitted' => ASSIGN_SUBMISSION_STATUS_SUBMITTED,
+                'draft' => ASSIGN_SUBMISSION_STATUS_DRAFT,
                 'notset' => ASSIGN_GRADE_NOT_SET,
             ], $groupparams, $enrolledparams);
 
-            $sql = "SELECT s.groupid AS id,
+            $sql = "SELECT s.groupid AS id, s.status,
                            COUNT(DISTINCT e.id) AS eligible,
                            COUNT(DISTINCT CASE
                                WHEN g.grade IS NOT NULL AND g.grade <> :notset
@@ -6793,18 +6801,23 @@ class assign {
                        AND g.userid = e.id AND g.attemptnumber = s.attemptnumber
                      WHERE s.assignment = :assignmentid
                        AND s.userid = 0 AND s.latest = 1
-                       AND s.status = :submitted AND s.timemodified IS NOT NULL
-                       AND s.groupid $groupsql
-                  GROUP BY s.groupid";
+                       AND s.status IN (:submitted, :draft)
+                       AND s.timemodified IS NOT NULL AND s.groupid $groupsql
+                  GROUP BY s.groupid, s.status";
             foreach ($DB->get_records_sql($sql, $params) as $team) {
-                if ((int) $team->eligible > (int) $team->graded) {
-                    $pending++;
+                if ($team->status === ASSIGN_SUBMISSION_STATUS_DRAFT) {
+                    $counts['drafts']++;
+                } else {
+                    $counts['submitted']++;
+                    if ((int) $team->eligible > (int) $team->graded) {
+                        $counts['pending']++;
+                    }
                 }
             }
         }
 
-        // Default team (groupid 0) is not in groups_members. Count it only
-        // when the native activity permits submissions without a valid group.
+        // The default team (groupid 0) has no groups_members rows, so check its
+        // participants separately. Use only learners already in the selected scope.
         if (!$instance->preventsubmissionnotingroup) {
             $defaultsubmission = $DB->get_record('assign_submission', [
                 'assignment' => $instance->id,
@@ -6812,7 +6825,11 @@ class assign {
                 'groupid' => 0,
                 'latest' => 1,
             ]);
-            if ($defaultsubmission && $defaultsubmission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+            if ($defaultsubmission && $defaultsubmission->timemodified &&
+                    in_array($defaultsubmission->status, [
+                        ASSIGN_SUBMISSION_STATUS_DRAFT,
+                        ASSIGN_SUBMISSION_STATUS_SUBMITTED,
+                    ], true)) {
                 $defaultmembers = [];
                 foreach ($participants as $participant) {
                     if (!$this->get_submission_group($participant->id)) {
@@ -6820,29 +6837,34 @@ class assign {
                     }
                 }
                 if ($defaultmembers) {
-                    [$idsql, $idparams] = $DB->get_in_or_equal($defaultmembers, SQL_PARAMS_NAMED, 'dashuser');
-                    $graded = $DB->count_records_sql(
-                        "SELECT COUNT(DISTINCT g.userid)
-                           FROM {assign_grades} g
-                          WHERE g.assignment = :assignmentid
-                            AND g.attemptnumber = :attemptnumber
-                            AND g.grade IS NOT NULL AND g.grade <> :notset
-                            AND g.timemodified > :submittedtime AND g.userid $idsql",
-                        array_merge([
-                            'assignmentid' => $instance->id,
-                            'attemptnumber' => $defaultsubmission->attemptnumber,
-                            'notset' => ASSIGN_GRADE_NOT_SET,
-                            'submittedtime' => $defaultsubmission->timemodified,
-                        ], $idparams)
-                    );
-                    if ($graded < count($defaultmembers)) {
-                        $pending++;
+                    if ($defaultsubmission->status === ASSIGN_SUBMISSION_STATUS_DRAFT) {
+                        $counts['drafts']++;
+                    } else {
+                        $counts['submitted']++;
+                        [$idsql, $idparams] = $DB->get_in_or_equal($defaultmembers, SQL_PARAMS_NAMED, 'dashuser');
+                        $graded = $DB->count_records_sql(
+                            "SELECT COUNT(DISTINCT g.userid)
+                               FROM {assign_grades} g
+                              WHERE g.assignment = :assignmentid
+                                AND g.attemptnumber = :attemptnumber
+                                AND g.grade IS NOT NULL AND g.grade <> :notset
+                                AND g.timemodified > :submittedtime AND g.userid $idsql",
+                            array_merge([
+                                'assignmentid' => $instance->id,
+                                'attemptnumber' => $defaultsubmission->attemptnumber,
+                                'notset' => ASSIGN_GRADE_NOT_SET,
+                                'submittedtime' => $defaultsubmission->timemodified,
+                            ], $idparams)
+                        );
+                        if ($graded < count($defaultmembers)) {
+                            $counts['pending']++;
+                        }
                     }
                 }
             }
         }
 
-        return $pending;
+        return $counts;
     }
 
     /**
