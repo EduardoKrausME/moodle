@@ -63,6 +63,9 @@ export default class User extends UserSearch {
      */
     selectAllResultsLink() {
         const url = new URL(this.baseUrl);
+        // A previous single-user selection must not override a new free-text
+        // search. Keep other active group and grading filters intact.
+        url.searchParams.delete('userid');
         url.searchParams.set('search', this.getSearchTerm());
 
         return url.toString();

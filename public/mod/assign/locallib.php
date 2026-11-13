@@ -5100,11 +5100,42 @@ class assign {
         $currenturl = new moodle_url('/mod/assign/view.php', ['id' => $this->get_course_module()->id, 'action' => 'grading']);
         $PAGE->activityheader->set_attrs(['hidecompletion' => true]);
 
-        $PAGE->requires->js_call_amd('mod_assign/user', 'init', [$currenturl->out(false)]);
+        // Native user/group selectors navigate using a base URL; include the
+        // current validated preferences, otherwise a new search can discard
+        // the active group or status filter in the URL.
+        $navigationstate = [
+            'group' => groups_get_activity_group($this->get_course_module()),
+            'userid' => optional_param('userid', null, PARAM_INT),
+            'search' => optional_param('search', '', PARAM_NOTAGS),
+            'status' => $filter,
+            'tifirst' => $gradingtable->get_initial_first(),
+            'tilast' => $gradingtable->get_initial_last(),
+        ];
+        $validstatusfilters = array_column($this->get_filters(), 'key');
+        if (!$this->is_any_submission_plugin_enabled() || !in_array($filter, $validstatusfilters, true)) {
+            $navigationstate['status'] = '';
+        }
+        $workflowfiltervalue = get_user_preferences('assign_workflowfilter', '');
+        if ($workflowfiltervalue !== '' && array_key_exists($workflowfiltervalue, $this->get_marking_workflow_filters())) {
+            $navigationstate['workflowfilter'] = $workflowfiltervalue;
+        }
+        $markerfiltervalue = get_user_preferences('assign_markerfilter', '');
+        if ($markerfiltervalue !== '' && array_key_exists($markerfiltervalue, $this->get_marking_allocation_filters())) {
+            $navigationstate['markingallocationfilter'] = $markerfiltervalue;
+        }
+        if (has_capability('moodle/course:viewsuspendedusers', $this->context) &&
+                !$this->show_only_active_users()) {
+            $navigationstate['suspendedparticipantsfilter'] = 1;
+        }
+        $navigationurl = new moodle_url('/mod/assign/view.php',
+            \mod_assign\local\grading_filter_state::parameters($cmid, $navigationstate));
 
-        // Conditionally add the group JS if we have groups enabled.
+        $PAGE->requires->js_call_amd('mod_assign/user', 'init', [$navigationurl->out(false)]);
+
+        // Group changes retain the other filters, but the native group picker
+        // still determines which groups the teacher may access.
         if (groups_get_activity_groupmode($this->get_course_module(), $this->get_course())) {
-            $PAGE->requires->js_call_amd('core_course/actionbar/group', 'init', [$currenturl->out(false), $cmid]);
+            $PAGE->requires->js_call_amd('core_course/actionbar/group', 'init', [$navigationurl->out(false), $cmid]);
         }
 
         $header = new assign_header($this->get_instance(),
