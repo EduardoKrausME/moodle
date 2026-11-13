@@ -22,6 +22,7 @@ require_once($CFG->dirroot . '/question/editlib.php');
 require_once($CFG->dirroot . '/mod/quiz/locallib.php');
 
 use core\context\module;
+use core\exception\invalid_parameter_exception;
 use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
@@ -79,6 +80,9 @@ class update_filter_condition extends external_api {
         require_capability('mod/quiz:manage', $context);
 
         $filtercondition = json_decode($filtercondition, true);
+        if (!is_array($filtercondition)) {
+            throw new invalid_parameter_exception('Invalid random question filter JSON.');
+        }
         $structure = quiz_settings::create_for_cmid($cmid)->get_structure();
         $structure->update_random_question($slotid, $filtercondition);
 

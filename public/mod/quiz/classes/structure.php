@@ -1690,6 +1690,8 @@ class structure {
      * @param array $filtercondition the filter condition. Must contain at least a category filter.
      */
     public function add_random_questions(int $addonpage, int $number, array $filtercondition): void {
+        // Adding new slots is a structural edit, even when called via a web service.
+        $this->check_can_be_edited();
         $category = $this->validate_filter_condition($filtercondition);
         for ($i = 0; $i < $number; $i++) {
             $randomslotdata = (object)[

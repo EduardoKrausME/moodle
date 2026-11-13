@@ -21,6 +21,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/question/editlib.php');
 require_once($CFG->dirroot . '/mod/quiz/locallib.php');
 
+use core\exception\invalid_parameter_exception;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
@@ -106,13 +107,28 @@ class add_random_questions extends \core_external\external_api {
             'parentcategory' => $parentcategory,
         ]);
 
+        // Match the native selection limit and reject invalid JSON before calling the structure API.
+        if ($randomcount < 1 || $randomcount > 100) {
+            throw new invalid_parameter_exception('randomcount must be between 1 and 100.');
+        }
+        if (!empty($filtercondition)) {
+            $decoded = json_decode($filtercondition, true);
+            if (!is_array($decoded)) {
+                throw new invalid_parameter_exception('Invalid random question filter JSON.');
+            }
+        }
+
         // Validate context.
         $thiscontext = \context_module::instance($cmid);
         self::validate_context($thiscontext);
         require_capability('mod/quiz:manage', $thiscontext);
+        $settings = quiz_settings::create_for_cmid($cmid);
+        $structure = $settings->get_structure();
+        // Check before creating a category to avoid leaving behind an orphan after attempts exist.
+        $structure->check_can_be_edited();
 
         // If filtercondition is not empty, decode it. Otherwise, set it to empty array.
-        $filtercondition = !empty($filtercondition) ? json_decode($filtercondition, true) : [];
+        $filtercondition = !empty($filtercondition) ? $decoded : [];
 
         // Create new category.
         if (!empty($newcategory)) {
@@ -138,8 +154,6 @@ class add_random_questions extends \core_external\external_api {
 
         // Add random question to the quiz.
         [$quiz, ] = get_module_from_cmid($cmid);
-        $settings = quiz_settings::create_for_cmid($cmid);
-        $structure = structure::create_for_quiz($settings);
         $structure->add_random_questions($addonpage, $randomcount, $filtercondition);
         quiz_delete_previews($quiz);
         quiz_settings::create($quiz->id)->get_grade_calculator()->recompute_quiz_sumgrades();

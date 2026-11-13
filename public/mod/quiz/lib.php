@@ -2680,9 +2680,9 @@ function mod_quiz_output_fragment_add_random_question_form($args) {
         'randomoptions' => $randomcount,
         'questioncategoryoptions' => $catoptions,
         // This is the destination within the quiz, not the source bank.
-        'targetpage' => !empty($args['addonpage'])
+        'targetpage' => !empty($slotid) ? '' : (!empty($args['addonpage'])
                 ? get_string('page') . ' ' . clean_param($args['addonpage'], PARAM_INT)
-                : get_string('quizselectionatend', 'quiz'),
+                : get_string('quizselectionatend', 'quiz')),
     ];
     if (!empty($slotid)) {
         $data['slotid'] = $slotid;
