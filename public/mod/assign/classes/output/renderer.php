@@ -346,7 +346,6 @@ class renderer extends \plugin_renderer_base {
             $o .= groups_print_activity_menu($summary->cm, $currenturl->out(), true, participationonly: false);
         }
 
-        $o .= $this->output->box_start('boxaligncenter gradingsummarytable');
         $t = new \html_table();
         $t->attributes['class'] = 'generaltable table table-striped table-bordered table-hover';
         $t->caption = get_string('gradingsummary', 'assign');
@@ -433,9 +432,39 @@ class renderer extends \plugin_renderer_base {
             $this->add_table_row_tuple($t, $cell1content, $cell2content, [], []);
         }
 
+        // Preserve the native table and its selectors as optional administrative details.
+        // Group selection and native notices above remain visible outside this disclosure.
+        if ($summary->dashboard !== null) {
+            $data = $summary->dashboard;
+            $data['heading'] = get_string('gradingdashboardheading', 'assign');
+            $data['progresslabel'] = get_string('gradingdashboardprogress', 'assign');
+            $data['progresstext'] = get_string('gradingdashboardprogresstext', 'assign', (object) [
+                'submitted' => $data['submitted'],
+                'total' => $data['participants'],
+                'unit' => get_string($data['teams'] ? 'gradingdashboardteams' : 'gradingdashboardparticipants', 'assign'),
+            ]);
+            $data['teamnotice'] = get_string('gradingdashboardteamnotice', 'assign');
+            $data['nogradenotice'] = get_string('gradingdashboardnograde', 'assign');
+            $data['gradednotice'] = get_string('gradingdashboardgradednotice', 'assign');
+            foreach ($data['cards'] as &$card) {
+                $key = $card['key'] === 'participants' && $data['teams'] ? 'teams' : $card['key'];
+                $card['label'] = get_string('gradingdashboard' . $key, 'assign');
+                $card['notapplicable'] = get_string('gradingdashboardnotapplicable', 'assign');
+                $card['linklabel'] = get_string('gradingdashboardview', 'assign', $card['label']);
+            }
+            unset($card);
+            $o .= $this->render_from_template('mod_assign/grading_dashboard', $data);
+            $o .= \html_writer::start_tag('details', ['class' => 'assign-grading-dashboard-details']);
+            $o .= \html_writer::tag('summary', get_string('gradingdashboarddetails', 'assign'));
+        }
+
         // All done - write the table.
+        $o .= $this->output->box_start('boxaligncenter gradingsummarytable');
         $o .= \html_writer::table($t);
         $o .= $this->output->box_end();
+        if ($summary->dashboard !== null) {
+            $o .= \html_writer::end_tag('details');
+        }
 
         // Close the container and insert a spacer.
         $o .= $this->output->container_end();

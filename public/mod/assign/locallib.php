@@ -6688,6 +6688,164 @@ class assign {
     }
 
     /**
+     * Prepare aggregate-only data for the teacher dashboard.
+     *
+     * Permissions and active group scope are checked by view_submission_page().
+     * Existing summary counts are reused. Team grading is counted per actual
+     * team and current attempt, rather than using the individual-only counter.
+     *
+     * @param \assign_grading_summary $summary Already-scoped native summary.
+     * @param int $activitygroup Native active activity group.
+     * @return array Template context.
+     */
+    protected function get_grading_dashboard_data(\assign_grading_summary $summary, int $activitygroup): array {
+        $instance = $this->get_instance();
+        $teams = (bool) $instance->teamsubmission;
+        $pending = $teams ? $this->count_dashboard_pending_teams($activitygroup) :
+            (int) $summary->submissionsneedgradingcount;
+
+        $base = [
+            'id' => $this->get_course_module()->id,
+            'action' => 'grading',
+            'group' => $activitygroup,
+            // Native persisted filters must not unexpectedly restrict a card's destination.
+            'workflowfilter' => '',
+            'markingallocationfilter' => '',
+            'tifirst' => '',
+            'tilast' => '',
+        ];
+        $filters = [
+            'participants' => '',
+            'submitted' => ASSIGN_FILTER_SUBMITTED,
+            'drafts' => ASSIGN_FILTER_DRAFT,
+            'pending' => ASSIGN_FILTER_REQUIRE_GRADING,
+            'graded' => ASSIGN_FILTER_GRADED,
+        ];
+        $urls = [];
+        foreach ($filters as $key => $status) {
+            $urls[$key] = (new \moodle_url('/mod/assign/view.php', $base + ['status' => $status]))->out(false);
+        }
+
+        return \mod_assign\local\grading_dashboard::describe(
+            (int) $summary->participantcount,
+            (int) $summary->submissionssubmittedcount,
+            (int) $summary->submissiondraftscount,
+            $pending,
+            $teams,
+            (bool) $summary->submissionsenabled,
+            (bool) $summary->submissiondraftsenabled,
+            $instance->grade != GRADE_TYPE_NONE,
+            $urls
+        );
+    }
+
+    /**
+     * Count distinct submitted teams with at least one eligible ungraded member.
+     *
+     * This intentionally does not call count_submissions_need_grading(), which
+     * returns zero for group submissions. The older group counter can also count
+     * groups outside a selected grouping; constrain team IDs to native participants.
+     * Members must have a valid current-attempt grade newer than the team submission.
+     *
+     * @param int $activitygroup Authorised native activity group.
+     * @return int Number of teams still requiring grading.
+     */
+    protected function count_dashboard_pending_teams(int $activitygroup): int {
+        global $DB;
+
+        $participants = $this->list_participants($activitygroup, true);
+        if (!$participants) {
+            return 0;
+        }
+        $instance = $this->get_instance();
+        $groups = groups_get_all_groups(
+            $this->get_course()->id,
+            array_keys($participants),
+            $instance->teamsubmissiongroupingid,
+            'DISTINCT g.id, g.name'
+        );
+        $pending = 0;
+
+        if ($groups) {
+            [$groupsql, $groupparams] = $DB->get_in_or_equal(array_keys($groups), SQL_PARAMS_NAMED, 'dashgroup');
+            [$enrolledsql, $enrolledparams] = get_enrolled_sql(
+                $this->get_context(),
+                'mod/assign:submit',
+                $activitygroup ? [$activitygroup] : [],
+                $this->show_only_active_users()
+            );
+            $params = array_merge([
+                'assignmentid' => $instance->id,
+                'submitted' => ASSIGN_SUBMISSION_STATUS_SUBMITTED,
+                'notset' => ASSIGN_GRADE_NOT_SET,
+            ], $groupparams, $enrolledparams);
+
+            $sql = "SELECT s.groupid AS id,
+                           COUNT(DISTINCT e.id) AS eligible,
+                           COUNT(DISTINCT CASE
+                               WHEN g.grade IS NOT NULL AND g.grade <> :notset
+                                    AND g.timemodified > s.timemodified
+                               THEN e.id ELSE NULL END) AS graded
+                      FROM {assign_submission} s
+                      JOIN {groups_members} gm ON gm.groupid = s.groupid
+                      JOIN ($enrolledsql) e ON e.id = gm.userid
+                 LEFT JOIN {assign_grades} g ON g.assignment = s.assignment
+                       AND g.userid = e.id AND g.attemptnumber = s.attemptnumber
+                     WHERE s.assignment = :assignmentid
+                       AND s.userid = 0 AND s.latest = 1
+                       AND s.status = :submitted AND s.timemodified IS NOT NULL
+                       AND s.groupid $groupsql
+                  GROUP BY s.groupid";
+            foreach ($DB->get_records_sql($sql, $params) as $team) {
+                if ((int) $team->eligible > (int) $team->graded) {
+                    $pending++;
+                }
+            }
+        }
+
+        // Default team (groupid 0) is not in groups_members. Count it only
+        // when the native activity permits submissions without a valid group.
+        if (!$instance->preventsubmissionnotingroup) {
+            $defaultsubmission = $DB->get_record('assign_submission', [
+                'assignment' => $instance->id,
+                'userid' => 0,
+                'groupid' => 0,
+                'latest' => 1,
+            ]);
+            if ($defaultsubmission && $defaultsubmission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+                $defaultmembers = [];
+                foreach ($participants as $participant) {
+                    if (!$this->get_submission_group($participant->id)) {
+                        $defaultmembers[] = $participant->id;
+                    }
+                }
+                if ($defaultmembers) {
+                    [$idsql, $idparams] = $DB->get_in_or_equal($defaultmembers, SQL_PARAMS_NAMED, 'dashuser');
+                    $graded = $DB->count_records_sql(
+                        "SELECT COUNT(DISTINCT g.userid)
+                           FROM {assign_grades} g
+                          WHERE g.assignment = :assignmentid
+                            AND g.attemptnumber = :attemptnumber
+                            AND g.grade IS NOT NULL AND g.grade <> :notset
+                            AND g.timemodified > :submittedtime AND g.userid $idsql",
+                        array_merge([
+                            'assignmentid' => $instance->id,
+                            'attemptnumber' => $defaultsubmission->attemptnumber,
+                            'notset' => ASSIGN_GRADE_NOT_SET,
+                            'submittedtime' => $defaultsubmission->timemodified,
+                        ], $idparams)
+                    );
+                    if ($graded < count($defaultmembers)) {
+                        $pending++;
+                    }
+                }
+            }
+        }
+
+        return $pending;
+    }
+
+    /**
      * Helper function to allow up to fetch the group overrides via one query as opposed to many calls.
      *
      * @param int $activitygroup The group we want to check the overrides of
@@ -6809,6 +6967,14 @@ class assign {
             $o .= $this->get_renderer()->submission_actionmenu($actionbuttons);
 
             $summary = $this->get_assign_grading_summary_renderable();
+            $activitygroup = groups_get_activity_group($this->get_course_module());
+            // Do not add new aggregate disclosures to a non-global viewer without
+            // a concrete active group when separate-group mode is in effect.
+            $groupsrestricted = $this->get_course_module()->effectivegroupmode == SEPARATEGROUPS &&
+                !has_capability('moodle/site:accessallgroups', $this->get_context());
+            if (!$groupsrestricted || $activitygroup > 0) {
+                $summary->dashboard = $this->get_grading_dashboard_data($summary, (int) $activitygroup);
+            }
             $o .= $this->get_renderer()->render($summary);
         }
 

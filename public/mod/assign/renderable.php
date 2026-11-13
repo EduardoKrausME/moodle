@@ -589,6 +589,8 @@ class assign_grading_summary implements renderable {
     public $isvisible = true;
     /** @var cm_info $cm - The course module object. */
     public $cm = null;
+    /** @var array|null Teacher-only presentation of the native grading summary. */
+    public ?array $dashboard = null;
 
     /** @var string no warning needed about group submissions */
     const WARN_GROUPS_NO = false;

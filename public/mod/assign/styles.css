@@ -2089,3 +2089,101 @@ body.path-mod-assign [data-region="grade-panel"] .mform .fitem.has-popout .felem
         gap: 0.8rem;
     }
 }
+
+/* Teacher assignment progress dashboard, scoped to the native grading summary. */
+.path-mod-assign .assign-grading-dashboard {
+    margin-block: 1rem 1.5rem;
+    text-align: start;
+    max-width: 100%;
+}
+
+.path-mod-assign .assign-grading-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: 0.85rem;
+}
+
+.path-mod-assign .assign-grading-dashboard-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 0.75rem;
+    background: var(--bs-body-bg, #fff);
+    color: var(--bs-body-color, #212529);
+}
+
+.path-mod-assign .assign-grading-dashboard-card dl {
+    margin: 0;
+}
+
+.path-mod-assign .assign-grading-dashboard-card dt {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--bs-secondary-color, #6c757d);
+}
+
+.path-mod-assign .assign-grading-dashboard-card dd {
+    margin: 0.5rem 0 0;
+}
+
+.path-mod-assign .assign-grading-dashboard-number {
+    font-size: clamp(1.5rem, 2vw, 2.25rem);
+    line-height: 1.1;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.path-mod-assign .assign-grading-dashboard-na {
+    font-size: 0.9rem;
+    color: var(--bs-secondary-color, #6c757d);
+}
+
+.path-mod-assign .assign-grading-dashboard-link {
+    margin-block-start: auto;
+    overflow-wrap: anywhere;
+    width: fit-content;
+}
+
+.path-mod-assign .assign-grading-dashboard-link:focus-visible,
+.path-mod-assign .assign-grading-dashboard-details summary:focus-visible {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 3px;
+}
+
+.path-mod-assign .assign-grading-dashboard-progress {
+    margin-block: 1.25rem;
+}
+
+.path-mod-assign .assign-grading-dashboard-progress progress {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: 0.7rem;
+    accent-color: var(--bs-primary, #0d6efd);
+}
+
+.path-mod-assign .assign-grading-dashboard-note {
+    margin-block: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color, #6c757d);
+}
+
+.path-mod-assign .assign-grading-dashboard-details {
+    text-align: start;
+    margin-block: 1rem;
+}
+
+.path-mod-assign .assign-grading-dashboard-details > summary {
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--bs-link-color, #0d6efd);
+    width: fit-content;
+}
+
+.path-mod-assign .assign-grading-dashboard-details .gradingsummarytable {
+    overflow-x: auto;
+    max-width: 100%;
+}

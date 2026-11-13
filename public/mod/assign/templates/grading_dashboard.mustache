@@ -1,0 +1,71 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+}}
+{{!
+    @template mod_assign/grading_dashboard
+
+    Teacher-only assignment activity summary. Counts are scoped by PHP and
+    links use existing native grading filters. No student identities are present.
+
+    Example context (json):
+    {
+        "heading": "Assignment progress",
+        "teams": false,
+        "cards": [
+            {"key": "participants", "label": "Participants", "value": 12,
+             "available": true, "hasurl": true, "url": "/mod/assign/view.php?id=4", "linklabel": "View participants"}
+        ],
+        "submitted": 7,
+        "participants": 12,
+        "percentage": 58,
+        "progresslabel": "Submission progress",
+        "progresstext": "7 of 12 participants submitted",
+        "teamnotice": ""
+    }
+}}
+<section class="assign-grading-dashboard" data-region="assign-grading-dashboard"
+         aria-labelledby="assign-grading-dashboard-heading">
+    <h4 class="h5" id="assign-grading-dashboard-heading">{{heading}}</h4>
+    <div class="assign-grading-dashboard-grid">
+        {{#cards}}
+            <div class="assign-grading-dashboard-card assign-grading-dashboard-card--{{key}}"
+                 data-region="grading-dashboard-{{key}}">
+                <dl>
+                    <dt>{{label}}</dt>
+                    <dd>
+                        {{#available}}<strong class="assign-grading-dashboard-number">{{value}}</strong>{{/available}}
+                        {{^available}}<span class="assign-grading-dashboard-na">{{notapplicable}}</span>{{/available}}
+                    </dd>
+                </dl>
+                {{#hasurl}}
+                    <a href="{{url}}" class="assign-grading-dashboard-link">{{linklabel}}</a>
+                {{/hasurl}}
+            </div>
+        {{/cards}}
+    </div>
+    {{#submissionsenabled}}
+        <div class="assign-grading-dashboard-progress">
+            <p class="mb-2"><strong>{{progresslabel}}</strong> — {{progresstext}} ({{percentage}}%)</p>
+            <progress value="{{percentage}}" max="100" aria-label="{{progresslabel}}: {{progresstext}}">
+                {{percentage}}%
+            </progress>
+        </div>
+    {{/submissionsenabled}}
+    {{#teams}}
+        <p class="assign-grading-dashboard-note">{{teamnotice}}</p>
+    {{/teams}}
+    {{^gradable}}
+        <p class="assign-grading-dashboard-note">{{nogradenotice}}</p>
+    {{/gradable}}
+    {{#gradable}}
+        <p class="assign-grading-dashboard-note">{{gradednotice}}</p>
+    {{/gradable}}
+</section>
