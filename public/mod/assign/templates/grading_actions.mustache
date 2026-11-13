@@ -60,8 +60,10 @@
     {{/showreview}}
 </div>
 {{#js}}
-require(['mod_assign/grading_actions', 'core_form/submit'], function(GradingActions, Submit) {
+require(['mod_assign/grading_actions', 'mod_assign/grading_station_layout', 'core_form/submit'],
+    function(GradingActions, GradingStationLayout, Submit) {
     new GradingActions('[data-region="grade-actions"]');
+    GradingStationLayout.init();
 
     Submit.init('savechanges-{{uniqid}}');
     Submit.init('saveandshownext-{{uniqid}}');
