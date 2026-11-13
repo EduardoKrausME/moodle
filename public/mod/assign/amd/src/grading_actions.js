@@ -436,7 +436,8 @@ define(['jquery', 'mod_assign/grading_events', 'core/str'], function($, GradingE
             this._showSaveStatus('gradingendoflist');
         }.bind(this));
         $(document).on('finish-loading-user', function() {
-            if (!this._isSaving) {
+            const form = $('[data-region="grade-panel"] .gradeform');
+            if (!this._isSaving && !form.data('unresolved-error')) {
                 this._showSaveStatus('gradingnochanges');
             }
         }.bind(this));
