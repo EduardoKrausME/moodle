@@ -147,6 +147,14 @@ class grading_app implements templatable, renderable {
 
         $export->showreview = $showreview;
 
+        // Presentation-only preference; no participant or grading data stored.
+        $layout = \mod_assign\local\grading_station_layout::normalise(
+            get_user_preferences('assign_grading_station_layout', 'split_70'),
+            $showreview
+        );
+        $export->layoutmode = $layout['mode'];
+        $export->layoutsplit = $layout['split'];
+
         $time = \core\di::get(\core\clock::class)->time();
         $export->count = count($export->participants);
         $export->coursename = $this->assignment->get_course_context()->get_context_name(true, false, false);
