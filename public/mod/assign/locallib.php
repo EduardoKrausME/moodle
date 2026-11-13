@@ -9565,6 +9565,89 @@ class assign {
         $gradingdisabled = $this->grading_disabled($userid);
         $gradinginstance = $this->get_grading_instance($userid, $grade, $gradingdisabled);
 
+        // Keep the actual MoodleQuickForm elements and the core advanced
+        // grading renderer authoritative. This is a presentation-only summary
+        // and must never create a second grading input or calculate grades.
+        $assessmentmethod = null;
+        if ($gradinginstance) {
+            $assessmentmethod = get_grading_manager($this->context, 'mod_assign', 'submissions')->get_active_method();
+        }
+        $assessmentmode = \mod_assign\local\grading_assessment_view::mode(
+            $assessmentmethod, $markerpage, $this->is_using_multiple_marking()
+        );
+        $modekeys = [
+            'simple' => 'gradingassessmentmodesimple',
+            'marker' => 'gradingassessmentmodemarker',
+            'multiple' => 'gradingassessmentmodemultiple',
+            'rubric' => 'gradingassessmentmoderubric',
+            'guide' => 'gradingassessmentmodeguide',
+            'advanced' => 'gradingassessmentmodeadvanced',
+        ];
+        $modetitle = get_string($modekeys[$assessmentmode], 'assign');
+        $summary = html_writer::tag('strong', s($modetitle), ['class' => 'assign-assessment-mode']);
+        $summary .= html_writer::div(
+            get_string('gradingassessmentdescription' . $assessmentmode, 'assign'),
+            'assign-assessment-description'
+        );
+
+        // The native form controls workflow and grades. Only explain a lock
+        // already imposed by Moodle, without adding a separate unlock button.
+        $restricted = !$markerpage && $this->grading_restricted($grade ? (int)$grade->id : null, $userid);
+        if ($gradingdisabled || $restricted) {
+            $summary .= html_writer::div(
+                get_string('gradingassessmentreadonly', 'assign'),
+                'assign-assessment-readonly',
+                ['role' => 'note']
+            );
+        }
+
+        // Never expose other markers' individual marks, names or allocations
+        // to a grader with only mod/assign:grade. This overview is available
+        // exclusively to roles already authorised to manage/review grading.
+        if ($assessmentmode === 'multiple' && $attemptnumber == -1 &&
+                has_any_capability([
+                    'mod/assign:managegrades',
+                    'mod/assign:reviewgrades',
+                    'mod/assign:manageallocations',
+                ], $this->context)) {
+            $allocations = $this->get_marker_allocations($userid);
+            $marks = $grade ? $this->get_mark_records((int)$grade->id, $userid) : [];
+            $progress = \mod_assign\local\grading_assessment_view::marker_progress(
+                $allocations,
+                $marks,
+                $this->required_marker_count(),
+                $this->optional_marker_count(),
+                ASSIGN_MARKING_WORKFLOW_STATE_READYFORREVIEW
+            );
+            $progressparams = (object)[
+                'completed' => $progress['completed'],
+                'expected' => $progress['expected'],
+            ];
+            $summary .= html_writer::div(
+                get_string('gradingassessmentprogress', 'assign', $progressparams),
+                'assign-assessment-progress'
+            );
+            $positions = '';
+            foreach ($progress['slots'] as $slot) {
+                $positionlabel = get_string('markernumber', 'assign', $slot['position']);
+                $statuskey = !$slot['enabled'] ? 'gradingassessmentoptionaloff' :
+                    (!$slot['assigned'] ? 'gradingassessmentunassigned' :
+                    ($slot['completed'] ? 'gradingassessmentcomplete' : 'gradingassessmentpending'));
+                $positions .= html_writer::tag('li',
+                    html_writer::span(s($positionlabel), 'assign-assessment-position') . ' ' .
+                    html_writer::span(get_string($statuskey, 'assign'), 'assign-assessment-position-state'),
+                    ['class' => 'assign-assessment-slot']
+                );
+            }
+            $summary .= html_writer::tag('ul', $positions, ['class' => 'assign-assessment-slots']);
+        }
+        $mform->addElement('html', html_writer::tag('section', $summary, [
+            'class' => 'assign-assessment-summary',
+            'data-region' => 'assign-assessment-summary',
+            'data-assessment-mode' => $assessmentmode,
+            'aria-label' => get_string('gradingassessmentoverview', 'assign'),
+        ]));
+
         if ($markerpage) {
             $mform->addElement('header', 'gradeheader', get_string('marknoun', 'assign'));
         } else {
