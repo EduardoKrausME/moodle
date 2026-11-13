@@ -35,7 +35,11 @@
         "sesskey": "abc123"
     }
 }}
-<p>{{text}}</p>
+<div data-region="assign-bulk-confirm">
+    <p>{{text}}</p>
+    <p class="assign-bulk-confirm-scope">{{#str}}bulkselectionpagescope, mod_assign{{/str}}</p>
+    <p data-region="assign-bulk-count" class="assign-bulk-confirm-count" role="status" aria-live="polite"></p>
+</div>
 <form method="post" action="view.php">
     <input type="hidden" name="action" value="gradingbatchoperation">
     <input type="hidden" name="operation" value="{{operation}}">
