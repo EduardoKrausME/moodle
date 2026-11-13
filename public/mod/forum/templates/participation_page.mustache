@@ -6,6 +6,14 @@
 <div class="forum-participation" data-region="forum-participation">
     <h2 class="h4">{{#str}}participationtitle, mod_forum{{/str}}</h2>
     <p class="text-muted">{{#str}}participationsubtitle, mod_forum{{/str}}</p>
+    <nav aria-label="{{#str}}participationperiod, mod_forum{{/str}}" class="mb-3">
+        <div class="d-flex flex-wrap gap-2">
+            {{#periodoptions}}
+                <a href="{{url}}" class="btn btn-sm {{#selected}}btn-primary{{/selected}}{{^selected}}btn-outline-secondary{{/selected}}"
+                   {{#selected}}aria-current="page"{{/selected}}>{{label}}</a>
+            {{/periodoptions}}
+        </div>
+    </nav>
     <form action="{{actionurl}}" method="get" data-region="participation-filters" class="mb-4">
         <div class="forum-participation__filters">
             <div>

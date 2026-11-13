@@ -135,3 +135,5 @@ $string['participationday'] = 'Dia/semana';
 $string['participationopenforum'] = 'Abrir fórum';
 $string['participationseriesdata'] = 'Tabela acessível com os valores do gráfico';
 $string['participationnodata'] = 'Sem valores neste período';
+
+$string['participationdays'] = '{$a} dias';

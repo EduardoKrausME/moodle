@@ -104,6 +104,19 @@ $url = new \moodle_url('/mod/forum/participation.php', [
     'from' => $fromdate, 'to' => $todate,
 ]);
 $downloadurl = new \moodle_url($url, ['download' => 'csv']);
+$periodoptions = [];
+foreach ([7, 30, 90] as $days) {
+    $start = $now->modify('-' . ($days - 1) . ' days')->format('Y-m-d');
+    $link = new \moodle_url('/mod/forum/participation.php', [
+        'courseid' => $courseid, 'forumid' => $forumid, 'groupid' => $groupid,
+        'from' => $start, 'to' => $now->format('Y-m-d'),
+    ]);
+    $periodoptions[] = [
+        'label' => get_string('participationdays', 'mod_forum', $days),
+        'url' => $link->out(false),
+        'selected' => $fromdate === $start && $todate === $now->format('Y-m-d'),
+    ];
+}
 $PAGE->set_context(\context_course::instance($courseid));
 $PAGE->set_url($url);
 $PAGE->set_pagelayout('report');
@@ -117,6 +130,7 @@ echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('mod_forum/participation_page', array_merge($data, [
     'actionurl' => (new \moodle_url('/mod/forum/participation.php'))->out(false),
     'downloadurl' => $downloadurl->out(false),
+    'periodoptions' => $periodoptions,
     'courses' => $courses,
     'forumoptions' => $forums,
     'groupoptions' => $groups,

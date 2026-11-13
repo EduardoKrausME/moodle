@@ -938,3 +938,5 @@ $string['participationday'] = 'Day/week';
 $string['participationopenforum'] = 'Open forum';
 $string['participationseriesdata'] = 'Accessible table of chart values';
 $string['participationnodata'] = 'No values in this period';
+
+$string['participationdays'] = '{$a} days';
