@@ -174,7 +174,7 @@ final class participation_report_test extends \advanced_testcase {
         $result = get_participation_report::execute($course->id, $forum->id, 0, $today, $today);
         $clean = external_api::clean_returnvalue(get_participation_report::execute_returns(), $result);
         $this->assertSame(1, $clean['metrics']['discussions']);
-        $this->assertSame($course->id, $clean['courseid']);
+        $this->assertSame((int)$course->id, $clean['courseid']);
         $this->assertCount(1, $clean['forums']);
     }
 }
