@@ -234,12 +234,15 @@ final class participation_metrics {
         }
 
         $elapsed = [];
+        $elapsedbyforum = [];
         foreach ($firstresponses as $id => $respondedat) {
             $forumid = (int)$cohorts[$id]['discussion']->forum;
             $metrics['responded']++;
             $forums[$forumid]['responded']++;
             $firstpost = $firstposts[$cohorts[$id]['discussion']->firstpost];
-            $elapsed[] = max(0, $respondedat - (int)$firstpost->created);
+            $duration = max(0, $respondedat - (int)$firstpost->created);
+            $elapsed[] = $duration;
+            $elapsedbyforum[$forumid][] = $duration;
         }
         sort($elapsed, SORT_NUMERIC);
         if ($elapsed) {
@@ -264,6 +267,14 @@ final class participation_metrics {
         foreach ($forums as &$row) {
             $row['coverage'] = $row['discussions'] ?
                 round(100 * $row['responded'] / $row['discussions'], 1) : 0.0;
+            $times = $elapsedbyforum[$row['id']] ?? [];
+            sort($times, SORT_NUMERIC);
+            if ($times) {
+                $middle = intdiv(count($times), 2);
+                $median = count($times) % 2 ?
+                    $times[$middle] : ($times[$middle - 1] + $times[$middle]) / 2;
+                $row['medianhours'] = round($median / HOURSECS, 1);
+            }
         }
         unset($row);
 
