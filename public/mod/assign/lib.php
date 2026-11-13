@@ -1815,6 +1815,12 @@ function mod_assign_user_preferences(): array {
         'default' => '',
         'permissioncallback' => [core_user::class, 'is_current_user'],
     );
+    $preferences['assign_grading_station_layout'] = [
+        'type' => PARAM_ALPHANUMEXT,
+        'null' => NULL_NOT_ALLOWED,
+        'default' => 'split_70',
+        'permissioncallback' => [core_user::class, 'is_current_user'],
+    ];
 
     return $preferences;
 }
