@@ -565,3 +565,26 @@ span.unread {
         align-items: stretch;
     }
 }
+
+/* Accepted replies stay in native order, with a focusable visual landmark. */
+.forum-solution-accepted {
+    border-inline-start: 4px solid var(--bs-success);
+    background-color: var(--bs-success-bg-subtle, transparent);
+}
+
+.forum-solution-list-state {
+    overflow-wrap: anywhere;
+}
+
+.forum-solution-accepted:focus-within {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+@media (max-width: 575.98px) {
+    .forum-solution-filters .btn {
+        max-width: 100%;
+        white-space: normal;
+        text-align: start;
+    }
+}

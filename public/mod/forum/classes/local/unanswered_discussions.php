@@ -409,6 +409,7 @@ final class unanswered_discussions {
                             'waitinghours' => max(0, (int)floor((time() - $created) / HOURSECS)),
                             'status' => $classification,
                             'statuslabel' => get_string('unansweredstatus_' . $classification, 'mod_forum'),
+                            'solutionurl' => $accepted ? $solutions[$id]['url'] : '',
                             'url' => (new \moodle_url('/mod/forum/discuss.php', ['d' => $id]))->out(false),
                             'replyurl' => $replyurl,
                             'canreply' => $replyurl !== '',

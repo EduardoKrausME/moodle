@@ -70,6 +70,7 @@ final class get_unanswered_discussions extends external_api {
                 'waitinghours' => new external_value(PARAM_INT, 'Hours since the question'),
                 'status' => new external_value(PARAM_ALPHA, 'Classification'),
                 'statuslabel' => new external_value(PARAM_TEXT, 'Localized status'),
+                'solutionurl' => new external_value(PARAM_RAW, 'Visible accepted solution link or empty'),
                 'url' => new external_value(PARAM_URL, 'Native discussion URL'),
                 'replyurl' => new external_value(PARAM_RAW, 'Authorised native reply URL'),
                 'canreply' => new external_value(PARAM_BOOL, 'Can use native reply action'),

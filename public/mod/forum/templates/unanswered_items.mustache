@@ -25,6 +25,11 @@
             <a class="btn btn-sm btn-outline-primary" href="{{url}}">
                 {{#str}}unansweredview, mod_forum{{/str}}
             </a>
+            {{#solutionurl}}
+                <a class="btn btn-sm btn-outline-success" href="{{solutionurl}}">
+                    {{#str}}viewsolution, mod_forum{{/str}}
+                </a>
+            {{/solutionurl}}
             {{#canreply}}
                 <a class="btn btn-sm btn-primary" href="{{replyurl}}">
                     {{#str}}unansweredreply, mod_forum{{/str}}

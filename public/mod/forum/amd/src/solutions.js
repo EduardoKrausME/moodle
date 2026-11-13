@@ -53,13 +53,14 @@ export const initDiscussion = async discussionid => {
 
     const posts = [...document.querySelectorAll('[data-region="post"][data-post-id]')];
     const roots = posts.length ? posts : [...document.querySelectorAll('.forumpost[data-post-id]')];
-    const livePosts = [...new Map(roots.map(post => [Number(post.dataset.postId), post])).values()];
+    let livePosts = [...new Map(roots.map(post => [Number(post.dataset.postId), post])).values()];
 
     const update = async next => {
         state = next;
         for (const post of livePosts) {
             const postid = Number(post.dataset.postId);
             const accepted = postid === state.postid;
+            post.classList.toggle('forum-solution-accepted', accepted);
             const panel = post.querySelector('[data-region="forum-solution-actions"]');
             if (!panel) {
                 continue;
@@ -104,7 +105,17 @@ export const initDiscussion = async discussionid => {
         const header = document.querySelector('[data-region="forum-solution-header"]');
         if (header) {
             header.replaceChildren();
+            if (!state.postid) {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-secondary';
+                badge.textContent = await getString('solutionnotaccepted', 'mod_forum');
+                header.append(badge);
+            }
             if (state.postid && state.url) {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-success me-2';
+                badge.textContent = await getString('acceptedsolution', 'mod_forum');
+                header.append(badge);
                 const link = document.createElement('a');
                 link.href = state.url;
                 link.className = 'btn btn-outline-success';
@@ -120,16 +131,45 @@ export const initDiscussion = async discussionid => {
         region.className = 'mb-3';
         host.after(region);
     }
-    for (const post of livePosts) {
-        const area = post.querySelector('[data-region="post-actions-container"]') || post;
-        const panel = document.createElement('div');
-        panel.dataset.region = 'forum-solution-actions';
-        panel.className = 'forum-solution-actions mt-2';
-        panel.setAttribute('role', 'group');
-        panel.setAttribute('aria-label', await getString('acceptedsolution', 'mod_forum'));
-        area.after(panel);
-    }
+    const ensurePanels = async() => {
+        const current = [...document.querySelectorAll('[data-region="post"][data-post-id]')];
+        const all = current.length ? current : [...document.querySelectorAll('.forumpost[data-post-id]')];
+        livePosts = [...new Map(all.map(post => [Number(post.dataset.postId), post])).values()];
+        for (const post of livePosts) {
+            if (post.querySelector('[data-region="forum-solution-actions"]')) {
+                continue;
+            }
+            const area = post.querySelector('[data-region="post-actions-container"]') || post;
+            const panel = document.createElement('div');
+            panel.dataset.region = 'forum-solution-actions';
+            panel.className = 'forum-solution-actions mt-2';
+            panel.setAttribute('role', 'group');
+            panel.setAttribute('aria-label', await getString('acceptedsolution', 'mod_forum'));
+            area.after(panel);
+        }
+    };
+    await ensurePanels();
     await update(state);
+
+    // Nested and progressively inserted replies are not always present when
+    // the initial Moodle discussion renderer finishes.
+    const observer = new MutationObserver(async mutations => {
+        const hasNewPosts = mutations.some(mutation => [...mutation.addedNodes].some(node =>
+            node.nodeType === Node.ELEMENT_NODE &&
+            (node.matches?.('[data-region="post"][data-post-id], .forumpost[data-post-id]') ||
+            node.querySelector?.('[data-region="post"][data-post-id], .forumpost[data-post-id]'))));
+        if (!hasNewPosts) {
+            return;
+        }
+        observer.disconnect();
+        try {
+            await ensurePanels();
+            await update(state);
+        } finally {
+            observer.observe(document.body, {childList: true, subtree: true});
+        }
+    });
+    observer.observe(document.body, {childList: true, subtree: true});
 };
 
 /**
