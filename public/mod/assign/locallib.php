@@ -5627,6 +5627,121 @@ class assign {
     }
 
     /**
+     * Reauthorise every native bulk target at the server boundary.
+     *
+     * Selection checkboxes and modal hidden fields are untrusted. This is
+     * called again by the second-step workflow, allocation and extension
+     * forms, not just when the initial confirmation is submitted.
+     *
+     * @param string $selectedusers Comma-separated selected user IDs.
+     * @param string $operation Native operation key.
+     * @return int[] Validated, unique participants in their original order.
+     */
+    protected function validate_bulk_action_selection(string $selectedusers, string $operation): array {
+        $users = \mod_assign\local\bulk_action_targets::normalise($selectedusers);
+        if (!\mod_assign\local\bulk_action_targets::supported($operation)) {
+            throw new \moodle_exception('invalidbulkoperation', 'assign');
+        }
+
+        $this->require_view_grades();
+        require_capability('mod/assign:grade', $this->context);
+
+        switch ($operation) {
+            case 'removesubmission':
+                require_capability('mod/assign:editothersubmission', $this->context);
+                break;
+            case 'grantextension':
+                require_capability('mod/assign:grantextension', $this->context);
+                if (empty($this->get_instance()->duedate)) {
+                    throw new \moodle_exception('invalidbulkoperation', 'assign');
+                }
+                break;
+            case 'setmarkingallocation':
+                require_capability('mod/assign:manageallocations', $this->context);
+                if (!$this->get_instance()->markingworkflow || !$this->get_instance()->markingallocation) {
+                    throw new \moodle_exception('invalidbulkoperation', 'assign');
+                }
+                break;
+            case 'setmarkingworkflowstate':
+                if (!$this->get_instance()->markingworkflow) {
+                    throw new \moodle_exception('invalidbulkoperation', 'assign');
+                }
+                break;
+            case 'addattempt':
+                if ($this->get_instance()->attemptreopenmethod != ASSIGN_ATTEMPT_REOPEN_METHOD_MANUAL ||
+                        ($this->get_instance()->maxattempts != ASSIGN_UNLIMITED_ATTEMPTS &&
+                        $this->get_instance()->maxattempts <= 1)) {
+                    throw new \moodle_exception('invalidbulkoperation', 'assign');
+                }
+                break;
+            case 'reverttodraft':
+                if (!$this->get_instance()->submissiondrafts) {
+                    throw new \moodle_exception('invalidbulkoperation', 'assign');
+                }
+                break;
+        }
+
+        if (str_starts_with($operation, 'plugingradingbatchoperation_')) {
+            $tail = substr($operation, strlen('plugingradingbatchoperation_'));
+            $parts = explode('_', $tail, 2);
+            if (count($parts) !== 2) {
+                throw new \moodle_exception('invalidbulkoperation', 'assign');
+            }
+            [$plugintype, $action] = $parts;
+            $plugin = $this->get_feedback_plugin_by_type($plugintype);
+            $validoperation = false;
+            if ($plugin && $plugin->is_visible() && $plugin->is_enabled()) {
+                foreach ($plugin->get_grading_batch_operation_details() as $detail) {
+                    if ($detail->key === $action) {
+                        $validoperation = true;
+                        break;
+                    }
+                }
+            }
+            if (!$validoperation) {
+                throw new \moodle_exception('invalidbulkoperation', 'assign');
+            }
+        }
+
+        if (in_array($operation, ['lock', 'unlock', 'downloadselected', 'removesubmission'], true) &&
+                !$this->is_any_submission_plugin_enabled()) {
+            throw new \moodle_exception('invalidbulkoperation', 'assign');
+        }
+
+        // The native list handles enrolled/eligible learners, activity
+        // restrictions and (where relevant) marker allocation. Suspended
+        // learners are included here only to check the explicit capability.
+        $participants = $this->list_participants(0, true, false, false);
+        $cm = $this->get_course_module();
+        $separategroups = groups_get_activity_groupmode($cm) == SEPARATEGROUPS &&
+            !has_capability('moodle/site:accessallgroups', $this->context);
+        $allowedgroups = $separategroups ? groups_get_activity_allowed_groups($cm) : [];
+
+        foreach ($users as $userid) {
+            if (!isset($participants[$userid]) || !$this->can_view_submission($userid)) {
+                throw new \moodle_exception('invalidbulkselection', 'assign');
+            }
+            if (!$this->is_active_user($userid) &&
+                    !has_capability('moodle/course:viewsuspendedusers', $this->context)) {
+                throw new \moodle_exception('invalidbulkselection', 'assign');
+            }
+            if ($separategroups) {
+                $allowed = false;
+                foreach (array_keys($allowedgroups) as $groupid) {
+                    if (groups_is_member($groupid, $userid)) {
+                        $allowed = true;
+                        break;
+                    }
+                }
+                if (!$allowed) {
+                    throw new \moodle_exception('invalidbulkselection', 'assign');
+                }
+            }
+        }
+        return $users;
+    }
+
+    /**
      * Allows the plugin to show a batch grading operation page.
      * You should confirm sesskey before calling this function.
      *
@@ -5663,8 +5778,8 @@ class assign {
         $operation = required_param('operation', PARAM_ALPHAEXT);
         $selectedusers = required_param('selectedusers', PARAM_SEQUENCE);
 
-        // Get the list of users.
-        $userlist = explode(',', $selectedusers);
+        // Recheck selection, context and operation before any side effect.
+        $userlist = $this->validate_bulk_action_selection($selectedusers, $operation);
 
         $prefix = 'plugingradingbatchoperation_';
 
