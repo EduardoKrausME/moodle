@@ -34,7 +34,20 @@
 {{> mod_assign/grading_navigation }}
 </div>
 {{#showreview}}
-<div data-region="review-panel">
+<div class="assign-grading-mobile-tabs" data-region="grading-mobile-tabs"
+     role="tablist" aria-label="{{#str}}gradingstationpanels, mod_assign{{/str}}">
+    <button type="button" role="tab" id="assign-grading-mobile-review-tab"
+            aria-controls="assign-grading-review-content" aria-selected="false" tabindex="-1"
+            data-region="grading-mobile-tab-review">
+        {{#str}}gradingstationreview, mod_assign{{/str}}
+    </button>
+    <button type="button" role="tab" id="assign-grading-mobile-grade-tab"
+            aria-controls="assign-grading-grade-content" aria-selected="true" tabindex="0"
+            data-region="grading-mobile-tab-grade">
+        {{#str}}gradingstationgrade, mod_assign{{/str}}
+    </button>
+</div>
+<div data-region="review-panel" id="assign-grading-review-content">
     <a href="#" data-region="review-panel-toggle">
         <div class="collapse-icon">{{#pix}} t/expanded, core, {{#str}} collapsereviewpanel, mod_assign {{/str}} {{/pix}}</div>
         <div class="expand-icon">
@@ -49,15 +62,18 @@
         </div>
     </div>
 </div>
-<div data-region="resizer" tabindex="0" aria-label="{{#str}} resizelayout, mod_assign {{/str}}" title="{{#str}} resizelayout, mod_assign {{/str}}"></div>
+<div data-region="resizer" tabindex="0" role="separator" aria-orientation="vertical"
+     aria-valuemin="8" aria-valuemax="92" aria-valuenow="{{layoutsplit}}"
+     aria-label="{{#str}}resizelayout, mod_assign{{/str}}"
+     title="{{#str}}resizelayout, mod_assign{{/str}}"></div>
 {{/showreview}}
-<div data-region="grade-panel" {{^showreview}}class="fullwidth"{{/showreview}}>
+<div data-region="grade-panel" id="assign-grading-grade-content" {{^showreview}}class="fullwidth"{{/showreview}}>
 <div data-region="grade" data-contextid="{{contextid}}" data-assignmentid="{{assignmentid}}">
 {{> mod_assign/grading_panel }}
 </div>
 </div>
 <div data-region="grade-actions-panel">
-<div data-region="grade-actions">
+<div data-region="grade-actions" data-layout-mode="{{layoutmode}}" data-layout-split="{{layoutsplit}}">
 <div class="tool_usertours-resettourcontainer float-start"></div>
 {{> mod_assign/grading_actions }}
 </div>
