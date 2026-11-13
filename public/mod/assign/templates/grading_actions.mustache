@@ -43,6 +43,10 @@
         <button type="submit" class="btn btn-primary" id="saveandshownext-{{uniqid}}" name="saveandshownext">{{#str}}saveandnext{{/str}}</button>
         <button type="submit" class="btn btn-secondary" id="resetbutton-{{uniqid}}" name="resetbutton">{{#str}}reset{{/str}}</button>
     </form>
+    <div data-region="grading-save-status" class="assign-grading-save-status align-self-center"
+         role="status" aria-live="polite" aria-atomic="true" data-state="gradingnochanges">
+        {{#str}}gradingnochanges, mod_assign{{/str}}
+    </div>
     {{#showreview}}
         <div class="btn-toolbar collapse-buttons">
             <div class="btn-group">
