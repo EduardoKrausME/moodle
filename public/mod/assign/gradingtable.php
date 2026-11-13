@@ -400,8 +400,11 @@ class assign_grading_table extends table_sql implements renderable {
             $bulkactionsselection = html_writer::span(get_string('bulkactionsselection', 'assign'), 'visually-hidden');
 
             // The select all checkbox.
-            $selectalllabel = html_writer::label(
-                get_string('bulkselectallpage', 'assign'), 'selectall', false, ['class' => 'visually-hidden']
+            $selectalllabel = html_writer::label(get_string('selectall'), 'selectall', false, ['class' => 'visually-hidden']);
+            $selectallhint = html_writer::span(
+                get_string('bulkselectallpage', 'assign'),
+                'visually-hidden',
+                ['id' => 'assign-bulk-selectall-scope']
             );
             $selectallcheckbox = html_writer::empty_tag(
                 'input',
@@ -409,10 +412,11 @@ class assign_grading_table extends table_sql implements renderable {
                     'type' => 'checkbox',
                     'id' => 'selectall',
                     'name' => 'selectall',
+                    'aria-describedby' => 'assign-bulk-selectall-scope',
                 ],
             );
             $headers[] = $visibleheader . $bulkactionsselection .
-                html_writer::div($selectalllabel . $selectallcheckbox, 'selectall');
+                html_writer::div($selectalllabel . $selectallhint . $selectallcheckbox, 'selectall');
         }
 
         if ($this->hasviewblind || !$this->assignment->is_blind_marking()) {
