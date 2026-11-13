@@ -9589,6 +9589,23 @@ class assign {
             get_string('gradingassessmentdescription' . $assessmentmode, 'assign'),
             'assign-assessment-description'
         );
+        // Workflow labels are sourced from the same native state definitions
+        // used by the grading select. Never infer release from a numeric mark.
+        if ($settings->markingworkflow && $attemptnumber == -1) {
+            if ($markerpage) {
+                $ownmark = $grade ? $this->get_mark((int)$grade->id, (int)$USER->id) : null;
+                $workflowstate = $ownmark->workflowstate ?? ASSIGN_MARKING_WORKFLOW_STATE_NOTMARKED;
+            } else {
+                $workflowstate = $this->get_grading_status($userid);
+            }
+            $workflowstates = $this->get_all_marking_workflow_states();
+            if (isset($workflowstates[$workflowstate])) {
+                $summary .= html_writer::div(
+                    s(get_string('gradingassessmentworkflow', 'assign', $workflowstates[$workflowstate])),
+                    'assign-assessment-workflow'
+                );
+            }
+        }
         $progressattributes = [];
         if (in_array($assessmentmode, ['rubric', 'guide'], true)) {
             $progresskey = $assessmentmode === 'rubric' ?
@@ -9639,6 +9656,11 @@ class assign {
                 'completed' => $progress['completed'],
                 'expected' => $progress['expected'],
             ];
+            // Managing grades does not itself override the native restriction
+            // while other evaluators are still working. Restricted values are
+            // shown only with the explicit override capability.
+            $canviewindividualmarks = has_capability('mod/assign:managerestrictedgrades', $this->context) ||
+                (!$restricted && has_capability('mod/assign:managegrades', $this->context));
             $summary .= html_writer::div(
                 get_string('gradingassessmentprogress', 'assign', $progressparams),
                 'assign-assessment-progress'
@@ -9649,13 +9671,28 @@ class assign {
                 $statuskey = !$slot['enabled'] ? 'gradingassessmentoptionaloff' :
                     (!$slot['assigned'] ? 'gradingassessmentunassigned' :
                     ($slot['completed'] ? 'gradingassessmentcomplete' : 'gradingassessmentpending'));
-                $positions .= html_writer::tag('li',
-                    html_writer::span(s($positionlabel), 'assign-assessment-position') . ' ' .
-                    html_writer::span(get_string($statuskey, 'assign'), 'assign-assessment-position-state'),
-                    ['class' => 'assign-assessment-slot']
-                );
+                $positioncontent = html_writer::span(s($positionlabel), 'assign-assessment-position') . ' ' .
+                    html_writer::span(get_string($statuskey, 'assign'), 'assign-assessment-position-state');
+                if ($canviewindividualmarks && $slot['enabled'] && $slot['assigned']) {
+                    $allocation = $allocations[$slot['position']] ?? null;
+                    $mark = $allocation ? ($marks[$allocation->marker] ?? null) : null;
+                    if ($mark && isset($mark->mark) && $mark->mark >= 0) {
+                        $positioncontent .= html_writer::span(
+                            s(get_string('gradingassessmentindividualmark', 'assign', format_float($mark->mark))),
+                            'assign-assessment-individual-mark'
+                        );
+                    }
+                }
+                $positions .= html_writer::tag('li', $positioncontent, ['class' => 'assign-assessment-slot']);
             }
             $summary .= html_writer::tag('ul', $positions, ['class' => 'assign-assessment-slots']);
+            if ($canviewindividualmarks) {
+                $agreed = isset($grade->grade) && $grade->grade !== null && $grade->grade >= 0;
+                $agreedlabel = $agreed ?
+                    get_string('gradingassessmentagreedvalue', 'assign', format_float($grade->grade)) :
+                    get_string('gradingassessmentagreedpending', 'assign');
+                $summary .= html_writer::div(s($agreedlabel), 'assign-assessment-agreed');
+            }
         }
         $mform->addElement('html', html_writer::tag('section', $summary, [
             'class' => 'assign-assessment-summary',
