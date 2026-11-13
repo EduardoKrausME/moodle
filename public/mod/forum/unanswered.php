@@ -69,6 +69,17 @@ foreach (['oldest', 'newest'] as $value) {
         'selected' => $value === $sort,
     ];
 }
+$participationurl = '';
+if ($courseid > 0) {
+    $participationcourses = \mod_forum\local\participation_report::get_course_options();
+    if (in_array($courseid, array_column($participationcourses, 'id'), true)) {
+        $allowedforums = \mod_forum\local\participation_report::get_forum_options($courseid);
+        $targetforum = $forumid && in_array($forumid, array_column($allowedforums, 'id'), true) ? $forumid : 0;
+        $participationurl = (new \moodle_url('/mod/forum/participation.php', [
+            'courseid' => $courseid, 'forumid' => $targetforum,
+        ]))->out(false);
+    }
+}
 $context = \context_system::instance();
 $url = new \moodle_url('/mod/forum/unanswered.php', [
     'courseid' => $courseid,
@@ -87,6 +98,7 @@ $PAGE->requires->js_call_amd('mod_forum/unanswered', 'init');
 
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('mod_forum/unanswered_page', [
+    'participationurl' => $participationurl,
     'actionurl' => (new \moodle_url('/mod/forum/unanswered.php'))->out(false),
     'courses' => $courses,
     'forums' => $forums,

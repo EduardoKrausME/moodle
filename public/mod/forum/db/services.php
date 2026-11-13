@@ -265,6 +265,15 @@ $functions = array(
         'ajax' => true,
     ],
 
+    'mod_forum_get_participation_report' => [
+        'classname' => 'mod_forum\\external\\get_participation_report',
+        'methodname' => 'execute',
+        'description' => 'Read permission-scoped aggregated forum participation metrics.',
+        'type' => 'read',
+        'ajax' => true,
+        'capabilities' => 'mod/forum:viewparticipationreport',
+    ],
+
     'mod_forum_get_unanswered_discussions' => [
         'classname' => 'mod_forum\\external\\get_unanswered_discussions',
         'methodname' => 'execute',

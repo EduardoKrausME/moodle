@@ -178,6 +178,18 @@ $rendererfactory = mod_forum\local\container::get_renderer_factory();
 // The elements for view action are rendered and added to the page.
 echo forum_activity_actionbar($forum, $groupid, $course, $search);
 
+// Participation report is read-only and uses its own module-scoped capability.
+if (has_capability('mod/forum:viewparticipationreport', $forum->get_context(), $USER) &&
+        has_capability('mod/forum:viewdiscussion', $forum->get_context(), $USER)) {
+    $participationurl = new \moodle_url('/mod/forum/participation.php', [
+        'courseid' => $course->id,
+        'forumid' => $forum->get_id(),
+    ]);
+    echo $OUTPUT->container(\html_writer::link($participationurl,
+        get_string('participationtitle', 'mod_forum'), ['class' => 'btn btn-outline-secondary']),
+        'mb-3');
+}
+
 // Read-only teacher queue is separate from ordinary forum navigation.
 if (has_capability('mod/forum:viewunanswered', $forum->get_context(), $USER) &&
         has_capability('mod/forum:viewdiscussion', $forum->get_context(), $USER)) {

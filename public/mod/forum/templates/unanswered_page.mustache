@@ -5,6 +5,11 @@
 <div class="forum-unanswered" data-region="forum-unanswered"
      data-cursor="{{nextcursor}}" data-has-more="{{#hasmore}}1{{/hasmore}}{{^hasmore}}0{{/hasmore}}">
     <p class="text-muted">{{#str}}unansweredsubtitle, mod_forum{{/str}}</p>
+    {{#participationurl}}
+        <p><a class="btn btn-outline-secondary" href="{{participationurl}}">
+            {{#str}}participationtitle, mod_forum{{/str}}
+        </a></p>
+    {{/participationurl}}
     <form action="{{actionurl}}" method="get" data-region="unanswered-filters" class="mb-4">
         <div class="forum-unanswered__filters">
             <div>

@@ -588,3 +588,45 @@ span.unread {
         text-align: start;
     }
 }
+
+/* Participation report: cards, keyboard-readable graph and responsive filters. */
+.forum-participation__filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+
+.forum-participation__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.forum-participation__metric strong {
+    font-variant-numeric: tabular-nums;
+}
+
+.forum-participation__bar {
+    min-width: 1px;
+    height: 0.8rem;
+    background-color: var(--bs-primary);
+}
+
+.forum-participation__bar--reply {
+    background-color: var(--bs-info);
+}
+
+.forum-participation__chart-table {
+    min-width: 480px;
+}
+
+.forum-participation__chart-table td {
+    vertical-align: middle;
+}
+
+@media (max-width: 575.98px) {
+    .forum-participation__filters {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
