@@ -317,8 +317,9 @@ define([
      * @method _chooseAttempt
      */
     GradingPanel.prototype._chooseAttempt = function(e) {
-        // Show a dialog.
-
+        if (this._saveState.isBusy() || this._confirmingOptionalMarker) {
+            return;
+        }
         // The form is in the element pointed to by data-submissions.
         var link = $(e.target);
         var submissionsId = link.data('submissions');
@@ -333,8 +334,23 @@ define([
         ]).done(function(strs) {
             notification.confirm(strs[0], formhtml, strs[1], strs[2], function() {
                 var attemptnumber = $("input:radio[name='select-attemptnumber']:checked").val();
+                const loadAttempt = () => this._refreshGradingPanel(null, this._lastUserId, '', attemptnumber);
+                if (!checker.checkFormForChanges('[data-region="grade-panel"] .gradeform')) {
+                    loadAttempt();
+                    return;
+                }
 
-                this._refreshGradingPanel(null, this._lastUserId, '', attemptnumber);
+                // An older attempt loads an entirely new native form. Do not
+                // replace an unsaved grade or feedback without explicit consent.
+                str.get_strings([
+                    {key: 'unsavedchanges', component: 'mod_assign'},
+                    {key: 'unsavedchangesquestion', component: 'mod_assign'},
+                    {key: 'gradingdiscardchanges', component: 'mod_assign'},
+                    {key: 'cancel', component: 'core'},
+                ]).then(function(labels) {
+                    notification.confirm(labels[0], labels[1], labels[2], labels[3], loadAttempt);
+                    return labels;
+                }).catch(notification.exception);
             }.bind(this));
         }.bind(this)).fail(notification.exception);
     };
