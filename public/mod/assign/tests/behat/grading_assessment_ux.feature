@@ -128,3 +128,23 @@ Feature: Native grading instruments have a consistent accessible assignment grad
     And I click on "Assessment" "button"
     Then "[data-region='grade-panel'] form.gradeform" "css_element" should exist
     And "[data-region='assign-assessment-summary']" "css_element" should exist
+
+  Scenario: A manager's multiple-marker overview never reveals marker identities
+    Given the following "activity" exists:
+      | activity | assign |
+      | course | C1 |
+      | name | Private marker overview |
+      | markingworkflow | 1 |
+      | markingallocation | 1 |
+      | markercount | 2 |
+      | grade[modgrade_type] | point |
+      | grade[modgrade_point] | 100 |
+    And the following "mod_assign > marker_allocations" exist:
+      | assign | user | marker |
+      | Private marker overview | student1 | teacher1 |
+      | Private marker overview | student1 | teacher2 |
+    When I go to "Student One" "Private marker overview" activity advanced grading page logged in as teacher1
+    Then "[data-region='assign-assessment-summary'][data-assessment-mode='multiple']" "css_element" should exist
+    And I should see "2 expected marks" in the "[data-region='assign-assessment-summary']" "css_element"
+    And I should not see "Teacher One" in the "[data-region='assign-assessment-summary']" "css_element"
+    And I should not see "Teacher Two" in the "[data-region='assign-assessment-summary']" "css_element"
