@@ -146,6 +146,11 @@ export const init = () => {
         group.value = '0';
         window.location.assign(urlForFilters().toString());
     });
+    // Group choices may differ between forums in the same course.
+    forum.addEventListener('change', () => {
+        group.value = '0';
+        window.location.assign(urlForFilters().toString());
+    });
     form.addEventListener('submit', event => {
         event.preventDefault();
         window.history.pushState({forumUnanswered: true}, '', urlForFilters().toString());
@@ -155,13 +160,15 @@ export const init = () => {
     retry.addEventListener('click', () => load());
     window.addEventListener('popstate', () => {
         const params = new URL(window.location.href).searchParams;
-        if (Number(params.get('courseid') || 0) !== Number(course.value)) {
+        if (Number(params.get('courseid') || 0) !== Number(course.value) ||
+                Number(params.get('forumid') || 0) !== Number(forum.value)) {
             window.location.reload();
             return;
         }
-        for (const input of [forum, group, status, sort]) {
-            const value = params.get(input.name);
-            if (value !== null && [...input.options].some(option => option.value === value)) {
+        for (const input of [group, status, sort]) {
+            const defaults = {groupid: '0', status: 'all', sort: 'oldest'};
+            const value = params.get(input.name) || defaults[input.name];
+            if ([...input.options].some(option => option.value === value)) {
                 input.value = value;
             }
         }

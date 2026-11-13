@@ -534,7 +534,7 @@ span.unread {
 /* Teacher's read-only question queue. */
 .forum-unanswered__filters {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
     gap: 1rem;
     align-items: end;
 }
@@ -544,7 +544,7 @@ span.unread {
 }
 .forum-unanswered__metrics {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
     gap: .75rem;
 }
 .forum-unanswered__metric {
@@ -553,7 +553,13 @@ span.unread {
 .forum-unanswered__item:focus-within {
     border-color: var(--bs-primary);
 }
+
 @media (max-width: 575.98px) {
+    .forum-unanswered__filters,
+    .forum-unanswered__metrics {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     .forum-unanswered__actions {
         flex-direction: column;
         align-items: stretch;

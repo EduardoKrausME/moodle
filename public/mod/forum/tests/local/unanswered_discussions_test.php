@@ -206,9 +206,10 @@ final class unanswered_discussions_test extends \advanced_testcase {
         $group2 = $generator->create_group(['courseid' => $course->id]);
         $generator->create_group_member(['groupid' => $group1->id, 'userid' => $author->id]);
         $generator->create_group_member(['groupid' => $group2->id, 'userid' => $author->id]);
-        // The forum is switched to visible groups to permit observation by all teachers.
-        set_coursemodule_groupmode($forum->cmid, VISIBLEGROUPS);
-        rebuild_course_cache($course->id, true);
+        // Create a grouped activity without deprecated groupmode setters.
+        $forum = $generator->create_module('forum', [
+            'course' => $course->id, 'groupmode' => VISIBLEGROUPS,
+        ]);
         $first = self::getDataGenerator()->get_plugin_generator('mod_forum')->create_discussion((object)[
             'forum' => $forum->id, 'course' => $course->id, 'userid' => $author->id,
             'name' => 'Group one question', 'groupid' => $group1->id,

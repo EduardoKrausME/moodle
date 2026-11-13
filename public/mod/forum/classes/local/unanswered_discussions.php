@@ -228,7 +228,8 @@ final class unanswered_discussions {
         $scanned = 0;
         $limited = false;
         $records = $DB->get_recordset_sql(
-            "SELECT p.*
+            "SELECT p.id, p.discussion, p.parent, p.userid, p.created, p.modified,
+                    p.deleted, p.privatereplyto, p.mailnow
                FROM {forum_posts} p JOIN {forum_discussions} d ON d.id = p.discussion
               WHERE {$where} ORDER BY p.id ASC", $params, 0, self::MAX_REPLY_ROWS + 1);
         foreach ($records as $post) {
@@ -343,6 +344,10 @@ final class unanswered_discussions {
                 $forum = $forums[$forumidforpost];
                 $context = $modules[$forumidforpost];
                 $firstpost = $firstposts[$discussion->firstpost] ?? null;
+                if ($groupid && groups_get_activity_groupmode($context['cm'],
+                        $context['course']) === NOGROUPS) {
+                    continue;
+                }
                 if (!$firstpost || !forum_user_can_see_discussion($forum, $discussion,
                         $context['context'], $USER) ||
                         !forum_user_can_see_post($forum, $discussion, $firstpost,
@@ -364,7 +369,9 @@ final class unanswered_discussions {
             foreach ($candidates as $discussion) {
                 $scanned++;
                 $id = (int)$discussion->id;
-                if (isset($visible[$id]) && !isset($unknown[$id])) {
+                // An accessible accepted post determines the outcome without
+                // requiring a complete scan of unrelated replies.
+                if (isset($visible[$id]) && (!isset($unknown[$id]) || isset($solutions[$id]))) {
                     $forum = $visible[$id]['forum'];
                     $module = $modules[(int)$discussion->forum];
                     $accepted = isset($solutions[$id]);
