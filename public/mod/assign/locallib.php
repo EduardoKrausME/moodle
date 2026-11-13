@@ -3630,7 +3630,14 @@ class assign {
                 $users = required_param('selectedusers', PARAM_SEQUENCE);
             }
         }
-        $userlist = explode(',', $users);
+        $bulkusers = optional_param('selectedusers', '', PARAM_SEQUENCE);
+        if ($bulkusers !== '') {
+            require_sesskey();
+            $userlist = $this->validate_bulk_action_selection($bulkusers, 'grantextension');
+            $users = implode(',', $userlist);
+        } else {
+            $userlist = explode(',', $users);
+        }
 
         $keys = array('duedate', 'cutoffdate', 'allowsubmissionsfromdate');
         $maxoverride = array('allowsubmissionsfromdate' => 0, 'duedate' => 0, 'cutoffdate' => 0);
@@ -5748,18 +5755,19 @@ class assign {
      * @return none
      */
     protected function view_plugin_grading_batch_operation() {
+        require_sesskey();
         require_capability('mod/assign:grade', $this->context);
         $prefix = 'plugingradingbatchoperation_';
 
         $operation = required_param('operation', PARAM_ALPHAEXT);
+        $selectedusers = required_param('selectedusers', PARAM_SEQUENCE);
+        $userlist = $this->validate_bulk_action_selection($selectedusers, $operation);
 
         $tail = substr($operation, strlen($prefix));
         list($plugintype, $action) = explode('_', $tail, 2);
 
         $plugin = $this->get_feedback_plugin_by_type($plugintype);
-        if ($plugin) {
-            $users = required_param('selectedusers', PARAM_SEQUENCE);
-            $userlist = explode(',', $users);
+        if ($plugin && $plugin->is_visible() && $plugin->is_enabled()) {
             echo $plugin->grading_batch_operation($action, $userlist);
             return;
         }
@@ -5839,8 +5847,10 @@ class assign {
 
         $o = '';
 
+        require_sesskey();
         $users = required_param('selectedusers', PARAM_SEQUENCE);
-        $userlist = explode(',', $users);
+        $userlist = $this->validate_bulk_action_selection($users, 'setmarkingworkflowstate');
+        $users = implode(',', $userlist);
 
         $formdata = array('id' => $this->get_course_module()->id,
                           'selectedusers' => $users);
@@ -5907,8 +5917,10 @@ class assign {
 
         $o = '';
 
+        require_sesskey();
         $users = required_param('selectedusers', PARAM_SEQUENCE);
-        $userlist = explode(',', $users);
+        $userlist = $this->validate_bulk_action_selection($users, 'setmarkingallocation');
+        $users = implode(',', $userlist);
 
         $formdata = array('id' => $this->get_course_module()->id,
                           'selectedusers' => $users);
@@ -8349,7 +8361,7 @@ class assign {
 
         if ($formdata = $mform->get_data()) {
             if (!empty($formdata->selectedusers)) {
-                $users = explode(',', $formdata->selectedusers);
+                $users = $this->validate_bulk_action_selection($formdata->selectedusers, 'grantextension');
                 $result = true;
                 foreach ($users as $userid) {
                     $user = $DB->get_record('user', array('id' => $userid), '*', MUST_EXIST);
@@ -10221,7 +10233,10 @@ class assign {
         }
 
         if ($formdata = $mform->get_data()) {
-            $useridlist = explode(',', $formdata->selectedusers);
+            require_sesskey();
+            $useridlist = $this->validate_bulk_action_selection(
+                $formdata->selectedusers, 'setmarkingworkflowstate'
+            );
             $state = $formdata->markingworkflowstate;
 
             foreach ($useridlist as $userid) {
@@ -10328,7 +10343,10 @@ class assign {
         }
 
         if ($formdata = $mform->get_data()) {
-            $useridlist = explode(',', $formdata->selectedusers);
+            require_sesskey();
+            $useridlist = $this->validate_bulk_action_selection(
+                $formdata->selectedusers, 'setmarkingallocation'
+            );
             $allocatedmarkers = $formdata->allocatedmarker ?? [];
             $enabledmarkers = $formdata->allocatedmarkerenabled ?? [];
 
