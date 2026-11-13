@@ -148,3 +148,65 @@ Feature: Teachers see accurate, permission-aware progress for current assignment
     Then ".assign-grading-dashboard" "css_element" should exist
     When I click on "Show original grading summary" "text"
     Then I should see "Number of participants" in the ".gradingsummarytable" "css_element"
+
+  @javascript
+  Scenario: A saved draft is not counted as a final submission
+    Given the following "activity" exists:
+      | activity | assign |
+      | course | C1 |
+      | name | Draft progress |
+      | submissiondrafts | 1 |
+      | assignsubmission_onlinetext_enabled | 1 |
+    And I am on the "Draft progress" Activity page logged in as student1
+    And I press "Add submission"
+    And I set the field "Online text" to "Work in progress"
+    And I press "Save changes"
+    When I am on the "Draft progress" Activity page logged in as teacher1
+    Then I should see "1" in the ".assign-grading-dashboard-card--drafts" "css_element"
+    And I should see "0" in the ".assign-grading-dashboard-card--submitted" "css_element"
+    And I should see "0" in the ".assign-grading-dashboard-card--graded" "css_element"
+
+  @javascript
+  Scenario: Reopening creates a new current attempt without reusing an old grade
+    Given the following "activity" exists:
+      | activity | assign |
+      | course | C1 |
+      | name | Reopened progress |
+      | submissiondrafts | 0 |
+      | maxattempts | 3 |
+      | attemptreopenmethod | manual |
+      | assignsubmission_onlinetext_enabled | 1 |
+    And the following "mod_assign > submissions" exist:
+      | assign | user | onlinetext |
+      | Reopened progress | student1 | First attempt |
+    And I am on the "Reopened progress" Activity page logged in as teacher1
+    And I go to "Student One" "Reopened progress" activity advanced grading page
+    And I set the field "Grade out of 100" to "80"
+    And I set the field "Allow another attempt" to "1"
+    And I press "Save changes"
+    When I am on the "Reopened progress" Activity page logged in as teacher1
+    Then I should see "0" in the ".assign-grading-dashboard-card--submitted" "css_element"
+    And I should see "0" in the ".assign-grading-dashboard-card--graded" "css_element"
+    And I should see "0" in the ".assign-grading-dashboard-card--pending" "css_element"
+
+  @javascript
+  Scenario: An assessment in workflow review is not described as released
+    Given the following "activity" exists:
+      | activity | assign |
+      | course | C1 |
+      | name | Workflow progress |
+      | submissiondrafts | 0 |
+      | markingworkflow | 1 |
+      | assignsubmission_onlinetext_enabled | 1 |
+    And the following "mod_assign > submissions" exist:
+      | assign | user | onlinetext |
+      | Workflow progress | student1 | Answer to review |
+    And I am on the "Workflow progress" Activity page logged in as teacher1
+    And I go to "Student One" "Workflow progress" activity advanced grading page
+    And I set the field "Grade out of 100" to "65"
+    And I set the field "Marking workflow state" to "In review"
+    And I press "Save changes"
+    When I am on the "Workflow progress" Activity page logged in as teacher1
+    Then I should see "1" in the ".assign-grading-dashboard-card--graded" "css_element"
+    And I should see "0" in the ".assign-grading-dashboard-card--pending" "css_element"
+    And I should see "may not yet be released to students" in the ".assign-grading-dashboard" "css_element"
