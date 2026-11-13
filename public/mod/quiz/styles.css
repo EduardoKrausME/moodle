@@ -2839,3 +2839,29 @@ table.quizreviewsummary td.cell {
         min-width: 0;
     }
 }
+
+/* Contextual guidance is part of the quiz settings form, not the attempt or review UI. */
+.path-mod-quiz .mod-quiz-settings-guidance {
+    margin: 0.625rem 0 1rem;
+    padding: 0.75rem 0.875rem;
+    border-inline-start: 3px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-sm, 0.25rem);
+    background: var(--bs-tertiary-bg, var(--bs-light));
+    color: var(--bs-body-color, inherit);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+.path-mod-quiz .mod-quiz-settings-guidance__title {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+.path-mod-quiz .mod-quiz-settings-guidance__message {
+    display: block;
+}
+@media (max-width: 767.98px) {
+    .path-mod-quiz .mod-quiz-settings-guidance {
+        width: 100%;
+        min-width: 0;
+        padding: 0.625rem 0.75rem;
+    }
+}

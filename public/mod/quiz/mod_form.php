@@ -144,6 +144,8 @@ class mod_quiz_mod_form extends moodleform_mod {
             $mform->addHelpButton('precreateattempts', 'precreateattempts', 'quiz');
         }
 
+        $this->add_settings_guidance($mform, 'timing');
+
         // -------------------------------------------------------------------------------
         // Grade settings.
         $this->standard_grading_coursemodule_elements();
@@ -173,6 +175,8 @@ class mod_quiz_mod_form extends moodleform_mod {
             $mform->hideIf('grademethod', 'attempts', 'eq', 1);
         }
 
+        $this->add_settings_guidance($mform, 'grading');
+
         // -------------------------------------------------------------------------------
         $mform->addElement('header', 'layouthdr', get_string('layout', 'quiz'));
 
@@ -195,6 +199,7 @@ class mod_quiz_mod_form extends moodleform_mod {
         $mform->addElement('select', 'navmethod', get_string('navmethod', 'quiz'),
                 quiz_get_navigation_options());
         $mform->addHelpButton('navmethod', 'navmethod', 'quiz');
+        $this->add_settings_guidance($mform, 'layout');
 
         // -------------------------------------------------------------------------------
         $mform->addElement('header', 'interactionhdr', get_string('questionbehaviour', 'quiz'));
@@ -231,6 +236,7 @@ class mod_quiz_mod_form extends moodleform_mod {
         if ($this->get_max_attempts_for_any_override() < 2) {
             $mform->hideIf('attemptonlast', 'attempts', 'eq', 1);
         }
+        $this->add_settings_guidance($mform, 'behaviour');
 
         // -------------------------------------------------------------------------------
         $mform->addElement('header', 'reviewoptionshdr',
@@ -261,6 +267,7 @@ class mod_quiz_mod_form extends moodleform_mod {
         foreach (self::$reviewfields as $field => $notused) {
             $mform->disabledIf($field . 'closed', 'timeclose[enabled]');
         }
+        $this->add_settings_guidance($mform, 'review');
 
         // -------------------------------------------------------------------------------
         $mform->addElement('header', 'display', get_string('appearance'));
@@ -328,6 +335,7 @@ class mod_quiz_mod_form extends moodleform_mod {
 
         // Any other rule plugins.
         access_manager::add_settings_form_fields($this, $mform);
+        $this->add_settings_guidance($mform, 'restrictions');
 
         // -------------------------------------------------------------------------------
         $mform->addElement('header', 'overallfeedbackhdr', get_string('overallfeedback', 'quiz'));
@@ -387,6 +395,8 @@ class mod_quiz_mod_form extends moodleform_mod {
             $mform->disabledIf('feedbacktext[' . ($i + 1) . ']', 'grade', 'eq', 0);
         }
 
+        $this->add_settings_guidance($mform, 'feedback');
+
         // -------------------------------------------------------------------------------
         $this->standard_coursemodule_elements();
 
@@ -402,6 +412,51 @@ class mod_quiz_mod_form extends moodleform_mod {
         $this->add_action_buttons();
 
         $PAGE->requires->yui_module('moodle-mod_quiz-modform', 'M.mod_quiz.modform.init');
+        $PAGE->requires->js_call_amd('mod_quiz/settings_guidance', 'init');
+    }
+
+    /**
+     * Add read-only guidance alongside existing Moodle form elements.
+     *
+     * The text remains useful without JavaScript. Data attributes contain only
+     * translated, public explanations; no quiz password, values or personal data.
+     * No form input is added and no rule is changed.
+     *
+     * @param \MoodleQuickForm $mform Native Moodle form.
+     * @param string $area Settings group.
+     */
+    protected function add_settings_guidance($mform, string $area): void {
+        $messages = [
+            'timing' => ['base', 'open', 'due', 'close', 'limit', 'grace'],
+            'grading' => ['base', 'single', 'multiple', 'unlimited'],
+            'layout' => ['base', 'sequential', 'free', 'repaginate'],
+            'behaviour' => ['base', 'redo', 'reuse'],
+            'review' => ['base', 'closeoff', 'answers', 'marks'],
+            'restrictions' => ['base', 'password', 'subnet', 'delays', 'browser'],
+            'feedback' => ['base', 'nograde'],
+        ];
+        if (!isset($messages[$area])) {
+            throw new \coding_exception('Unknown quiz settings guidance area: ' . $area);
+        }
+        $attributes = [
+            'class' => 'mod-quiz-settings-guidance',
+            'data-region' => 'quiz-settings-guidance',
+            'data-guidance' => $area,
+            'role' => 'note',
+        ];
+        foreach ($messages[$area] as $message) {
+            $attributes['data-message-' . $message] = get_string('settingsguidance' . $area . $message, 'quiz');
+        }
+
+        $label = \html_writer::tag('strong', get_string('settingsguidanceheading', 'quiz'),
+                ['class' => 'mod-quiz-settings-guidance__title']);
+        $summary = \html_writer::tag('span', s(get_string('settingsguidance' . $area . 'base', 'quiz')), [
+            'data-region' => 'quiz-settings-guidance-message',
+            'class' => 'mod-quiz-settings-guidance__message',
+            'aria-live' => 'polite',
+            'aria-atomic' => 'true',
+        ]);
+        $mform->addElement('html', \html_writer::div($label . ' ' . $summary, '', $attributes));
     }
 
     protected function add_review_options_group($mform, $quizconfig, $whenname,
