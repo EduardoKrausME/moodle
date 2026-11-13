@@ -123,7 +123,6 @@ class grading_actionmenu implements templatable, renderable {
         );
         $data['userselector'] = $userselector->export_for_template($output);
 
-        $hasinitials = !empty($this->userinitials['firstname']) || !empty($this->userinitials['lastname']);
         $activitygroup = groups_get_activity_group($cm);
         $statusfilter = get_user_preferences('assign_filter', '');
         $filterstate = [
@@ -200,12 +199,6 @@ class grading_actionmenu implements templatable, renderable {
         // and advanced preferences, rather than reverting to a partial URL.
         $additionalparams = $navigationparams;
         unset($additionalparams['tifirst'], $additionalparams['tilast']);
-
-        if (!empty($userid)) {
-            $additionalparams['userid'] = $userid;
-        } else if (!empty($usersearch)) {
-            $additionalparams['search'] = $usersearch;
-        }
 
         $initialselector = new \core_course\output\actionbar\initials_selector(
             course: $course,
@@ -349,6 +342,7 @@ class grading_actionmenu implements templatable, renderable {
     /**
      * Get the status menu for the grading action menu.
      *
+     * @param array $navigationparams Authorised, whitelisted navigation state.
      * @return array An array containing the status menu and the current value.
      */
     private function get_status_menu(array $navigationparams): array {
@@ -384,6 +378,7 @@ class grading_actionmenu implements templatable, renderable {
     /**
      * The renderable for the extra filters dropdown, if available.
      *
+     * @param array $navigationparams Authorised, whitelisted navigation state.
      * @return dialog|null The renderable for the extra filters dropdown, if available.
      */
     private function get_extra_filters_dropdown(array $navigationparams): ?dialog {
@@ -464,17 +459,23 @@ class grading_actionmenu implements templatable, renderable {
     private function get_applied_extra_filters_count(): int {
         $appliedextrafilterscount = 0;
 
-        // If marking workflow is enabled.
+        // Count only values which are valid for this activity and currently
+        // available to the teacher, not stale preferences from another task.
         if ($this->assign->get_instance()->markingworkflow) {
-            if (get_user_preferences('assign_workflowfilter')) {
+            $workflowfilter = get_user_preferences('assign_workflowfilter', '');
+            if ($workflowfilter !== '' &&
+                    array_key_exists($workflowfilter, $this->assign->get_marking_workflow_filters())) {
                 $appliedextrafilterscount++;
             }
 
             $canallocatemarker = $this->assign->get_instance()->markingallocation &&
                 has_capability('mod/assign:manageallocations', $this->assign->get_context());
-
-            if ($canallocatemarker && get_user_preferences('assign_markerfilter')) {
-                $appliedextrafilterscount++;
+            if ($canallocatemarker) {
+                $markerfilter = get_user_preferences('assign_markerfilter', '');
+                if ($markerfilter !== '' &&
+                        array_key_exists($markerfilter, $this->assign->get_marking_allocation_filters())) {
+                    $appliedextrafilterscount++;
+                }
             }
         }
 
