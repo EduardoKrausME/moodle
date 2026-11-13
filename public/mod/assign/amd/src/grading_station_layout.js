@@ -35,6 +35,7 @@ define(['core_user/repository', 'core/notification'], function(UserRepository, N
             this.activeTab = 'grade';
             this.restoring = false;
             this.pointerId = null;
+            this.mouseDragStarted = false;
             this.saveQueue = Promise.resolve();
             this.mode = this.root ? this.root.dataset.layoutMode : 'split';
             if (!['split', 'grade', 'review'].includes(this.mode)) {
@@ -119,8 +120,14 @@ define(['core_user/repository', 'core/notification'], function(UserRepository, N
                     this.captureNativeResize();
                 }
             });
-            document.addEventListener('mouseup', event => {
+            this.resizer.addEventListener('mousedown', event => {
                 if (event.button === 0 && !this.mobile.matches) {
+                    this.mouseDragStarted = true;
+                }
+            });
+            document.addEventListener('mouseup', event => {
+                if (this.mouseDragStarted && event.button === 0 && !this.mobile.matches) {
+                    this.mouseDragStarted = false;
                     this.captureNativeResize();
                 }
             });
@@ -215,7 +222,7 @@ define(['core_user/repository', 'core/notification'], function(UserRepository, N
             [[this.review, reviewActive, this.reviewTab], [this.grade, !reviewActive, this.gradeTab]]
                 .forEach(([panel, active, button]) => {
                     if (!active && panel.contains(document.activeElement)) {
-                        button.focus();
+                        (reviewActive ? this.reviewTab : this.gradeTab).focus();
                     }
                     panel.setAttribute('role', 'tabpanel');
                     panel.setAttribute('aria-labelledby', button.id);
