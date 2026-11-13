@@ -5809,27 +5809,53 @@ class assign {
         }
 
         if ($operation == 'downloadselected') {
+            // Download has its own response and may terminate the request.
             $this->download_submissions($userlist);
+        } else if ($this->get_instance()->teamsubmission && $operation == 'addattempt') {
+            // One attempt per team, never one per selected team member.
+            // Group operations can partially succeed, so do not invent a
+            // per-student success count from a single boolean.
+            $this->process_add_attempt_group($userlist);
+            \core\notification::add(
+                get_string('bulkoperationcompletednotice', 'assign'),
+                \core\output\notification::NOTIFY_INFO
+            );
         } else {
+            $processed = 0;
+            $skipped = 0;
             foreach ($userlist as $userid) {
+                // Preserve native per-user operations, permissions, plugins
+                // and submission/gradebook side effects. Do not retry writes.
+                $result = false;
                 if ($operation == 'lock') {
-                    $this->process_lock_submission($userid);
+                    $result = $this->process_lock_submission($userid);
                 } else if ($operation == 'unlock') {
-                    $this->process_unlock_submission($userid);
+                    $result = $this->process_unlock_submission($userid);
                 } else if ($operation == 'reverttodraft') {
-                    $this->process_revert_to_draft($userid);
+                    $result = $this->process_revert_to_draft($userid);
                 } else if ($operation == 'removesubmission') {
-                    $this->process_remove_submission($userid);
+                    $result = $this->process_remove_submission($userid);
                 } else if ($operation == 'addattempt') {
-                    if (!$this->get_instance()->teamsubmission) {
-                        $this->process_add_attempt($userid);
-                    }
+                    $result = $this->process_add_attempt($userid);
+                }
+                if ($result) {
+                    $processed++;
+                } else {
+                    $skipped++;
                 }
             }
-        }
-        if ($this->get_instance()->teamsubmission && $operation == 'addattempt') {
-            // This needs to be handled separately so that each team submission is only re-opened one time.
-            $this->process_add_attempt_group($userlist);
+            // Report exactly what the native calls returned. This is not an
+            // atomic rollback guarantee and may not cover group side effects.
+            $message = get_string('bulkoperationprocessedcount', 'assign', (object)[
+                'processed' => $processed,
+                'selected' => count($userlist),
+                'skipped' => $skipped,
+            ]);
+            \core\notification::add(
+                $message,
+                $skipped ? \core\output\notification::NOTIFY_WARNING :
+                    \core\output\notification::NOTIFY_SUCCESS
+            );
         }
 
         return 'grading';
