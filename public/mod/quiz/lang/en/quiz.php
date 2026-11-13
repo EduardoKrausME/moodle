@@ -1251,3 +1251,5 @@ $string['quizselectionprocessing'] = 'Saving the question selection...';
 $string['quizselectionselectedcount'] = 'Selected on this page: {$a}';
 $string['quizselectiondestination'] = 'Add to';
 $string['quizselectionatend'] = 'End of quiz';
+$string['quizselectioninvalidcount'] = 'Choose between 1 and 100 random questions.';
+$string['quizselectioninvalidfilter'] = 'The random-question filters are invalid. Reload the dialog and try again.';

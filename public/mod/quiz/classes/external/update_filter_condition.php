@@ -81,7 +81,7 @@ class update_filter_condition extends external_api {
 
         $filtercondition = json_decode($filtercondition, true);
         if (!is_array($filtercondition)) {
-            throw new invalid_parameter_exception('Invalid random question filter JSON.');
+            throw new invalid_parameter_exception(get_string('quizselectioninvalidfilter', 'quiz'));
         }
         $structure = quiz_settings::create_for_cmid($cmid)->get_structure();
         $structure->update_random_question($slotid, $filtercondition);

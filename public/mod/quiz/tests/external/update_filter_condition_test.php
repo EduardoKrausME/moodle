@@ -144,7 +144,8 @@ final class update_filter_condition_test extends advanced_testcase {
     }
 
     /**
-     * Test updating the filter conditions of a random question with an invalid array of conditions
+     * Test that malformed JSON is reported as an invalid parameter, not as a type error.
+     *
      * @return void
      */
     public function test_malformed_filter_json_is_rejected(): void {
@@ -159,6 +160,11 @@ final class update_filter_condition_test extends advanced_testcase {
         update_filter_condition::execute($cm->id, $reference->itemid, '{invalid');
     }
 
+    /**
+     * Test updating the filter conditions of a random question with an invalid array of conditions.
+     *
+     * @return void
+     */
     public function test_invalid_filter_condition(): void {
 
         global $DB;

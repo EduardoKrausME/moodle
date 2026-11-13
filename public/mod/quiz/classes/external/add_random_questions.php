@@ -108,12 +108,12 @@ class add_random_questions extends \core_external\external_api {
 
         // Match the native selection limit and reject invalid JSON before calling the structure API.
         if ($randomcount < 1 || $randomcount > 100) {
-            throw new invalid_parameter_exception('randomcount must be between 1 and 100.');
+            throw new invalid_parameter_exception(get_string('quizselectioninvalidcount', 'quiz'));
         }
         if (!empty($filtercondition)) {
             $decoded = json_decode($filtercondition, true);
             if (!is_array($decoded)) {
-                throw new invalid_parameter_exception('Invalid random question filter JSON.');
+                throw new invalid_parameter_exception(get_string('quizselectioninvalidfilter', 'quiz'));
             }
         }
 
