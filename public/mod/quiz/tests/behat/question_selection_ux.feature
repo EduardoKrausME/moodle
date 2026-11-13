@@ -36,6 +36,8 @@ Feature: Modern question bank and random question selection
     And ".mod-quiz-selector-bank" "css_element" should exist
     And "button[data-action='switch-question-bank']" "css_element" should exist
     And "form#questionsubmit" "css_element" should exist
+    And "[data-region='quiz-selection-selected'][aria-live='polite']" "css_element" should exist
+    And I should see "Selected on this page: 0"
     And I should see "Essay one" in the "categoryquestions" "table"
     And I should see "Essay two" in the "categoryquestions" "table"
 
@@ -45,7 +47,9 @@ Feature: Modern question bank and random question selection
     And I follow "a random question"
     Then ".mod-quiz-selector-dialog" "css_element" should exist
     And "a[role='tab'][aria-controls]" "css_element" should exist
-    And "#menurandomcount[name='randomcount']" "css_element" should exist
+    And "#menurandomcount[name='randomcount'][aria-describedby='quiz-random-candidate-help']" "css_element" should exist
+    And ".mod-quiz-selector-form__destination" "css_element" should exist
+    And I should see "End of quiz" in ".mod-quiz-selector-form__destination" "css_element"
     And "[data-region='quiz-selection-status'][aria-live='polite']" "css_element" should exist
     And I should see "The matching questions are candidates for random selection"
     And I apply question bank filter "Category" with value "Questions Category 1"

@@ -49,10 +49,15 @@ final class question_selection_ux_test extends \advanced_testcase {
             'questionbank' => '<div id="questionscontainer"><input name="cmid" value="99"></div>',
             'randomoptions' => [['value' => 1, 'name' => '1'], ['value' => 2, 'name' => '2']],
             'questioncategoryoptions' => [],
+            'targetpage' => 'Page 2',
         ]);
 
         $this->assertStringContainsString('id="add_random_question_form"', $html);
         $this->assertStringContainsString('id="menurandomcount"', $html);
+        $this->assertStringContainsString('aria-describedby="quiz-random-candidate-help"', $html);
+        $this->assertStringContainsString('mod-quiz-selector-form__destination', $html);
+        $this->assertStringContainsString('Page 2', $html);
+        $this->assertStringContainsString(get_string('quizselectiondestination', 'quiz'), $html);
         $this->assertStringContainsString('name="randomcount"', $html);
         $this->assertStringContainsString('name="addrandom"', $html);
         $this->assertStringContainsString('name="newcategory"', $html);
@@ -67,6 +72,7 @@ final class question_selection_ux_test extends \advanced_testcase {
         $html = $this->template('mod_quiz/add_random_question_form', [
             'returnurl' => '/mod/quiz/edit.php?cmid=12',
             'slotid' => 123,
+            'targetpage' => '',
             'questionbank' => '<div data-filtercondition="{}"></div>',
             'randomoptions' => [],
             'questioncategoryoptions' => [],
@@ -77,6 +83,7 @@ final class question_selection_ux_test extends \advanced_testcase {
         $this->assertStringNotContainsString('name="newcategory"', $html);
         $this->assertStringNotContainsString('name="randomcount"', $html);
         $this->assertStringNotContainsString('name="addrandom"', $html);
+        $this->assertStringNotContainsString('mod-quiz-selector-form__destination', $html);
         $this->assertSame(1, substr_count($html, '<form '));
     }
 
@@ -124,5 +131,83 @@ final class question_selection_ux_test extends \advanced_testcase {
         $this->assertStringContainsString('id="questionsubmit"', $html);
         $this->assertStringContainsString('name="addonpage"', $html);
         $this->assertSame(1, substr_count($html, '<form '));
+    }
+
+    /**
+     * Question selection text must stay escaped even if the destination is unexpected.
+     */
+    public function test_random_destination_escapes_html(): void {
+        $html = $this->template('mod_quiz/add_random_question_form', [
+            'returnurl' => '/mod/quiz/edit.php?cmid=12',
+            'questionbank' => '<div data-filtercondition="{}"></div>',
+            'randomoptions' => [['value' => 1, 'name' => '1']],
+            'questioncategoryoptions' => [],
+            'targetpage' => '<script>alert(1)</script>',
+        ]);
+        $this->assertStringNotContainsString('<script>', $html);
+        $this->assertStringContainsString('&lt;script&gt;', $html);
+    }
+
+    /**
+     * The native selected count belongs only to the ordinary question bank controls.
+     */
+    public function test_question_bank_bottom_controls_show_native_selection_counter(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $bank = $this->getMockBuilder(custom_view::class)->disableOriginalConstructor()->getMock();
+        $method = new \ReflectionMethod(custom_view::class, 'display_bottom_controls');
+        ob_start();
+        $method->invoke($bank, \context_system::instance());
+        $html = ob_get_clean();
+
+        $this->assertStringContainsString('data-region="quiz-selection-selected"', $html);
+        $this->assertStringContainsString('data-count-template=', $html);
+        $this->assertStringContainsString(get_string('quizselectionselectedcount', 'quiz', 0), $html);
+        $this->assertStringContainsString('name="add"', $html);
+    }
+
+    /**
+     * The service must not add new random slots after student attempts exist.
+     */
+    public function test_random_slot_addition_is_locked_after_attempts(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        $quizgenerator = $this->getDataGenerator()->get_plugin_generator('mod_quiz');
+        $quiz = $quizgenerator->create_instance(['course' => $course->id]);
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+
+        $questions = $this->getDataGenerator()->get_plugin_generator('core_question');
+        $category = $questions->create_question_category();
+        $questions->create_question('truefalse', null, ['category' => $category->id]);
+        $condition = ['filter' => ['category' => [
+            'jointype' => \core_question\local\bank\condition::JOINTYPE_DEFAULT,
+            'values' => [$category->id],
+            'filteroptions' => ['includesubcategories' => false],
+        ]]];
+        $structure = \mod_quiz\quiz_settings::create($quiz->id)->get_structure();
+        $structure->add_random_questions(1, 1, $condition);
+        $quizgenerator->create_attempt($quiz->id, $student->id);
+
+        $this->expectException(\moodle_exception::class);
+        $structure->add_random_questions(1, 1, $condition);
+    }
+
+    public function test_random_add_service_rejects_zero_count(): void {
+        $this->expectException(\core\exception\invalid_parameter_exception::class);
+        \mod_quiz\external\add_random_questions::execute(0, 1, 0);
+    }
+
+    public function test_random_add_service_rejects_more_than_one_hundred(): void {
+        $this->expectException(\core\exception\invalid_parameter_exception::class);
+        \mod_quiz\external\add_random_questions::execute(0, 1, 101);
+    }
+
+    public function test_random_add_service_rejects_malformed_json(): void {
+        $this->expectException(\core\exception\invalid_parameter_exception::class);
+        \mod_quiz\external\add_random_questions::execute(0, 1, 1, '{invalid');
     }
 }

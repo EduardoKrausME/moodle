@@ -28,7 +28,6 @@ use core_external\external_value;
 use core_question\category_manager;
 use mod_quiz\question\bank\filter\custom_category_condition;
 use mod_quiz\quiz_settings;
-use mod_quiz\structure;
 
 /**
  * Add random questions to a quiz.

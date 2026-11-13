@@ -237,7 +237,7 @@ test('only latest question bank fragment can replace the modal body', async () =
 
 test('inaccessible remembered bank is forgotten and reloaded from the quiz', async () => {
     const stubs = makeBankStubs();
-    stubs.storage.set('lastBankCmid', '77');
+    stubs.storage.set('mod_quiz:lastBankCmid:30', '77');
     const Modal = loadAmd('modal_quiz_question_bank', stubs.dependencies, stubs.globals);
     const modal = bankInstance(Modal);
     const loaded = [];
@@ -250,7 +250,78 @@ test('inaccessible remembered bank is forgotten and reloaded from the quiz', asy
     };
     modal.reloadBodyContent('?q=1');
     await new Promise(resolve => setImmediate(resolve));
-    assert.equal(stubs.storage.has('lastBankCmid'), false);
+    assert.equal(stubs.storage.has('mod_quiz:lastBankCmid:30'), false);
     assert.deepEqual(loaded, ['77', 55]);
     assert.equal(modal.pendingBody.getContent().html, '<div>quiz bank</div>');
+});
+
+test('native selection counter counts only checked q-ID inputs', () => {
+    const stubs = makeBankStubs();
+    const Modal = loadAmd('modal_quiz_question_bank', stubs.dependencies, stubs.globals);
+    const modal = bankInstance(Modal);
+    const counter = {dataset: {countTemplate: 'Selected on this page: %COUNT%'}, textContent: ''};
+    const checked = [{name: 'q21'}, {name: 'q33'}, {name: 'qbank-toggle-all'}, {name: 'filter'}];
+    const form = {querySelectorAll() { return checked; }};
+    modal.getBody = () => ({
+        get() {
+            return {querySelector(selector) {
+                return selector === 'form#questionsubmit' ? form : counter;
+            }};
+        }
+    });
+
+    modal.updateSelectedCount();
+    assert.equal(counter.textContent, 'Selected on this page: 2');
+    checked.splice(0, 2);
+    modal.updateSelectedCount();
+    assert.equal(counter.textContent, 'Selected on this page: 0');
+});
+
+test('remembered question bank is scoped to one quiz module', async () => {
+    const stubs = makeBankStubs();
+    stubs.storage.set('mod_quiz:lastBankCmid:31', '77');
+    const Modal = loadAmd('modal_quiz_question_bank', stubs.dependencies, stubs.globals);
+    const modal = bankInstance(Modal);
+    const banks = [];
+    modal.bodyFragment = (query, cmid) => {
+        banks.push(cmid);
+        return Promise.resolve('<div>own quiz bank</div>');
+    };
+
+    modal.reloadBodyContent('?q=1');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(banks, [55]);
+    assert.equal(stubs.storage.get('mod_quiz:lastBankCmid:31'), '77');
+});
+
+test('editing one random slot does not remove new-category tab for subsequent additions', () => {
+    const stubs = makeRandomStubs(() => Promise.resolve({message: 'ok'}));
+    const handlers = [];
+    const Modal = loadAmd('modal_add_random_question', stubs.dependencies, {
+        document: {addEventListener(type, callback) { handlers.push(callback); }},
+    });
+    const configs = [];
+    Modal.create = (config) => { configs.push(config); };
+    Modal.init(10, 20, '7,10', '/mod/quiz/edit.php', 30, true, 1);
+
+    const click = (dataset) => handlers[0]({
+        target: {closest() { return {dataset}; }},
+        preventDefault() {},
+    });
+    click({slotid: '42', header: 'Edit random filters'});
+    click({header: 'Add random question', addonpage: '1'});
+
+    assert.equal(configs[0].showNewCategory, false);
+    assert.equal(configs[0].templateContext.hidden, false);
+    assert.equal(configs[1].showNewCategory, true);
+    assert.equal(configs[1].templateContext.hidden, true);
+});
+
+test('production random selection build uses modal-scoped form fields', () => {
+    const filepath = path.join(__dirname, '..', '..', 'amd', 'build',
+        'modal_add_random_question.min.js');
+    const code = fs.readFileSync(filepath, 'utf8');
+    assert.ok(code.includes('this.getBody().get(0).querySelector(SELECTORS.FILTER_CONDITION_ELEMENT)'));
+    assert.ok(!code.includes('document.querySelector(SELECTORS.SELECT_NUMBER_TO_ADD)'));
+    assert.ok(!code.includes('setAttribute(\'name\', this.quizCmId)'));
 });

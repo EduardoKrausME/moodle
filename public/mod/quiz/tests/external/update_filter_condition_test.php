@@ -147,6 +147,18 @@ final class update_filter_condition_test extends advanced_testcase {
      * Test updating the filter conditions of a random question with an invalid array of conditions
      * @return void
      */
+    public function test_malformed_filter_json_is_rejected(): void {
+        global $DB;
+
+        [, $cm, , , $quizcontext] = $this->create_quiz_with_random_questions();
+        $reference = $DB->get_record('question_set_references', [
+            'usingcontextid' => $quizcontext->id,
+        ], '*', MUST_EXIST);
+
+        $this->expectException(\core\exception\invalid_parameter_exception::class);
+        update_filter_condition::execute($cm->id, $reference->itemid, '{invalid');
+    }
+
     public function test_invalid_filter_condition(): void {
 
         global $DB;
