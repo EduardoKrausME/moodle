@@ -5247,6 +5247,7 @@ class assign {
             $jsparams['supportssubmissions'] = $this->is_any_submission_plugin_enabled();
             $jsparams['hassubmissions'] = $this->count_submissions() > 0;
             $PAGE->requires->js_call_amd('mod_assign/bulkactions/grading/bulk_actions', 'init', [$jsparams]);
+            $PAGE->requires->js_call_amd('mod_assign/bulkactions/grading/selection_ui', 'init', []);
         }
 
         return $o;
