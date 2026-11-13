@@ -133,7 +133,8 @@ define(['core/str'], function(Str) {
             element.dataset.assignBulkReady = '1';
             const ids = targets.value.split(',').filter(id => /^[1-9][0-9]*$/.test(id));
             const total = new Set(ids).size;
-            Str.get_string('bulkselectedcount', 'mod_assign', total).then(label => {
+            const labelKey = total === 1 ? 'bulkselectedsingle' : 'bulkselectedcount';
+            Str.get_string(labelKey, 'mod_assign', total).then(label => {
                 if (summary.isConnected) {
                     summary.textContent = label;
                 }
