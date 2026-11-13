@@ -19,7 +19,10 @@
     Example context (json):
     {
         "slotid": "1",
+        "actionslabel": "Actions for question 1",
         "canbeedited": true,
+        "israndom": false,
+        "isinfo": false,
         "checkbox": "<input id='selectquestion-1' name='selectquestion[]' type='checkbox' class='select-multiple-checkbox'>",
         "questionnumber": "<span class='slotnumber'><span class='accesshide'>Question</span> 1</span>",
         "questionname": "This is a test question",
@@ -49,14 +52,18 @@
     }
 }}
 
-<div class="mod-indent-outer" id="mod-indent-outer-slot-{{slotid}}">
+<div class="mod-indent-outer mod-quiz-edit-question{{#israndom}} mod-quiz-edit-question--random{{/israndom}}{{#isinfo}} mod-quiz-edit-question--info{{/isinfo}}"
+        id="mod-indent-outer-slot-{{slotid}}">
     {{{checkbox}}}
     {{{questionnumber}}}
     <div class="mod-indent"></div>
-    <div class="activityinstance">
-        <div>{{{questionname}}}</div>
+    <div class="activityinstance mod-quiz-edit-question__content">
+        <div class="mod-quiz-edit-question__name">{{{questionname}}}</div>
+        {{#israndom}}
+            <span class="mod-quiz-edit-question__kind">{{#str}}randomquestion, quiz{{/str}}</span>
+        {{/israndom}}
         {{#issharedbank}}
-            <div class="sharedbank">
+            <div class="sharedbank mod-quiz-edit-question__bank">
                 {{#bankurl}}
                     <a href="{{bankurl}}">
                 {{/bankurl}}
@@ -67,10 +74,11 @@
             </div>
         {{/issharedbank}}
     </div>
-    <div class="actions">
+    <div class="actions mod-quiz-edit-question__actions" role="group"
+            aria-label="{{actionslabel}}">
         {{#versionselection}}
             <label for="version-{{slotid}}" class="visually-hidden">{{#str}}question_version, question{{/str}}</label>
-            <select id="version-{{slotid}}" name="version" class="form-select me-2 version-selection"
+            <select id="version-{{slotid}}" name="version" class="form-select me-2 version-selection mod-quiz-edit-question__version"
             data-action="mod_quiz-select_slot" data-slot-id="{{slotid}}">
                 {{#versionoption}}
                     <option value="{{version}}" {{#selected}}selected="selected"{{/selected}}>{{versionvalue}}</option>

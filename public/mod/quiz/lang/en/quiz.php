@@ -1240,3 +1240,6 @@ $string['reviewcontextflags'] = 'Question flags';
 $string['reviewcontexthistory'] = 'Question history';
 $string['reviewcontextstate'] = 'Question status';
 $string['historylatestattempt'] = 'Most recent attempt';
+$string['editstructurehelp'] = 'Organise the questions by section and page. Use the existing controls to add, move and configure them.';
+$string['editstructurelocked'] = 'The question structure is locked because attempts exist. Grading controls remain available where permitted.';
+$string['editquestionactions'] = 'Actions for question {$a}';

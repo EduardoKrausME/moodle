@@ -66,21 +66,26 @@ class edit_renderer extends \plugin_renderer_base {
 
         // Page title.
         $output .= $this->heading(get_string('questions', 'quiz'));
+        $output .= html_writer::tag('p', get_string(
+            $structure->can_be_edited() ? 'editstructurehelp' : 'editstructurelocked', 'quiz'),
+            ['class' => 'mod-quiz-edit-intro']);
 
         // Information at the top.
         $output .= $this->quiz_state_warnings($structure);
 
-        $output .= html_writer::start_div('mod_quiz-edit-top-controls');
+        $output .= html_writer::start_div('mod_quiz-edit-top-controls mod-quiz-edit-overview');
 
-        $output .= html_writer::start_div('d-flex justify-content-between flex-wrap mb-1');
-        $output .= html_writer::start_div('d-flex align-items-center justify-content-around');
+        $output .= html_writer::start_div('d-flex justify-content-between flex-wrap mb-1 mod-quiz-edit-overview__row');
+        $output .= html_writer::start_div('d-flex align-items-center justify-content-around mod-quiz-edit-overview__status');
         $output .= $this->quiz_information($structure);
         $output .= html_writer::end_tag('div');
         $output .= $this->maximum_grade_input($structure, $pageurl);
         $output .= html_writer::end_tag('div');
 
-        $output .= html_writer::start_div('d-flex justify-content-between flex-wrap mb-1');
-        $output .= html_writer::start_div('mod_quiz-edit-action-buttons btn-group edit-toolbar', ['role' => 'group']);
+        $output .= html_writer::start_div('d-flex justify-content-between flex-wrap mb-1 mod-quiz-edit-overview__row');
+        $output .= html_writer::start_div(
+            'mod_quiz-edit-action-buttons btn-group edit-toolbar mod-quiz-edit-overview__actions',
+            ['role' => 'group']);
         $output .= $this->repaginate_button($structure, $pageurl);
         $output .= $this->selectmultiple_button($structure);
         $output .= html_writer::end_tag('div');
@@ -164,7 +169,7 @@ class edit_renderer extends \plugin_renderer_base {
         foreach ($warnings as $warning) {
             $output[] = \html_writer::tag('p', $warning);
         }
-        return $this->box(implode("\n", $output), 'statusdisplay');
+        return $this->box(implode("\n", $output), 'statusdisplay mod-quiz-edit-warning');
     }
 
     /**
@@ -383,7 +388,9 @@ class edit_renderer extends \plugin_renderer_base {
         if ($structure->get_section_count() == 1) {
             $class .= ' only-one-section';
         }
-        return html_writer::start_tag('ul', ['class' => $class, 'role' => 'presentation']);
+        return html_writer::start_tag('ul', [
+            'class' => $class . ' mod-quiz-edit-section-list', 'role' => 'presentation',
+        ]);
     }
 
     /**
@@ -423,12 +430,13 @@ class edit_renderer extends \plugin_renderer_base {
         }
 
         $output .= html_writer::start_tag('li', ['id' => 'section-'.$section->id,
-            'class' => 'section main clearfix'.$sectionstyle, 'role' => 'presentation',
+            'class' => 'section main clearfix mod-quiz-edit-section' . $sectionstyle,
+            'role' => 'presentation',
             'data-sectionname' => $sectionheadingtext]);
 
-        $output .= html_writer::start_div('content');
+        $output .= html_writer::start_div('content mod-quiz-edit-section-content');
 
-        $output .= html_writer::start_div('section-heading');
+        $output .= html_writer::start_div('section-heading mod-quiz-edit-section-heading');
 
         $headingtext = $this->heading(html_writer::span($sectionheading, 'sectioninstance'), 3);
 
@@ -440,7 +448,8 @@ class edit_renderer extends \plugin_renderer_base {
                         'moodle', ['class' => 'editicon visibleifjs']),
                         ['class' => 'editing_section', 'data-action' => 'edit_section_title', 'role' => 'button']);
         }
-        $output .= html_writer::div($headingtext . $editsectionheadingicon, 'instancesectioncontainer');
+        $output .= html_writer::div($headingtext . $editsectionheadingicon,
+            'instancesectioncontainer mod-quiz-edit-section-title');
 
         if (!$structure->is_first_section($section) && $structure->can_be_edited()) {
             $output .= $this->section_remove_icon($section);
@@ -538,7 +547,7 @@ class edit_renderer extends \plugin_renderer_base {
         }
 
         $this->page->requires->js_call_amd('mod_quiz/question_slot', 'init');
-        return html_writer::tag('ul', $output, ['class' => 'section img-text']);
+        return html_writer::tag('ul', $output, ['class' => 'section img-text mod-quiz-edit-section-slots']);
     }
 
     /**
@@ -565,7 +574,7 @@ class edit_renderer extends \plugin_renderer_base {
         // Question HTML.
         $questionhtml = $this->question($structure, $slot, $pageurl);
         $qtype = $structure->get_question_type_for_slot($slot);
-        $questionclasses = 'activity ' . $qtype . ' qtype_' . $qtype . ' slot';
+        $questionclasses = 'activity ' . $qtype . ' qtype_' . $qtype . ' slot mod-quiz-edit-slot';
 
         $output .= html_writer::tag('li', $questionhtml . $joinhtml,
                 ['class' => $questionclasses, 'id' => 'slot-' . $structure->get_slot_id_for_slot($slot),
@@ -604,7 +613,8 @@ class edit_renderer extends \plugin_renderer_base {
                     $pagenumber, $pageurl, $pagevars);
 
             $output .= html_writer::tag('li', $page . $addmenu . $addquestionform,
-                    ['class' => 'pagenumber activity yui3-dd-drop page', 'id' => 'page-' . $pagenumber]);
+                    ['class' => 'pagenumber activity yui3-dd-drop page mod-quiz-edit-page',
+                        'id' => 'page-' . $pagenumber]);
         }
 
         return $output;
@@ -796,7 +806,11 @@ class edit_renderer extends \plugin_renderer_base {
 
         $data = [
             'slotid' => $slotid,
+            'actionslabel' => get_string('editquestionactions', 'quiz',
+                    $structure->get_displayed_number_for_slot($slot)),
             'canbeedited' => $structure->can_be_edited(),
+            'israndom' => (bool) $structure->get_slot_by_number($slot)->random,
+            'isinfo' => !$structure->is_real_question($slot),
             'checkbox' => $this->get_checkbox_render($structure, $slot),
             'questionnumber' => $this->question_number($questionnumber, $structure->get_slot_by_number($slot)->defaultnumber),
             'questionname' => $this->get_question_name_for_slot($structure, $slot, $pageurl),
