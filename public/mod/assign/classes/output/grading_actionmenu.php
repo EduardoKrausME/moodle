@@ -103,14 +103,13 @@ class grading_actionmenu implements templatable, renderable {
         $data = [];
 
         $userid = optional_param('userid', null, PARAM_INT);
-        // If the user ID is set, it indicates that a user has been selected. In this case, override the user search
-        // string with the full name of the selected user.
-        $usersearch = $userid ? fullname(\core_user::get_user($userid)) : optional_param('search', '', PARAM_NOTAGS);
-
+        // Never resolve a real name for a blind marking search label unless the
+        // teacher is permitted to view identities.
         $isblind = $this->assign->is_blind_marking() && !$this->hasviewblind;
-        if ($isblind) {
-            $usersearch = $userid ? get_string('hiddenuser', 'assign') . $this->assign->get_uniqueid_for_user($userid) : $usersearch;
-        }
+        $searchtext = optional_param('search', '', PARAM_NOTAGS);
+        $usersearch = $userid ? ($isblind ?
+            get_string('hiddenuser', 'assign') . $this->assign->get_uniqueid_for_user($userid) :
+            fullname(\core_user::get_user($userid))) : $searchtext;
 
         $resetlink = new moodle_url('/mod/assign/view.php', ['id' => $this->cmid, 'action' => 'grading']);
         $groupid = groups_get_course_group($course, true);
@@ -125,7 +124,82 @@ class grading_actionmenu implements templatable, renderable {
         $data['userselector'] = $userselector->export_for_template($output);
 
         $hasinitials = !empty($this->userinitials['firstname']) || !empty($this->userinitials['lastname']);
-        $additionalparams = ['action' => 'grading', 'id' => $this->cmid];
+        $activitygroup = groups_get_activity_group($cm);
+        $statusfilter = get_user_preferences('assign_filter', '');
+        $filterstate = [
+            'group' => $activitygroup,
+            'userid' => $userid,
+            'search' => $userid ? '' : $searchtext,
+            'status' => $this->assign->is_any_submission_plugin_enabled() ? $statusfilter : '',
+            'tifirst' => $this->userinitials['firstname'] ?? '',
+            'tilast' => $this->userinitials['lastname'] ?? '',
+        ];
+
+        $statuslabels = [];
+        if ($this->assign->is_any_submission_plugin_enabled()) {
+            foreach ($this->assign->get_filters() as $filter) {
+                if ($filter['key'] !== ASSIGN_FILTER_NONE) {
+                    $statuslabels[$filter['key']] = $filter['name'];
+                }
+            }
+        }
+        $labels = [];
+        if ($userid || $searchtext !== '') {
+            $labels['user'] = get_string('gradingfiltersearch', 'assign', $usersearch);
+        }
+        if ($activitygroup && groups_get_activity_groupmode($cm, $course)) {
+            $labels['group'] = get_string('gradingfiltergroup', 'assign', groups_get_group_name($activitygroup));
+        }
+        if (isset($statuslabels[$statusfilter])) {
+            $labels['status'] = get_string('gradingfilterstatus', 'assign', $statuslabels[$statusfilter]);
+        }
+        if (!empty($filterstate['tifirst'])) {
+            $labels['tifirst'] = get_string('gradingfilterfirstname', 'assign', $filterstate['tifirst']);
+        }
+        if (!empty($filterstate['tilast'])) {
+            $labels['tilast'] = get_string('gradingfilterlastname', 'assign', $filterstate['tilast']);
+        }
+
+        $workflowoptions = $this->assign->get_marking_workflow_filters();
+        $workflowfilter = get_user_preferences('assign_workflowfilter', '');
+        if ($workflowfilter !== '' && array_key_exists($workflowfilter, $workflowoptions)) {
+            $filterstate['workflowfilter'] = $workflowfilter;
+            $labels['workflowfilter'] = get_string('gradingfilterworkflow', 'assign',
+                $workflowoptions[$workflowfilter]);
+        }
+
+        $markeroptions = $this->assign->get_marking_allocation_filters();
+        $markerfilter = get_user_preferences('assign_markerfilter', '');
+        if ($markerfilter !== '' && array_key_exists($markerfilter, $markeroptions)) {
+            $filterstate['markingallocationfilter'] = $markerfilter;
+            $labels['markingallocationfilter'] = get_string('gradingfiltermarker', 'assign',
+                $markeroptions[$markerfilter]);
+        }
+        if (has_capability('moodle/course:viewsuspendedusers', $this->assign->get_context()) &&
+                !$this->assign->show_only_active_users()) {
+            $filterstate['suspendedparticipantsfilter'] = 1;
+            $labels['suspendedparticipantsfilter'] = get_string('gradingfiltersuspended', 'assign');
+        }
+
+        $navigationparams = \mod_assign\local\grading_filter_state::parameters($this->cmid, $filterstate);
+        $chips = \mod_assign\local\grading_filter_state::chips($this->cmid, $filterstate, $labels);
+        $data['hasactivefilters'] = !empty($chips);
+        $data['activefilters'] = [];
+        foreach ($chips as $chip) {
+            $chip['url'] = (new moodle_url('/mod/assign/view.php', $chip['params']))->out(false);
+            $chip['removelabel'] = get_string('gradingfilterremove', 'assign', $chip['label']);
+            unset($chip['params']);
+            $data['activefilters'][] = $chip;
+        }
+        if ($chips) {
+            $data['pagereset'] = (new moodle_url('/mod/assign/view.php',
+                \mod_assign\local\grading_filter_state::reset($this->cmid)))->out(false);
+        }
+
+        // The initials selector must carry the validated status, group, search
+        // and advanced preferences, rather than reverting to a partial URL.
+        $additionalparams = $navigationparams;
+        unset($additionalparams['tifirst'], $additionalparams['tilast']);
 
         if (!empty($userid)) {
             $additionalparams['userid'] = $userid;
@@ -150,31 +224,14 @@ class grading_actionmenu implements templatable, renderable {
             $data['groupselector'] = $gs->export_for_template($output);
         }
 
-        if ($extrafiltersdropdown = $this->get_extra_filters_dropdown()) {
+        if ($extrafiltersdropdown = $this->get_extra_filters_dropdown($navigationparams)) {
             $PAGE->requires->js_call_amd('mod_assign/actionbar/grading/extra_filters_dropdown', 'init', []);
             $data['extrafiltersdropdown'] = $extrafiltersdropdown->export_for_template($output);
         }
 
-        $activitygroup = groups_get_activity_group($cm);
-        $hasuserfilter = get_user_preferences('assign_filter');
-        $hasextrafilters = $this->get_applied_extra_filters_count() > 0;
-        if ($activitygroup || $hasuserfilter || $hasextrafilters || $hasinitials) {
-            $url = new moodle_url('/mod/assign/view.php', [
-                'id' => $this->cmid,
-                'action' => 'grading',
-                'group' => 0,
-                'status' => '',
-                'workflowfilter' => '',
-                'markingallocationfilter' => '',
-                'suspendedparticipantsfilter' => 0,
-                'tifirst' => '',
-                'tilast' => '',
-            ]);
-            $data['pagereset'] = $url->out(false);
-        }
-
         if ($this->assign->is_any_submission_plugin_enabled()) {
-            ['statusmenu' => $statusmenu, 'currentvalue' => $currentvalue] = $this->get_status_menu();
+            ['statusmenu' => $statusmenu, 'currentvalue' => $currentvalue] =
+                $this->get_status_menu($navigationparams);
             $statusselect = new \core\output\select_menu('status', $statusmenu, $currentvalue, true);
             $statusselect->set_label(get_string('status', 'mod_assign'), [], true);
             $data['statusselector'] = $statusselect->export_for_template($output);
@@ -204,15 +261,7 @@ class grading_actionmenu implements templatable, renderable {
         $controller = $gradingmanager->get_active_controller();
         $showquickgrading = empty($controller) && $this->assign->can_grade();
         if ($showquickgrading) {
-            $quickgradingbaseurl = new moodle_url('/mod/assign/view.php', [
-                'id' => $this->assign->get_course_module()->id,
-                'action' => 'grading',
-            ]);
-            if ($userid) {
-                $quickgradingbaseurl->param('userid', $userid);
-            } else if ($usersearch) {
-                $quickgradingbaseurl->param('search', $usersearch);
-            }
+            $quickgradingbaseurl = new moodle_url('/mod/assign/view.php', $navigationparams);
 
             $data['quickgrading'] = [
                 'baseurl' => $quickgradingbaseurl->out(false),
@@ -221,15 +270,7 @@ class grading_actionmenu implements templatable, renderable {
         }
 
         if ($this->showdownload) {
-            $downloadasfoldersbaseurl = new moodle_url('/mod/assign/view.php', [
-                'id' => $this->assign->get_course_module()->id,
-                'action' => 'grading',
-            ]);
-            if ($userid) {
-                $downloadasfoldersbaseurl->param('userid', $userid);
-            } else if ($usersearch) {
-                $downloadasfoldersbaseurl->param('search', $usersearch);
-            }
+            $downloadasfoldersbaseurl = new moodle_url('/mod/assign/view.php', $navigationparams);
             $downloadasfolders = get_user_preferences('assign_downloadasfolders', 1);
             $data['downloadasfolders'] = [
                 'baseurl' => $downloadasfoldersbaseurl->out(false),
@@ -310,7 +351,7 @@ class grading_actionmenu implements templatable, renderable {
      *
      * @return array An array containing the status menu and the current value.
      */
-    private function get_status_menu(): array {
+    private function get_status_menu(array $navigationparams): array {
         $statusmenu = [];
         $currentvalue = '';
 
@@ -321,11 +362,8 @@ class grading_actionmenu implements templatable, renderable {
                     // The 'none' filter is not a real filter.
                     $filter['key'] = '';
                 }
-                $url = new moodle_url('/mod/assign/view.php', [
-                    'id' => $this->assign->get_course_module()->id,
-                    'action' => 'grading',
-                    'status' => $filter['key'],
-                ]);
+                $url = new moodle_url('/mod/assign/view.php',
+                    array_replace($navigationparams, ['status' => $filter['key']]));
                 $statusmenu[$url->out(false)] = $filter['name'];
 
                 if ($filter['active']) {
@@ -348,7 +386,7 @@ class grading_actionmenu implements templatable, renderable {
      *
      * @return dialog|null The renderable for the extra filters dropdown, if available.
      */
-    private function get_extra_filters_dropdown(): ?dialog {
+    private function get_extra_filters_dropdown(array $navigationparams): ?dialog {
         global $OUTPUT;
 
         $dropdowncontentdata = [
@@ -356,7 +394,18 @@ class grading_actionmenu implements templatable, renderable {
             'id' => $this->assign->get_course_module()->id,
             'action' => 'grading',
             'filters' => [],
+            'preserved' => [],
         ];
+        // GET forms for workflow/marker filters must not discard the current
+        // search, group, status, or initial-bar restrictions.
+        foreach (['group', 'userid', 'search', 'status', 'tifirst', 'tilast'] as $key) {
+            if (array_key_exists($key, $navigationparams)) {
+                $dropdowncontentdata['preserved'][] = [
+                    'name' => $key,
+                    'value' => $navigationparams[$key],
+                ];
+            }
+        }
 
         // If marking workflow is enabled.
         if ($this->assign->get_instance()->markingworkflow) {

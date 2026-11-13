@@ -69,6 +69,9 @@
     <form action="{{{actionurl}}}" method="GET">
         <input type="hidden" name="id" value="{{id}}">
         <input type="hidden" name="action" value="{{action}}">
+        {{#preserved}}
+            <input type="hidden" name="{{name}}" value="{{value}}">
+        {{/preserved}}
         {{#filters}}
             {{#markingworkflow}}
                 <div class="d-flex flex-wrap gap-2 m-0 pb-3">

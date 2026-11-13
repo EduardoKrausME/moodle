@@ -68,8 +68,8 @@
     }
 
 }}
-<div class="container-fluid tertiary-navigation full-width-bottom-border mb-2">
-    <div class="d-flex">
+<div class="container-fluid tertiary-navigation full-width-bottom-border mb-2 assign-grading-filters-toolbar">
+    <div class="d-flex flex-wrap align-items-center gap-2">
         <div class="navitem">
             <h2>{{#str}}gradeitem:submissions, mod_assign{{/str}}</h2>
         </div>
@@ -127,6 +127,20 @@
         {{/graderurl}}
     </div>
 </div>
+{{#hasactivefilters}}
+    <section class="container-fluid assign-grading-active-filters mb-3" data-region="assign-grading-active-filters"
+             aria-label="{{#str}}gradingactivefilters, assign{{/str}}">
+        <span class="assign-grading-active-filters-heading">{{#str}}gradingactivefilters, assign{{/str}}</span>
+        <div class="assign-grading-filter-chips">
+            {{#activefilters}}
+                <a href="{{url}}" class="assign-grading-filter-chip" data-filter-key="{{key}}"
+                   aria-label="{{removelabel}}" title="{{removelabel}}">
+                    <span>{{label}}</span><span aria-hidden="true" class="assign-grading-filter-chip-remove">×</span>
+                </a>
+            {{/activefilters}}
+        </div>
+    </section>
+{{/hasactivefilters}}
 <div class="container-fluid tertiary-navigation pt-0">
     <div class="d-flex flex-wrap justify-content-end gap-2 pb-2">
         {{#quickgrading}}
