@@ -27,15 +27,18 @@
         "slotid": "5678"
     }
 }}
-<div>
+<div class="mod-quiz-selector-form mod-quiz-selector-dialog" data-region="quiz-selection-dialog">
+    <p class="mod-quiz-selector-dialog__hint">{{#str}}quizselectionfilterhint, mod_quiz{{/str}}</p>
+    <div data-region="quiz-selection-status" role="status" aria-live="polite"
+            data-busy-message="{{#str}}quizselectionprocessing, mod_quiz{{/str}}"></div>
     <!-- Question bank -->
-    <div id="questionbank_container">
+    <div id="questionbank_container" class="mod-quiz-selector-form__filters">
         {{{questionbank}}}
     </div>
 
 
     <!-- submit buttons -->
-    <form action="{{returnurl}}" method="POST" id="update_filter_condition_form" data-cmid="{{cmid}}" data-slotid="{{slotid}}">
+    <form action="{{returnurl}}" method="POST" class="mod-quiz-selector-form__actions" id="update_filter_condition_form" data-cmid="{{cmid}}" data-slotid="{{slotid}}">
         <input type="hidden" name="message" value="">
         <input type="submit" class="btn btn-primary" name="update" value="{{#str}} updatefilterconditon, mod_quiz {{/str}}">
         <input type="submit" class="btn btn-secondary" name="cancel" value="{{#str}} cancel {{/str}}">

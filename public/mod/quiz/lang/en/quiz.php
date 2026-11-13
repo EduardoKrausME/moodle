@@ -1243,3 +1243,7 @@ $string['historylatestattempt'] = 'Most recent attempt';
 $string['editstructurehelp'] = 'Organise the questions by section and page. Use the existing controls to add, move and configure them.';
 $string['editstructurelocked'] = 'The question structure is locked because attempts exist. Grading controls remain available where permitted.';
 $string['editquestionactions'] = 'Actions for question {$a}';
+$string['quizselectionrandomhint'] = 'Choose the question bank, category and filters for the random selection.';
+$string['quizselectioncandidatehint'] = 'The matching questions are candidates for random selection, not the questions guaranteed to appear in an attempt.';
+$string['quizselectionfilterhint'] = 'Update the matching criteria for this random-question slot.';
+$string['quizselectionprocessing'] = 'Saving the question selection...';

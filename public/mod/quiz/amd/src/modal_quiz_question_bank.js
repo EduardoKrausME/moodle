@@ -21,6 +21,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+import $ from 'jquery';
 import Modal from './add_question_modal';
 import * as Fragment from 'core/fragment';
 import * as FormChangeChecker from 'core_form/changechecker';
@@ -122,24 +123,52 @@ export default class ModalQuizQuestionBank extends Modal {
      * @param {string} querystring URL encoded string.
      */
     reloadBodyContent(querystring) {
-        // Load the question bank fragment to be displayed in the modal and hide the 'go back' button.
+        // A bank switch may happen before the previous fragment request finishes.
+        // Only the latest request is permitted to replace the modal contents.
+        this.bodyRequestId = (this.bodyRequestId || 0) + 1;
+        const requestId = this.bodyRequestId;
         this.hideFooter();
         this.setTitle(this.originalTitle);
+        this.getBody().attr('aria-busy', 'true');
+
+        // Fragment.loadFragment returns HTML *and* collected JavaScript. Keep the
+        // original jQuery promise contract so controls initialise correctly.
+        // Reuse one pending body while bank requests race: only the latest wins.
+        if (!this.pendingBody || this.pendingBody.state() !== 'pending') {
+            this.pendingBody = $.Deferred();
+            this.setBody(this.pendingBody.promise());
+        }
+        const bodySink = this.pendingBody;
+
         const lastBankCmid = window.sessionStorage.getItem('lastBankCmid');
         let bankCmid = lastBankCmid ? lastBankCmid : this.bankCmId;
-        const bodyFragment = this.bodyFragment(querystring, bankCmid)
+
+        this.bodyFragment(querystring, bankCmid)
             .catch((ex) => {
                 if (lastBankCmid && (ex.errorcode === 'nopermissions' || ex.errorcode === 'invalidcoursemodule')) {
-                    // The user has lost access to their last accessed bank, try again with the current bank.
                     window.sessionStorage.removeItem('lastBankCmid');
                     bankCmid = this.bankCmId;
-                    return this.bodyFragment(querystring, this.bankCmId);
-                } else {
-                    Notification.exception(ex);
-                    return '';
+                    return this.bodyFragment(querystring, bankCmid);
+                }
+                throw ex;
+            })
+            .then((html, js) => {
+                if (requestId === this.bodyRequestId) {
+                    bodySink.resolve(html, js);
+                }
+                return;
+            })
+            .catch((error) => {
+                if (requestId === this.bodyRequestId) {
+                    bodySink.resolve('', '');
+                    Notification.exception(error);
+                }
+            })
+            .finally(() => {
+                if (requestId === this.bodyRequestId) {
+                    this.getBody().attr('aria-busy', 'false');
                 }
             });
-        this.setBody(bodyFragment);
     }
 
     /**
@@ -171,6 +200,12 @@ export default class ModalQuizQuestionBank extends Modal {
         super.registerEventListeners(this);
 
         this.getModal().on('submit', SELECTORS.ADD_QUESTIONS_FORM, (e) => {
+            // Keep the native form action and submit input intact, but ignore duplicate submits.
+            if (this.submitting) {
+                e.preventDefault();
+                return;
+            }
+            this.submitting = true;
             // If the user clicks on the "Add selected questions to the quiz" button to add some questions to the page
             // then we need to intercept the submit in order to include the correct "add on page id"
             // and the quizmod id before the form is submitted.
@@ -213,7 +248,12 @@ export default class ModalQuizQuestionBank extends Modal {
 
             // If the anchor element was the add to quiz link.
             if (anchorElement.closest(SELECTORS.ADD_TO_QUIZ_CONTAINER)) {
+                if (this.addingQuestion) {
+                    e.preventDefault();
+                    return;
+                }
                 this.handleAddToQuizEvent(e, anchorElement);
+                this.addingQuestion = true;
                 return;
             }
 
@@ -222,6 +262,8 @@ export default class ModalQuizQuestionBank extends Modal {
 
         // Disable the form change checker when the body is rendered.
         this.getRoot().on(ModalEvents.bodyRendered, () => {
+            this.submitting = false;
+            this.addingQuestion = false;
             // Make sure the form change checker is disabled otherwise it'll stop the user from navigating away from the
             // page once the modal is hidden.
             FormChangeChecker.disableAllChecks();

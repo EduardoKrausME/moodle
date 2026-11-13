@@ -38,11 +38,16 @@
 
 {{< core/modal }}
     {{$body}}
-    <ul class="nav nav-tabs" role="tablist">
+    <div class="mod-quiz-selector-dialog" data-region="quiz-selection-dialog">
+    <p class="mod-quiz-selector-dialog__hint">{{#str}} quizselectionrandomhint, mod_quiz {{/str}}</p>
+    <ul class="nav nav-tabs mod-quiz-selector-tabs" role="tablist">
         <li class="nav-item">
             <a class="nav-link active"
                 data-bs-toggle="tab"
                 href="#existing-category-{{uniqid}}"
+                id="existing-category-tab-{{uniqid}}"
+                aria-controls="existing-category-{{uniqid}}"
+                aria-selected="true"
                 role="tab">
                 {{#str}} existingcategory, mod_quiz {{/str}}
             </a>
@@ -52,28 +57,35 @@
             <a class="nav-link"
                 data-bs-toggle="tab"
                 href="#new-category-{{uniqid}}"
+                id="new-category-tab-{{uniqid}}"
+                aria-controls="new-category-{{uniqid}}"
+                aria-selected="false"
+                tabindex="-1"
                 role="tab">
                 {{#str}} newcategory, mod_quiz {{/str}}
             </a>
         </li>
         {{/hidden}}
     </ul>
-    <div class="tab-content" data-region="tab-content">
+    <div class="tab-content mod-quiz-selector-dialog__body" data-region="tab-content">
         <div class="text-sm-center pt-5" data-region="loading-container">
             {{> core/loading }}
         </div>
         <div class="tab-pane active pt-3"
             id="existing-category-{{uniqid}}"
             role="tabpanel"
+            aria-labelledby="existing-category-tab-{{uniqid}}"
             data-region="existing-category-container">
         </div>
         {{#hidden}}
         <div class="tab-pane pt-3"
             id="new-category-{{uniqid}}"
             role="tabpanel"
+            aria-labelledby="new-category-tab-{{uniqid}}"
             data-region="new-category-container">
         </div>
         {{/hidden}}
+    </div>
     </div>
     {{/body}}
 {{/ core/modal }}

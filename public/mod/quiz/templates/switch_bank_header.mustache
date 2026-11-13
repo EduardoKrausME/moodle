@@ -34,7 +34,7 @@
         "currentbank": "Quiz 1"
     }
 }}
-<div class="d-flex align-items-center">
-    <h5>{{#str}}currentbank, mod_quiz, {{currentbank}} {{/str}}</h5>
+<div class="d-flex align-items-center flex-wrap gap-2 mod-quiz-selector-bank" data-region="quiz-selection-current-bank">
+    <h5 class="mod-quiz-selector-bank__name mb-0">{{#str}}currentbank, mod_quiz, {{currentbank}} {{/str}}</h5>
     <button data-action="switch-question-bank" type="button" class="btn btn-secondary ms-auto mb-2" id="switch-question-bank">{{#str}}switchbank, core_question{{/str}}</button>
 </div>

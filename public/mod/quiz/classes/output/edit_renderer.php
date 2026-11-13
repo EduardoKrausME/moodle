@@ -1442,6 +1442,7 @@ class edit_renderer extends \plugin_renderer_base {
     public function question_bank_contents(\mod_quiz\question\bank\custom_view $questionbank, array $pagevars) {
 
         $qbank = $questionbank->render($pagevars, 'editq');
-        return html_writer::div(html_writer::div($qbank, 'bd'), 'questionbankformforpopup');
+        return html_writer::div(html_writer::div($qbank, 'bd'),
+                'questionbankformforpopup mod-quiz-selector-dialog mod-quiz-selector-qbank');
     }
 }

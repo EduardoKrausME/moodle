@@ -49,29 +49,34 @@
         "questionbank": "<pre>Question bank HTML goes here</pre>"
     }
 }}
-<div class="mt-2 position-relative" data-region="add_random_question_form-container">
+<div class="mt-2 position-relative mod-quiz-selector-form" data-region="add_random_question_form-container">
     <form action="{{returnurl}}" method="POST" id="add_random_question_form" class="mform">
-        <fieldset id="id_existingcategoryheader">
+        <div data-region="quiz-selection-status" role="status" aria-live="polite"
+                data-busy-message="{{#str}}quizselectionprocessing, mod_quiz{{/str}}"></div>
+        <fieldset id="id_existingcategoryheader" class="mod-quiz-selector-form__fieldset">
             {{^slotid}}
             <legend>{{#str}} randomfromexistingcategory, mod_quiz {{/str}}</legend>
             {{/slotid}}
             <!-- Question bank -->
-            {{{questionbank}}}
+            <div class="mod-quiz-selector-form__filters" data-region="quiz-selection-filters">
+                {{{questionbank}}}
+            </div>
+            <p class="mod-quiz-selector-dialog__hint">{{#str}}quizselectioncandidatehint, mod_quiz{{/str}}</p>
 
             <!-- Select number of random question -->
             {{^slotid}}
-            <label>
-                {{#str}}randomnumber, mod_quiz{{/str}}
+            <div class="mod-quiz-selector-form__quantity">
+                <label for="menurandomcount">{{#str}}randomnumber, mod_quiz{{/str}}</label>
                 <select id="menurandomcount" name="randomcount" class="form-control form-select">
                     {{#randomoptions}}
                         <option value="{{value}}">{{name}}</option>
                     {{/randomoptions}}
                 </select>
-            </label>
+            </div>
             {{/slotid}}
 
                         <!-- Buttons -->
-            <div class="modal-footer mt-1" data-region="footer">
+            <div class="modal-footer mt-2 mod-quiz-selector-form__actions" data-region="footer">
                 <input type="hidden" name="message" value="">
                 {{#slotid}}
                     <input name="slotid" type="hidden" value="{{slotid}}"/>
@@ -86,7 +91,7 @@
         </fieldset>
 
         {{^slotid}}
-        <fieldset id="id_newcategoryheader">
+        <fieldset id="id_newcategoryheader" class="mod-quiz-selector-form__fieldset">
             <legend>{{#str}} randomquestionusinganewcategory, mod_quiz {{/str}}</legend>
             <!-- New categoryname -->
             <div class="mb-3 row fitem">
@@ -120,7 +125,7 @@
             </div>
 
             <!-- Buttons -->
-            <div class="modal-footer mt-1" data-region="footer">
+            <div class="modal-footer mt-2 mod-quiz-selector-form__actions" data-region="footer">
                 <input type="submit" class="btn btn-primary" name="newcategory" value="{{#str}} createcategoryandaddrandomquestion, mod_quiz {{/str}}">
                 <input type="submit" class="btn btn-secondary" name="cancel" value="{{#str}} cancel {{/str}}">
             </div>

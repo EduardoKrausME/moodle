@@ -125,6 +125,9 @@ export default class ModalAddRandomQuestion extends Modal {
         this.loadedForm = false;
         this.slotId = 0;
         this.savedFilterCondition = null;
+        this.submitting = false;
+        this.formRequestId = 0;
+        this.actionListenerAdded = false;
     }
 
     configure(modalConfig) {
@@ -321,6 +324,7 @@ export default class ModalAddRandomQuestion extends Modal {
      * @return {promise} Resolved with form HTML and JS.
      */
     loadForm() {
+        const requestId = ++this.formRequestId;
         const addonpage = this.getAddOnPageId();
         const quizcmid = this.quizCmId;
         const lastBankCmid = window.sessionStorage.getItem('lastBankCmid');
@@ -332,6 +336,7 @@ export default class ModalAddRandomQuestion extends Modal {
             .catch((ex) => {
                 if (lastBankCmid && (ex.errorcode === 'nopermissions' || ex.errorcode === 'invalidcoursemodule')) {
                     // The user has lost access to their last accessed bank, try again with the current bank.
+                    window.sessionStorage.removeItem('lastBankCmid');
                     bankcmid = this.bankCmId;
                     return this.loadFormFragment(bankcmid, savedfiltercondition);
                 }
@@ -340,6 +345,9 @@ export default class ModalAddRandomQuestion extends Modal {
 
         fragmentPromise
             .then(({html, js}) => {
+                if (requestId !== this.formRequestId) {
+                    return false;
+                }
                 const form = $(html);
                 if (!this.getSlotId()) {
                     const existingCategoryTabContent = form.find(SELECTORS.EXISTING_CATEGORY_TAB);
@@ -354,13 +362,21 @@ export default class ModalAddRandomQuestion extends Modal {
                 }
 
                 Templates.replaceNode(this.getBody().find(SELECTORS.TAB_CONTENT), form, js);
-                return;
+                return true;
             })
-            .then(() => {
+            .then((rendered) => {
+                if (!rendered || requestId !== this.formRequestId) {
+                    return;
+                }
                 // Make sure the form change checker is disabled otherwise it'll stop the user from navigating away from the
                 // page once the modal is hidden.
                 FormChangeChecker.disableAllChecks();
 
+                // Fragment reloads must never install duplicate submit listeners.
+                if (this.actionListenerAdded) {
+                    return;
+                }
+                this.actionListenerAdded = true;
                 // Add question to quiz.
                 this.getBody()[0].addEventListener('click', (e) => {
                     const button = e.target.closest(SELECTORS.SUBMIT_BUTTON_ELEMENT);
@@ -368,6 +384,9 @@ export default class ModalAddRandomQuestion extends Modal {
                         return;
                     }
                     e.preventDefault();
+                    if (this.submitting) {
+                        return;
+                    }
 
                     // Intercept the submission to adjust the POST params so that the quiz mod id is set and not the bank module id.
                     document.querySelector('#questionscontainer input[name="cmid"]').setAttribute('name', this.quizCmId);
@@ -401,6 +420,20 @@ export default class ModalAddRandomQuestion extends Modal {
                         );
                         return;
                     }
+                });
+
+                // Enter in the form follows the same server-side service path as a click.
+                this.getBody()[0].addEventListener('submit', (e) => {
+                    if (!e.target.matches(SELECTORS.FORM_ELEMENT)) {
+                        return;
+                    }
+                    e.preventDefault();
+                    if (this.submitting) {
+                        return;
+                    }
+                    const button = e.submitter && e.submitter.matches(SELECTORS.SUBMIT_BUTTON_ELEMENT)
+                        ? e.submitter : e.target.querySelector(SELECTORS.SUBMIT_BUTTON_ELEMENT);
+                    button?.click();
                 });
 
                 const switcher = new BankSwitcher();
@@ -444,7 +477,61 @@ export default class ModalAddRandomQuestion extends Modal {
                     }
                 });
             })
-            .catch(Notification.exception);
+            .catch((error) => {
+                if (requestId === this.formRequestId) {
+                    this.loadedForm = false;
+                    Notification.exception(error);
+                }
+            });
+    }
+
+    /**
+     * Execute a single native quiz service call, preventing double submissions.
+     *
+     * @param {Object} call Validated Moodle service request.
+     * @return {Promise<void>}
+     */
+    async submitRequest(call) {
+        if (this.submitting) {
+            return;
+        }
+        const form = this.getBody().find(SELECTORS.FORM_ELEMENT).get(0);
+        if (!form) {
+            return;
+        }
+        this.submitting = true;
+        const submitButtons = Array.from(form.querySelectorAll(SELECTORS.SUBMIT_BUTTON_ELEMENT));
+        const status = form.querySelector('[data-region="quiz-selection-status"]');
+        submitButtons.forEach((button) => {
+            button.disabled = true;
+        });
+        if (status) {
+            status.textContent = status.dataset.busyMessage || '';
+        }
+
+        // The pending operation stays active after success because the page redirects.
+        const pending = new Pending('mod-quiz/modal_add_random_questions');
+        let committed = false;
+        try {
+            const response = await fetchMany([call])[0];
+            const messageInput = form.querySelector(SELECTORS.MESSAGE_INPUT);
+            messageInput.value = response.message;
+            form.submit();
+            committed = true;
+        } catch (error) {
+            Notification.exception(error);
+        } finally {
+            if (!committed) {
+                pending.resolve();
+                this.submitting = false;
+                submitButtons.forEach((button) => {
+                    button.disabled = false;
+                });
+                if (status) {
+                    status.textContent = '';
+                }
+            }
+        }
     }
 
     /**
@@ -457,7 +544,7 @@ export default class ModalAddRandomQuestion extends Modal {
      * @param {string} newcategory add new category
      * @param {string} parentcategory parent category of new category
      */
-    async addQuestions(
+    addQuestions(
         quizcmid,
         addonpage,
         randomcount,
@@ -465,9 +552,7 @@ export default class ModalAddRandomQuestion extends Modal {
         newcategory,
         parentcategory
     ) {
-        // We do not need to resolve this Pending because the form submission will result in a page redirect.
-        new Pending('mod-quiz/modal_add_random_questions');
-        const call = {
+        return this.submitRequest({
             methodname: 'mod_quiz_add_random_questions',
             args: {
                 cmid: quizcmid,
@@ -477,49 +562,26 @@ export default class ModalAddRandomQuestion extends Modal {
                 newcategory,
                 parentcategory,
             }
-        };
-        try {
-            const response = await fetchMany([call])[0];
-            const form = document.querySelector(SELECTORS.FORM_ELEMENT);
-            const messageInput = form.querySelector(SELECTORS.MESSAGE_INPUT);
-            messageInput.value = response.message;
-            form.submit();
-        } catch (e) {
-            Notification.exception(e);
-        }
+        });
     }
 
     /**
-     * Call web service function to update the filter condition for an existing slot.
+     * Update filters for one existing random-question slot.
      *
-     * @param {number} quizcmid the course module id of the quiz.
-     * @param {number} slotid The slot the random question is in.
-     * @param {string} filtercondition The new filter condition.
+     * @param {number} quizcmid Quiz course module id.
+     * @param {number} slotid Slot ID.
+     * @param {string} filtercondition Native filter definition.
+     * @return {Promise<void>}
      */
-    async updateFilterCondition(
-        quizcmid,
-        slotid,
-        filtercondition,
-    ) {
-        // We do not need to resolve this Pending because the form submission will result in a page redirect.
-        new Pending('mod-quiz/modal_add_random_questions');
-        const call = {
+    updateFilterCondition(quizcmid, slotid, filtercondition) {
+        return this.submitRequest({
             methodname: 'mod_quiz_update_filter_condition',
             args: {
                 cmid: quizcmid,
                 slotid,
                 filtercondition,
             }
-        };
-        try {
-            const response = await fetchMany([call])[0];
-            const form = document.querySelector(SELECTORS.FORM_ELEMENT);
-            const messageInput = form.querySelector(SELECTORS.MESSAGE_INPUT);
-            messageInput.value = response.message;
-            form.submit();
-        } catch (e) {
-            Notification.exception(e);
-        }
+        });
     }
 
     /**
