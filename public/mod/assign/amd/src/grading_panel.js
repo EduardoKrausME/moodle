@@ -221,6 +221,7 @@ define([
             return;
         }
         $('[data-region="overlay"]').hide();
+        const endOfList = nextUser === false && nextUserId === null;
         if (typeof nextUserId === "undefined") {
             nextUserId = request.userId;
         }
@@ -254,8 +255,11 @@ define([
                     Toast.add(message);
                 }).catch(notification.exception);
 
-            if (nextUserId == request.userId || (!nextUser && (nextUserId === null || nextUserId <= 0))) {
-                $(document).trigger('reset', nextUserId);
+            if (endOfList) {
+                $(document).trigger('reset', request.userId);
+                $(document).trigger('assign-grading-sequence-complete');
+            } else if (nextUserId == request.userId) {
+                $(document).trigger('reset', request.userId);
             } else if (nextUser) {
                 $(document).trigger('done-saving-show-next', true);
             } else {
@@ -479,7 +483,9 @@ define([
      * @method _handleSaveAndShowNext
      */
     GradingPanel.prototype._handleSaveAndShowNext = function() {
-        this._submitForm(null, this.nextUserId, this.nextUser);
+        // An explicit null records "no next participant" separately from a
+        // normal Save action, which passes an undefined destination.
+        this._submitForm(null, this.nextUserId ?? null, this.nextUser);
     };
 
     /**
