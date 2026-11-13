@@ -37,7 +37,7 @@ Feature: Teachers can understand exactly which assignment submissions bulk actio
     When I navigate to "Submissions" in current page administration
     Then "Select all" "checkbox" should exist
     And "#submissions [name='selectall'][aria-describedby='assign-bulk-selectall-scope']" "css_element" should exist
-    And I should see "Select all participants on this page" in the "#submissions" "css_element"
+    And "#submissions #assign-bulk-selectall-scope" "css_element" should exist
 
   Scenario: A partial selection gives the header an accessible mixed state
     Given I am on the "Bulk grading review" Activity page logged in as teacher1
@@ -115,6 +115,6 @@ Feature: Teachers can understand exactly which assignment submissions bulk actio
     And I navigate to "Submissions" in current page administration
     And I click on "Select all" "checkbox"
     When I click on "Change marking state" "button" in the "sticky-footer" "region"
-    Then I should see "1 participants selected on this page" in the "Set marking workflow state" "dialogue"
+    Then I should see "1 participant selected on this page" in the "Set marking workflow state" "dialogue"
     When I click on "Change marking state" "button" in the "Set marking workflow state" "dialogue"
     Then I should see "Marking workflow state"
