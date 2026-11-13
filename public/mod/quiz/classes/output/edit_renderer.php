@@ -389,7 +389,7 @@ class edit_renderer extends \plugin_renderer_base {
             $class .= ' only-one-section';
         }
         return html_writer::start_tag('ul', [
-            'class' => $class . ' mod-quiz-edit-section-list', 'role' => 'presentation',
+            'class' => $class . ' mod-quiz-edit-section-list',
         ]);
     }
 
@@ -431,7 +431,6 @@ class edit_renderer extends \plugin_renderer_base {
 
         $output .= html_writer::start_tag('li', ['id' => 'section-'.$section->id,
             'class' => 'section main clearfix mod-quiz-edit-section' . $sectionstyle,
-            'role' => 'presentation',
             'data-sectionname' => $sectionheadingtext]);
 
         $output .= html_writer::start_div('content mod-quiz-edit-section-content');
@@ -578,7 +577,8 @@ class edit_renderer extends \plugin_renderer_base {
 
         $output .= html_writer::tag('li', $questionhtml . $joinhtml,
                 ['class' => $questionclasses, 'id' => 'slot-' . $structure->get_slot_id_for_slot($slot),
-                        'data-canfinish' => $structure->can_finish_during_the_attempt($slot)]);
+                        'data-canfinish' => $structure->can_finish_during_the_attempt($slot),
+                        'aria-labelledby' => 'mod-quiz-edit-question-name-' . $structure->get_slot_id_for_slot($slot)]);
 
         return $output;
     }
@@ -804,6 +804,18 @@ class edit_renderer extends \plugin_renderer_base {
             $questionnumber = $structure->get_displayed_number_for_slot($slot);
         }
 
+        // Reuse the question bank's own name for the type. Random and missing
+        // questions need explicit labels without creating editable links.
+        $questiontype = $structure->get_question_type_for_slot($slot);
+        if ($structure->get_slot_by_number($slot)->random) {
+            $questiontype = get_string('randomquestion', 'quiz');
+        } else if (question_bank::is_qtype_usable($questiontype)) {
+            $questiontype = question_bank::get_qtype($questiontype, false)->local_name();
+        } else {
+            $questiontype = get_string('invalidquestiontype', 'question',
+                    $question->originalqtype ?? $questiontype);
+        }
+
         $data = [
             'slotid' => $slotid,
             'actionslabel' => get_string('editquestionactions', 'quiz',
@@ -811,6 +823,7 @@ class edit_renderer extends \plugin_renderer_base {
             'canbeedited' => $structure->can_be_edited(),
             'israndom' => (bool) $structure->get_slot_by_number($slot)->random,
             'isinfo' => !$structure->is_real_question($slot),
+            'questiontype' => $questiontype,
             'checkbox' => $this->get_checkbox_render($structure, $slot),
             'questionnumber' => $this->question_number($questionnumber, $structure->get_slot_by_number($slot)->defaultnumber),
             'questionname' => $this->get_question_name_for_slot($structure, $slot, $pageurl),
@@ -893,7 +906,7 @@ class edit_renderer extends \plugin_renderer_base {
         if (!$slotinfo->random && question_bank::is_qtype_usable($qtype)) {
             $questionicons .= $this->question_preview_icon($structure->get_quiz(),
                     $structure->get_question_in_slot($slot),
-                    null, null, $slotinfo->requestedversion ?: question_preview_options::ALWAYS_LATEST);
+                    true, null, $slotinfo->requestedversion ?: question_preview_options::ALWAYS_LATEST);
         }
         if ($structure->can_be_edited() && $structure->has_use_capability($slot)) {
             $questionicons .= $this->question_remove_icon($structure, $slot, $pageurl);
@@ -995,7 +1008,9 @@ class edit_renderer extends \plugin_renderer_base {
 
         $image = $this->pix_icon('t/delete', $strdelete);
 
-        return $this->action_link($url, $image, null, ['title' => $strdelete,
+        return $this->action_link($url,
+                $image . ' ' . html_writer::span($strdelete, 'mod-quiz-edit-question__action-label'),
+                null, ['title' => $strdelete,
                     'class' => 'cm-edit-action editing_delete', 'data-action' => 'delete']);
     }
 
@@ -1242,7 +1257,9 @@ class edit_renderer extends \plugin_renderer_base {
                 ]
             )
         );
-        return html_writer::span($output, 'instancemaxmarkcontainer');
+        return html_writer::span(
+                html_writer::span(get_string('maxmark', 'quiz'), 'mod-quiz-edit-question__mark-label') . $output,
+                'instancemaxmarkcontainer mod-quiz-edit-question__mark');
     }
 
     /**

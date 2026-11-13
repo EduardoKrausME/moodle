@@ -26,6 +26,7 @@
         "checkbox": "<input id='selectquestion-1' name='selectquestion[]' type='checkbox' class='select-multiple-checkbox'>",
         "questionnumber": "<span class='slotnumber'><span class='accesshide'>Question</span> 1</span>",
         "questionname": "This is a test question",
+        "questiontype": "Multiple choice",
         "questionicons": "<i class='icon fa fa-search-plus fa-fw' title='Preview question'></i>",
         "questiondependencyicon": "<span class='question_dependency_wrapper question_dependency_cannot_depend'></span>",
         "versionselection": true,
@@ -58,32 +59,34 @@
     {{{questionnumber}}}
     <div class="mod-indent"></div>
     <div class="activityinstance mod-quiz-edit-question__content">
-        <div class="mod-quiz-edit-question__name">{{{questionname}}}</div>
-        {{#israndom}}
-            <span class="mod-quiz-edit-question__kind">{{#str}}randomquestion, quiz{{/str}}</span>
-        {{/israndom}}
-        {{#issharedbank}}
-            <div class="sharedbank mod-quiz-edit-question__bank">
-                {{#bankurl}}
-                    <a href="{{bankurl}}">
-                {{/bankurl}}
-                    <span class="badge bg-primary text-light ms-2 mt-1">{{{bankname}}}</span>
-                {{#bankurl}}
-                    </a>
-                {{/bankurl}}
-            </div>
-        {{/issharedbank}}
+        <h5 class="mod-quiz-edit-question__name" id="mod-quiz-edit-question-name-{{slotid}}">{{{questionname}}}</h5>
+        <div class="mod-quiz-edit-question__metadata">
+            <span class="mod-quiz-edit-question__kind">{{questiontype}}</span>
+            {{#issharedbank}}
+                <div class="sharedbank mod-quiz-edit-question__bank">
+                    {{#bankurl}}
+                        <a href="{{bankurl}}">
+                    {{/bankurl}}
+                        <span class="badge bg-primary text-light">{{{bankname}}}</span>
+                    {{#bankurl}}
+                        </a>
+                    {{/bankurl}}
+                </div>
+            {{/issharedbank}}
+        </div>
     </div>
     <div class="actions mod-quiz-edit-question__actions" role="group"
             aria-label="{{actionslabel}}">
         {{#versionselection}}
-            <label for="version-{{slotid}}" class="visually-hidden">{{#str}}question_version, question{{/str}}</label>
-            <select id="version-{{slotid}}" name="version" class="form-select me-2 version-selection mod-quiz-edit-question__version"
-            data-action="mod_quiz-select_slot" data-slot-id="{{slotid}}">
-                {{#versionoption}}
-                    <option value="{{version}}" {{#selected}}selected="selected"{{/selected}}>{{versionvalue}}</option>
-                {{/versionoption}}
-            </select>
+            <div class="mod-quiz-edit-question__version-control">
+                <label for="version-{{slotid}}" class="mod-quiz-edit-question__version-label">{{#str}}question_version, question{{/str}}</label>
+                <select id="version-{{slotid}}" name="version" class="form-select me-2 version-selection mod-quiz-edit-question__version"
+                data-action="mod_quiz-select_slot" data-slot-id="{{slotid}}">
+                    {{#versionoption}}
+                        <option value="{{version}}" {{#selected}}selected="selected"{{/selected}}>{{versionvalue}}</option>
+                    {{/versionoption}}
+                </select>
+            </div>
         {{/versionselection}}
         {{{questionicons}}}
     </div>

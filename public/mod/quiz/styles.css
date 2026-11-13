@@ -2590,6 +2590,118 @@ table.quizreviewsummary td.cell {
     }
 }
 
+/* Quiz question editor: clearly identified metadata and actions; keep legacy YUI selectors intact. */
+#page-mod-quiz-edit .mod-quiz-edit-question__name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+#page-mod-quiz-edit .mod-quiz-edit-question__metadata {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.375rem 0.5rem;
+    min-width: 0;
+}
+
+#page-mod-quiz-edit .mod-quiz-edit-question__metadata .mod-quiz-edit-question__bank .badge {
+    margin: 0;
+}
+
+#page-mod-quiz-edit .mod-quiz-edit-question__version-control {
+    display: flex;
+    order: 1;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    min-width: 0;
+}
+
+#page-mod-quiz-edit .mod-quiz-edit-question__version-label,
+#page-mod-quiz-edit .mod-quiz-edit-question__mark-label {
+    color: var(--bs-secondary-color);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+#page-mod-quiz-edit .mod-quiz-edit-question__version-control .mod-quiz-edit-question__version {
+    min-width: 7rem;
+    max-width: 12rem;
+    margin: 0;
+}
+
+#page-mod-quiz-edit ul.slots li.section li.activity .actions.mod-quiz-edit-question__actions
+    .instancemaxmarkcontainer.mod-quiz-edit-question__mark {
+    display: inline-flex;
+    order: 0;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    min-height: 2.5rem;
+    padding: 0 0.5rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-sm, 0.25rem);
+}
+
+#page-mod-quiz-edit ul.slots li.section li.activity .actions.mod-quiz-edit-question__actions
+    a.preview,
+#page-mod-quiz-edit ul.slots li.section li.activity .actions.mod-quiz-edit-question__actions
+    a.editing_delete {
+    display: inline-flex;
+    order: 2;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 2.5rem;
+    padding: 0.375rem 0.625rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-sm, 0.25rem);
+    color: var(--bs-body-color);
+    text-decoration: none;
+}
+
+#page-mod-quiz-edit ul.slots li.section li.activity .actions.mod-quiz-edit-question__actions
+    a.editing_delete {
+    order: 3;
+}
+
+#page-mod-quiz-edit ul.slots li.section li.activity .actions.mod-quiz-edit-question__actions
+    a:is(.preview, .editing_delete):hover {
+    background: var(--bs-tertiary-bg);
+}
+
+#page-mod-quiz-edit .mod-quiz-edit-slot .editing_move {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+}
+
+#page-mod-quiz-edit .mod-quiz-edit-slot .editing_move:focus-visible {
+    outline: 3px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+@media (max-width: 575.98px) {
+    #page-mod-quiz-edit .mod-quiz-edit-question__version-control {
+        flex: 1 1 100%;
+    }
+
+    #page-mod-quiz-edit .mod-quiz-edit-question__version-control .mod-quiz-edit-question__version {
+        flex: 1 1 8rem;
+        max-width: 100%;
+    }
+
+    #page-mod-quiz-edit ul.slots li.section li.activity .actions.mod-quiz-edit-question__actions
+        a:is(.preview, .editing_delete) {
+        flex: 1 1 auto;
+    }
+}
+
 /* Question bank selection and random question dialogs. Scoped to fragment roots,
    because Moodle modals can render outside #page-mod-quiz-edit. */
 .mod-quiz-selector-dialog {
