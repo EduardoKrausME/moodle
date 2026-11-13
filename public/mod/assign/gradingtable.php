@@ -400,7 +400,9 @@ class assign_grading_table extends table_sql implements renderable {
             $bulkactionsselection = html_writer::span(get_string('bulkactionsselection', 'assign'), 'visually-hidden');
 
             // The select all checkbox.
-            $selectalllabel = html_writer::label(get_string('selectall'), 'selectall', false, ['class' => 'visually-hidden']);
+            $selectalllabel = html_writer::label(
+                get_string('bulkselectallpage', 'assign'), 'selectall', false, ['class' => 'visually-hidden']
+            );
             $selectallcheckbox = html_writer::empty_tag(
                 'input',
                 [
