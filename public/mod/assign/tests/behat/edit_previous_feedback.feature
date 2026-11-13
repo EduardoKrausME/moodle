@@ -45,7 +45,8 @@ Feature: In an assignment, teachers can edit feedback for a students previous su
     And I log out
 
     And I am on the "Test assignment name" Activity page logged in as student2
-    And I should see "I'm the teacher first feedback" in the "Feedback comments" "table_row"
+    And I click on "Review this previous attempt" "text"
+    And I should see "I'm the teacher first feedback" in the ".assign-attempt-timeline-detail-content" "css_element"
     And I log out
 
     And I am on the "Test assignment name" Activity page logged in as teacher1
@@ -63,7 +64,8 @@ Feature: In an assignment, teachers can edit feedback for a students previous su
     And I log out
 
     And I am on the "Test assignment name" Activity page logged in as student2
-    Then I should see "I'm the teacher second feedback" in the "Feedback comments" "table_row"
+    Then I click on "Review this previous attempt" "text"
+    And I should see "I'm the teacher second feedback" in the ".assign-attempt-timeline-detail-content" "css_element"
     And I should see "50.00"
     And I click on ".mod-assign-history-link" "css_element"
     And I should not see "I'm the teacher second feedback" in the "Feedback comments" "table_row"

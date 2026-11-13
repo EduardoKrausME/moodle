@@ -53,5 +53,5 @@ Feature: In an assignment, teachers can edit a students submission inline
     And I should see "Submitted for grading" in the "Submission status" "table_row"
     And I should see "Graded" in the "Grading status" "table_row"
     And I should see "I'm the student first submission" in the "Online text" "table_row"
-    And I should see "I'm the teacher feedback" in the "Feedback comments" "table_row"
-    And I should see "empty.txt" in the "Feedback files" "table_row"
+    And I should see "I'm the teacher feedback" in the ".assign-student-feedback" "css_element"
+    And I should see "empty.txt" in the ".assign-student-feedback" "css_element"

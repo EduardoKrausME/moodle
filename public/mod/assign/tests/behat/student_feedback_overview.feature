@@ -39,6 +39,9 @@ Feature: Student feedback overview shows only authorised grade and plugin inform
       | submissiondrafts | 0 |
       | assignsubmission_onlinetext_enabled | 1 |
       | assignfeedback_comments_enabled | 1 |
+    And the following "mod_assign > submissions" exist:
+      | assign | user | onlinetext |
+      | Marked assignment | student1 | Initial submission |
     And I am on the "Marked assignment" Activity page logged in as teacher1
     And I go to "Student One" "Marked assignment" activity advanced grading page
     And I set the field "Grade out of 100" to "85"
@@ -60,7 +63,11 @@ Feature: Student feedback overview shows only authorised grade and plugin inform
       | name | Pending release |
       | markingworkflow | 1 |
       | submissiondrafts | 0 |
+      | assignsubmission_onlinetext_enabled | 1 |
       | assignfeedback_comments_enabled | 1 |
+    And the following "mod_assign > submissions" exist:
+      | assign | user | onlinetext |
+      | Pending release | student1 | Initial submission |
     And I am on the "Pending release" Activity page logged in as teacher1
     And I go to "Student One" "Pending release" activity advanced grading page
     And I set the field "Grade out of 100" to "90"
@@ -81,7 +88,11 @@ Feature: Student feedback overview shows only authorised grade and plugin inform
       | name | Anonymous feedback |
       | hidegrader | 1 |
       | submissiondrafts | 0 |
+      | assignsubmission_onlinetext_enabled | 1 |
       | assignfeedback_comments_enabled | 1 |
+    And the following "mod_assign > submissions" exist:
+      | assign | user | onlinetext |
+      | Anonymous feedback | student1 | Initial submission |
     And I am on the "Anonymous feedback" Activity page logged in as teacher1
     And I go to "Student One" "Anonymous feedback" activity advanced grading page
     And I set the field "Grade out of 100" to "75"
@@ -93,3 +104,26 @@ Feature: Student feedback overview shows only authorised grade and plugin inform
     And I should see "Review the methodology." in the ".assign-student-feedback-plugin" "css_element"
     And ".assign-student-feedback-grader" "css_element" should not exist
     And I should not see "Graded by" in the ".assign-student-feedback" "css_element"
+
+  @javascript @_file_upload
+  Scenario: Feedback files retain their native download links
+    Given the following "activity" exists:
+      | activity | assign |
+      | course | C1 |
+      | name | Feedback files assignment |
+      | submissiondrafts | 0 |
+      | assignsubmission_onlinetext_enabled | 1 |
+      | assignfeedback_file_enabled | 1 |
+    And the following "mod_assign > submissions" exist:
+      | assign | user | onlinetext |
+      | Feedback files assignment | student1 | Initial submission |
+    And I am on the "Feedback files assignment" Activity page logged in as teacher1
+    And I go to "Student One" "Feedback files assignment" activity advanced grading page
+    And I set the field "Grade out of 100" to "60"
+    And I upload "lib/tests/fixtures/empty.txt" file to "Feedback files" filemanager
+    And I press "Save changes"
+    And I log out
+    When I am on the "Feedback files assignment" Activity page logged in as student1
+    Then ".assign-student-feedback" "css_element" should exist
+    And I should see "empty.txt" in the ".assign-student-feedback-plugin" "css_element"
+    And "empty.txt" "link" should exist in the ".assign-student-feedback-plugin" "css_element"
