@@ -21,7 +21,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      3.1
  */
-define(['jquery', 'mod_assign/grading_events'], function($, GradingEvents) {
+define(['jquery', 'mod_assign/grading_events', 'core/str'], function($, GradingEvents, Str) {
 
     /**
      * GradingActions class.
@@ -32,6 +32,8 @@ define(['jquery', 'mod_assign/grading_events'], function($, GradingEvents) {
     var GradingActions = function(selector) {
         this._regionSelector = selector;
         this._region = $(selector);
+        this._statusRevision = 0;
+        this._isSaving = false;
 
         this.registerEventListeners();
     };
@@ -287,6 +289,42 @@ define(['jquery', 'mod_assign/grading_events'], function($, GradingEvents) {
     };
 
     /**
+     * Display a server-localised, screen-reader-announced save status.
+     *
+     * @param {String} key Moodle string key.
+     */
+    GradingActions.prototype._showSaveStatus = function(key) {
+        const status = this._region.find('[data-region="grading-save-status"]');
+        if (!status.length) {
+            return;
+        }
+        const revision = ++this._statusRevision;
+        Str.get_string(key, 'mod_assign').then(function(message) {
+            if (revision === this._statusRevision) {
+                status.text(message);
+                status.attr('data-state', key);
+            }
+        }.bind(this)).catch(function() {
+            // The native form and save controls remain usable if a label fails.
+        });
+    };
+
+    /**
+     * Disable repeat submissions while keeping native form data untouched.
+     *
+     * @param {Boolean} busy Save currently in progress.
+     */
+    GradingActions.prototype._setSaveBusy = function(busy) {
+        this._isSaving = busy;
+        this._region.find('[name="savechanges"],[name="saveandshownext"],[name="resetbutton"]')
+            .prop('disabled', busy);
+        $('[data-action="change-user"]').prop('disabled', busy);
+        $('[data-action="previous-user"],[data-action="next-user"]')
+            .attr('aria-disabled', String(busy))
+            .toggleClass('disabled', busy);
+    };
+
+    /**
      * Register event listeners for the grade panel.
      *
      * @method registerEventListeners
@@ -381,6 +419,32 @@ define(['jquery', 'mod_assign/grading_events'], function($, GradingEvents) {
         }
 
         $(document).on('user-changed', this._showActionsForm.bind(this));
+        $(document).on('assign-grading-save-start', function() {
+            this._setSaveBusy(true);
+            this._showSaveStatus('savingchanges');
+        }.bind(this));
+        $(document).on('assign-grading-save-success', function() {
+            this._setSaveBusy(false);
+            this._showSaveStatus('gradingsavedsuccess');
+        }.bind(this));
+        $(document).on('assign-grading-save-failed', function(event, reason) {
+            this._setSaveBusy(false);
+            this._showSaveStatus(reason === 'validation' ? 'gradingvalidationfailed' :
+                reason === 'newchanges' ? 'gradingnewchanges' : 'gradingnetworkuncertain');
+        }.bind(this));
+        $(document).on('assign-grading-sequence-complete', function() {
+            this._showSaveStatus('gradingendoflist');
+        }.bind(this));
+        $(document).on('finish-loading-user', function() {
+            if (!this._isSaving) {
+                this._showSaveStatus('gradingnochanges');
+            }
+        }.bind(this));
+        $(document).on('input change', '[data-region="grade-panel"] .gradeform :input', function() {
+            if (!this._isSaving) {
+                this._showSaveStatus('gradingpendingchanges');
+            }
+        }.bind(this));
 
         this._region.find('[name="savechanges"]').on('click', this._trigger.bind(this, 'save-changes'));
         this._region.find('[name="saveandshownext"]').on('click', this._trigger.bind(this, 'save-and-show-next'));
