@@ -156,7 +156,8 @@ class quiz_grading_renderer extends plugin_renderer_base {
                 'method' => 'post',
                 'action' => $formaction,
                 'class' => 'mform',
-                'id' => 'manualgradingform'
+                'id' => 'manualgradingform',
+                'data-saving-label' => get_string('gradingbatchsaving', 'quiz_grading'),
         ]);
         $output .= html_writer::start_tag('div');
         $output .= html_writer::input_hidden_params(new moodle_url('', $hiddeninputs));

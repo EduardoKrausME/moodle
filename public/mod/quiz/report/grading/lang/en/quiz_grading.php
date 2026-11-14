@@ -85,3 +85,5 @@ $string['gradingbatchprevious'] = 'Previous response';
 $string['gradingbatchnext'] = 'Next response';
 $string['gradingbatchnavigation'] = 'Navigate within this grading batch';
 $string['gradingoptionshint'] = 'Choose the grading state, number of responses and order. Random order has no fixed next page. These options affect only the report view.';
+$string['gradingbatchsaving'] = 'Saving grades...';
+$string['gradinginvalidbatch'] = 'The grading batch has changed or is no longer available. Reload the report and try again.';
