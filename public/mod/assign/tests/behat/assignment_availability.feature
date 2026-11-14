@@ -1,4 +1,4 @@
-@mod @mod_assign
+@mod @mod_assign @assign_ux_15 @assign_ux_15_1
 Feature: Assignment availability overview uses viewer-specific deadlines
   In order to plan submissions correctly
   As a student

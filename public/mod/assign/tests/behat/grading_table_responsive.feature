@@ -1,4 +1,4 @@
-@mod @mod_assign
+@mod @mod_assign @assign_ux_15 @assign_ux_15_2
 Feature: Native submissions table remains readable and fully functional on narrow screens
   In order to manage submissions on a computer or mobile device
   As a teacher

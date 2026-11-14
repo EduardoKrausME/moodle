@@ -1,4 +1,4 @@
-@mod @mod_assign
+@mod @mod_assign @assign_ux_15 @assign_ux_15_2
 Feature: Student feedback overview shows only authorised grade and plugin information
   In order to understand my assignment result
   As a learner

@@ -1,4 +1,4 @@
-@mod @mod_assign @javascript
+@mod @mod_assign @javascript @assign_ux_15 @assign_ux_15_3
 Feature: Assignment grading saves before navigating and never loses unconfirmed edits
   In order to grade successive participants without accidental data loss
   As a teacher

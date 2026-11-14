@@ -1,4 +1,4 @@
-@mod @mod_assign @javascript
+@mod @mod_assign @javascript @assign_ux_15 @assign_ux_15_3
 Feature: The assignment grader uses native accessible mobile tabs and keeps the desktop split view
   In order to review submissions without losing feedback and grade changes
   As a teacher

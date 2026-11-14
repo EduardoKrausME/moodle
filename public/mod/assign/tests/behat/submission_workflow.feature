@@ -1,4 +1,4 @@
-@mod @mod_assign
+@mod @mod_assign @assign_ux_15 @assign_ux_15_1
 Feature: A learner can review and confirm their saved assignment draft
   In order to understand when work is actually sent for grading
   As a student

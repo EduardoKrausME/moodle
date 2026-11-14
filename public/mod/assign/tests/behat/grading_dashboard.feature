@@ -1,4 +1,4 @@
-@mod @mod_assign
+@mod @mod_assign @assign_ux_15 @assign_ux_15_2
 Feature: Teachers see accurate, permission-aware progress for current assignment attempts
   In order to identify submissions still requiring attention
   As a teacher

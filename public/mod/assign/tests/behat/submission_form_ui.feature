@@ -1,4 +1,4 @@
-@mod @mod_assign
+@mod @mod_assign @assign_ux_15 @assign_ux_15_1
 Feature: Native assignment submission controls have clear responsive guidance
   In order to submit my work safely
   As a student

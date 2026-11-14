@@ -1,4 +1,4 @@
-@mod @mod_assign @javascript
+@mod @mod_assign @javascript @assign_ux_15 @assign_ux_15_3
 Feature: Native grading instruments have a consistent accessible assignment grading workspace
   In order to assess submissions without losing native grading contracts
   As a teacher

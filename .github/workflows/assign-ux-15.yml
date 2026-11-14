@@ -1,0 +1,229 @@
+name: Assignment UX/UI 15 CI
+# Unlike core CI, this workflow runs on direct commits to main.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/mod/assign/**'
+      - '.github/ci/assign-ux-15.json'
+      - '.github/ci/assign-ux-15-amd.cjs'
+      - '.github/workflows/assign-ux-15.yml'
+      - '.github/workflows/config-template.php'
+      - '.github/ci/moodle-php-router.php'
+  pull_request:
+    paths:
+      - 'public/mod/assign/**'
+      - '.github/ci/assign-ux-15.json'
+      - '.github/ci/assign-ux-15-amd.cjs'
+      - '.github/workflows/assign-ux-15.yml'
+      - '.github/workflows/config-template.php'
+      - '.github/ci/moodle-php-router.php'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: assign-ux-15-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  static:
+    name: PHP lint, JS lint, Gherkin, AMD and item map
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - name: Assignment PHP syntax
+        run: find public/mod/assign -type f -name '*.php' -print0 | xargs -0 -r -n 1 php -l
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - run: npm ci
+      - name: Verify mapping of all 15 approved UX items
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+          items = json.loads(Path('.github/ci/assign-ux-15.json').read_text())['items']
+          assert [i['number'] for i in items] == list(range(1, 16))
+          features = set()
+          amd = set()
+          for item in items:
+              n = item['number']
+              shard = (n - 1) // 5 + 1
+              assert item['shard'] == shard and item['phpunit'] and item['behat'], n
+              for name in item['phpunit']:
+                  p = Path(name)
+                  assert p.is_file() and name.startswith('public/mod/assign/tests/') and name.endswith('.php'), name
+                  assert re.search(r'function\s+test_[A-Za-z0-9_]+\s*\(', p.read_text()), name
+              for name in item['behat']:
+                  p = Path(name)
+                  assert p.is_file() and name.startswith('public/mod/assign/tests/behat/') and name.endswith('.feature'), name
+                  tags = p.read_text().splitlines()[0].split()
+                  assert '@mod_assign' in tags and '@assign_ux_15' in tags, name
+                  assert f'@assign_ux_15_{shard}' in tags, name
+                  assert re.search(r'^\s*Scenario(?: Outline)?:', p.read_text(), re.M), name
+                  features.add(name)
+              for name in item['amd']:
+                  p = Path(name)
+                  assert p.is_file() and name.startswith('public/mod/assign/amd/tests/') and name.endswith('_test.js'), name
+                  assert re.search(r'\bit\s*\(', p.read_text()), name
+                  amd.add(name)
+              print(f"Item {n:02d} {item['title']}")
+          assert len(features) == 15 and len(amd) == 3
+          print('15 feature files + 3 AMD regression files mapped')
+          PY
+      - name: Assignment ESLint
+        run: npx grunt eslint:amd --root=public/mod/assign
+      - name: Assignment CSS stylelint
+        run: npx grunt stylelint:css --root=public/mod/assign
+      - name: Assignment Gherkin lint
+        run: npx grunt gherkinlint --root=public/mod/assign
+      - name: Compile assignment AMD
+        run: npx grunt amd --root=public/mod/assign
+      - name: Run AMD regression tests
+        run: node .github/ci/assign-ux-15-amd.cjs
+  phpunit:
+    name: Full native mod_assign PHPUnit suite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+      exttests:
+        image: moodlehq/moodle-exttests
+        ports: ['8080:80']
+    env:
+      dbtype: pgsql
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pgsql, pdo_pgsql, mbstring, intl, gd, zip, redis, soap
+          ini-values: max_input_vars=5000
+          coverage: none
+      - uses: ramsey/composer-install@v4
+      - name: Initialise Moodle PHPUnit
+        shell: bash
+        run: |
+          echo "pathtophp=$(command -v php)" >> "$GITHUB_ENV"
+          cp .github/workflows/config-template.php config.php
+          mkdir -p ../moodledata ../phpunitdata
+          sudo locale-gen en_AU.UTF-8
+          php public/admin/tool/phpunit/cli/init.php --disable-composer
+      - name: Execute native assignment suite
+        run: vendor/bin/phpunit --testsuite mod_assign_testsuite --fail-on-empty-test-suite
+  behat:
+    name: Assignment Behat group ${{ matrix.shard }}
+    needs: static
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      dbtype: pgsql
+      MOODLE_CI_BEHAT: '1'
+      PHP_CLI_SERVER_WORKERS: '4'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pgsql, pdo_pgsql, mbstring, intl, gd, zip, soap
+          ini-values: max_input_vars=5000
+          coverage: none
+      - uses: ramsey/composer-install@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Build assignment AMD for browser
+        run: |
+          npm ci
+          npx grunt amd --root=public/mod/assign
+      - name: Execute tagged browser tests
+        shell: bash
+        env:
+          BEHAT_TAG: '@assign_ux_15_${{ matrix.shard }}'
+        run: |
+          set -euo pipefail
+          echo "pathtophp=$(command -v php)" >> "$GITHUB_ENV"
+          cp .github/workflows/config-template.php config.php
+          mkdir -p ../moodledata ../behatdata
+          sudo locale-gen en_AU.UTF-8
+          echo '127.0.0.1 host.docker.internal' | sudo tee -a /etc/hosts
+          docker run -d --rm --name assign-ci-selenium \
+            --shm-size=2g -p 4444:4444 \
+            --add-host=host.docker.internal:host-gateway \
+            selenium/standalone-chrome:4.33.0
+          php -S 0.0.0.0:8000 -t public .github/ci/moodle-php-router.php \
+            >/tmp/assign-behat-php.log 2>&1 &
+          webpid=$!
+          trap 'kill "$webpid" 2>/dev/null || true; docker rm -f assign-ci-selenium >/dev/null 2>&1 || true' EXIT
+          ready=false
+          for i in {1..90}; do
+            if curl -fsS http://127.0.0.1:4444/status 2>/dev/null | jq -e '.value.ready == true' >/dev/null 2>&1; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != true ]; then
+            echo "::error::Selenium did not report readiness"
+            docker logs assign-ci-selenium || true
+            exit 1
+          fi
+          php public/admin/tool/behat/cli/init.php --disable-composer
+          php public/admin/tool/behat/cli/run.php --profile=chrome --tags="$BEHAT_TAG"
+      - name: Gather Behat failure diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p .ci-artifacts/assign-ux-15
+          if [ -d ../behatdata/behat_dump ]; then
+            cp -a ../behatdata/behat_dump .ci-artifacts/assign-ux-15/
+          fi
+          if [ -f /tmp/assign-behat-php.log ]; then
+            cp /tmp/assign-behat-php.log .ci-artifacts/assign-ux-15/php-server.log
+          fi
+      - name: Upload Behat failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: assign-ux-15-behat-${{ matrix.shard }}
+          path: .ci-artifacts/assign-ux-15/
+          if-no-files-found: ignore

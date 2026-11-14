@@ -1,0 +1,191 @@
+{
+  "description": "15 mod_assign UX/UI items. All 15 tagged Behat feature files are sharded; the complete mod_assign PHPUnit suite runs; items 13-15 have dedicated AMD regressions.",
+  "items": [
+    {
+      "number": 1,
+      "title": "Página inicial",
+      "shard": 1,
+      "phpunit": [
+        "public/mod/assign/tests/locallib_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/submission_overview.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 2,
+      "title": "Configuração",
+      "shard": 1,
+      "phpunit": [
+        "public/mod/assign/tests/local/submission_guidance_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/assign_settings_navigation.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 3,
+      "title": "Prazos",
+      "shard": 1,
+      "phpunit": [
+        "public/mod/assign/tests/dates_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/assignment_availability.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 4,
+      "title": "Envio",
+      "shard": 1,
+      "phpunit": [
+        "public/mod/assign/tests/local/submission_guidance_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/submission_form_ui.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 5,
+      "title": "Rascunhos",
+      "shard": 1,
+      "phpunit": [
+        "public/mod/assign/tests/local/submission_workflow_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/submission_workflow.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 6,
+      "title": "Grupos",
+      "shard": 2,
+      "phpunit": [
+        "public/mod/assign/tests/local/group_submission_overview_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/group_submission_overview.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 7,
+      "title": "Tentativas",
+      "shard": 2,
+      "phpunit": [
+        "public/mod/assign/tests/local/attempt_history_overview_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/attempt_history_timeline.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 8,
+      "title": "Feedback",
+      "shard": 2,
+      "phpunit": [
+        "public/mod/assign/tests/local/feedback_overview_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/student_feedback_overview.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 9,
+      "title": "Dashboard",
+      "shard": 2,
+      "phpunit": [
+        "public/mod/assign/tests/local/grading_dashboard_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/grading_dashboard.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 10,
+      "title": "Tabela responsiva",
+      "shard": 2,
+      "phpunit": [
+        "public/mod/assign/tests/local/grading_table_layout_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/grading_table_responsive.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 11,
+      "title": "Filtros",
+      "shard": 3,
+      "phpunit": [
+        "public/mod/assign/tests/local/grading_filter_state_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/grading_filters_usability.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 12,
+      "title": "Estação de correção",
+      "shard": 3,
+      "phpunit": [
+        "public/mod/assign/tests/local/grading_station_layout_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/grading_station_responsive.feature"
+      ],
+      "amd": []
+    },
+    {
+      "number": 13,
+      "title": "Salvamento seguro",
+      "shard": 3,
+      "phpunit": [
+        "public/mod/assign/tests/locallib_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/grading_continuous_safe.feature"
+      ],
+      "amd": [
+        "public/mod/assign/amd/tests/grading_save_state_test.js"
+      ]
+    },
+    {
+      "number": 14,
+      "title": "Ações em lote",
+      "shard": 3,
+      "phpunit": [
+        "public/mod/assign/tests/local/bulk_action_targets_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/bulk_selection_usability.feature"
+      ],
+      "amd": [
+        "public/mod/assign/amd/tests/bulk_selection_ui_test.js"
+      ]
+    },
+    {
+      "number": 15,
+      "title": "Rubricas e avaliadores",
+      "shard": 3,
+      "phpunit": [
+        "public/mod/assign/tests/local/grading_assessment_view_test.php"
+      ],
+      "behat": [
+        "public/mod/assign/tests/behat/grading_assessment_ux.feature"
+      ],
+      "amd": [
+        "public/mod/assign/amd/tests/grading_assessment_test.js"
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-@mod @mod_assign
+@mod @mod_assign @assign_ux_15 @assign_ux_15_1
 Feature: Assignment edit form has section navigation while retaining native Moodle fields
   In order to configure assignments more easily
   As a teacher

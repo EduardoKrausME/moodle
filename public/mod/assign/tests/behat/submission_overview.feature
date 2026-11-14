@@ -1,4 +1,4 @@
-@mod @mod_assign
+@mod @mod_assign @assign_ux_15 @assign_ux_15_1
 Feature: Assignment landing page overview
   In order to understand what to do next without losing existing assignment functionality
   As a student or a teacher

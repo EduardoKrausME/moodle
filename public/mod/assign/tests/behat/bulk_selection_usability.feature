@@ -1,4 +1,4 @@
-@mod @mod_assign @javascript
+@mod @mod_assign @javascript @assign_ux_15 @assign_ux_15_3
 Feature: Teachers can understand exactly which assignment submissions bulk actions affect
   In order to avoid processing unintended participants
   As a teacher
