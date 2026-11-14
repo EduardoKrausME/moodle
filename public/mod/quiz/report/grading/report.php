@@ -479,7 +479,9 @@ class quiz_grading_report extends report_base {
         $this->print_header_and_tabs($this->cm, $this->course, $this->quiz, 'grading');
 
         $gradequestioncontent = '';
+        $batchnumber = 0;
         foreach ($qubaids as $qubaid) {
+            $batchnumber++;
             $attempt = $attempts[$qubaid];
             $quba = question_engine::load_questions_usage_by_activity($qubaid);
             $displayoptions = quiz_get_review_options($this->quiz, $attempt, $this->context);
@@ -492,7 +494,9 @@ class quiz_grading_report extends report_base {
                     $slot,
                     $displayoptions,
                     $this->questions[$slot]->number,
-                    $this->get_question_heading($attempt, $shownames, $showcustomfields)
+                    $this->get_question_heading($attempt, $shownames, $showcustomfields),
+                    $batchnumber,
+                    count($qubaids)
             );
         }
 
@@ -585,7 +589,6 @@ class quiz_grading_report extends report_base {
             throw new moodle_exception('invalidattemptid', 'quiz_grading');
         }
 
-        $slots = optional_param('slots', '', PARAM_SEQUENCE);
         if (!$slots) {
             $slots = [];
         } else {

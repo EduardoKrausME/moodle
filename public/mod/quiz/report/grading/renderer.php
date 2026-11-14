@@ -84,12 +84,12 @@ class quiz_grading_renderer extends plugin_renderer_base {
         $output = '';
 
         $table = new html_table();
-        $table->class = 'table generaltable';
+        $table->class = 'table generaltable mod-quiz-manual-grading-table';
         $table->id = 'questionstograde';
         $table->head = $header;
         $table->data = $data;
 
-        $output .= html_writer::table($table);
+        $output .= html_writer::div(html_writer::table($table), 'table-responsive mod-quiz-manual-grading-table-wrap');
 
         return $output;
     }
@@ -145,6 +145,9 @@ class quiz_grading_renderer extends plugin_renderer_base {
 
         $output .= $filterform->render();
 
+        $output .= html_writer::tag('p', get_string('gradingbatchhelp', 'quiz_grading'),
+                ['class' => 'mod-quiz-manual-grading-help']);
+
         $output .= $this->heading(get_string('gradingattemptsxtoyofz', 'quiz_grading', $paginginfo), 3);
 
         $output .= $this->render_paging_bar($pagingbar);
@@ -158,19 +161,34 @@ class quiz_grading_renderer extends plugin_renderer_base {
         $output .= html_writer::start_tag('div');
         $output .= html_writer::input_hidden_params(new moodle_url('', $hiddeninputs));
 
+        // This is local, unsaved editing progress, never a count of grades persisted to the database.
+        $totalinbatch = max(0, $paginginfo->to - $paginginfo->from + 1);
+        $progress = (object) ['edited' => 0, 'total' => $totalinbatch];
+        $progressformat = (object) ['edited' => '%EDITED%', 'total' => '%TOTAL%'];
+        $output .= html_writer::div(get_string('gradingbatchmodified', 'quiz_grading', $progress),
+                'mod-quiz-manual-grading-progress', [
+                    'data-region' => 'manual-grading-progress',
+                    'data-progress-template' => get_string('gradingbatchmodified', 'quiz_grading', $progressformat),
+                    'data-total' => $totalinbatch,
+                    'role' => 'status',
+                    'aria-live' => 'polite',
+                    'aria-atomic' => 'true',
+                ]);
+
         $output .= $gradequestioncontent;
 
         $output .= html_writer::tag('div', html_writer::empty_tag('input', [
                 'type' => 'submit',
                 'class' => 'btn btn-primary',
                 'value' => get_string('saveandnext', 'quiz_grading')
-        ]), ['class' => 'mdl-align']);
+        ]), ['class' => 'mdl-align mod-quiz-manual-grading-actions']);
         $output .= html_writer::end_tag('div') . html_writer::end_tag('form');
 
         $output .= $this->render_paging_bar($pagingbar);
 
         // Add the form change checker.
         $this->page->requires->js_call_amd('core_form/changechecker', 'watchFormById', ['manualgradingform']);
+        $this->page->requires->js_call_amd('mod_quiz/manual_grading_navigation', 'init');
 
         return $output;
     }
@@ -183,17 +201,60 @@ class quiz_grading_renderer extends plugin_renderer_base {
      * @param question_display_options $displayoptions the display options to use.
      * @param int $questionnumber the number of the question to check.
      * @param string $heading the question heading text.
+     * @param int $batchnumber Position of this response within the current batch.
+     * @param int $batchsize Number of responses in the batch.
      * @return string The HTML for the question display.
      */
-    public function render_grade_question($questionusage, $slot, $displayoptions, $questionnumber, $heading) {
+    public function render_grade_question($questionusage, $slot, $displayoptions, $questionnumber, $heading,
+            int $batchnumber = 0, int $batchsize = 0) {
         $output = '';
+
+        if ($batchnumber > 0) {
+            // The numbered label never exposes participant identity when identities are hidden.
+            $label = get_string('gradingbatchresponse', 'quiz_grading', $batchnumber);
+            $output .= html_writer::start_tag('section', [
+                'id' => 'mod-quiz-grading-response-' . $batchnumber,
+                'class' => 'mod-quiz-manual-grading-card',
+                'data-region' => 'manual-grading-card',
+                'role' => 'region',
+                'aria-label' => $label,
+            ]);
+            $output .= html_writer::tag('p', html_writer::tag('strong', $label),
+                    ['class' => 'mod-quiz-manual-grading-card__label']);
+        }
 
         if ($heading) {
             $output .= $this->heading($heading, 4);
         }
 
+        // Retain the native question engine markup, including grade and comment controls.
         $output .= $questionusage->render_question($slot, $displayoptions, $questionnumber);
 
+        if ($batchnumber > 0) {
+            $output .= html_writer::tag('p', get_string('gradingbatchunchanged', 'quiz_grading'), [
+                'class' => 'mod-quiz-manual-grading-card__status',
+                'data-region' => 'manual-grading-card-status',
+                'data-clean-message' => get_string('gradingbatchunchanged', 'quiz_grading'),
+                'data-dirty-message' => get_string('gradingbatchunsaved', 'quiz_grading'),
+                'aria-live' => 'polite',
+            ]);
+            $navigation = [];
+            if ($batchnumber > 1) {
+                $navigation[] = html_writer::link('#mod-quiz-grading-response-' . ($batchnumber - 1),
+                        get_string('gradingbatchprevious', 'quiz_grading'));
+            }
+            if ($batchnumber < $batchsize) {
+                $navigation[] = html_writer::link('#mod-quiz-grading-response-' . ($batchnumber + 1),
+                        get_string('gradingbatchnext', 'quiz_grading'));
+            }
+            if ($navigation) {
+                $output .= html_writer::tag('nav', implode(' ', $navigation), [
+                    'class' => 'mod-quiz-manual-grading-card__navigation',
+                    'aria-label' => get_string('gradingbatchnavigation', 'quiz_grading'),
+                ]);
+            }
+            $output .= html_writer::end_tag('section');
+        }
         return $output;
     }
 

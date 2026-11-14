@@ -77,6 +77,8 @@ class quiz_grading_settings_form extends moodleform {
         $mform = $this->_form;
 
         $mform->addElement('header', 'options', get_string('options', 'quiz_grading'));
+        $mform->addElement('static', 'gradingoptionshint', '',
+                get_string('gradingoptionshint', 'quiz_grading'));
 
         $gradeoptions = [];
         foreach (['needsgrading', 'manuallygraded', 'autograded', 'all'] as $type) {
