@@ -258,3 +258,69 @@ Feature: Basic use of the Manual grading report
     And the following should exist in the "generaltable" table:
       | Username | Q. 1  | Q. 2  | Q. 3 |
       | student1 | 12.50 | 50.00 | -    |
+
+  @javascript
+  Scenario: Native grading cards show progress and allow navigation inside a batch
+    Given the following "questions" exist:
+      | questioncategory | qtype | name        | questiontext                    |
+      | Test questions   | essay | Essay batch | Explain how testing is useful. |
+    And quiz "Quiz 2" contains the following questions:
+      | question    | page |
+      | Essay batch | 1    |
+    And the following "group members" exist:
+      | user     | group |
+      | student2 | tg    |
+    And user "student1" has attempted "Quiz 2" with responses:
+      | slot | response                 |
+      | 1    | Testing reveals mistakes |
+    And user "student2" has attempted "Quiz 2" with responses:
+      | slot | response              |
+      | 1    | Testing limits errors |
+    When I am on the "Quiz 2" "mod_quiz > Manual grading report" page logged in as "teacher1"
+    And I click on "Grade" "link" in the "Essay batch" "table_row"
+    Then I should see "Grading attempts 1 to 2 of 2"
+    And I should see "Unsaved edits in this batch: 0 of 2 responses"
+    And "#mod-quiz-grading-response-1[role='region']" "css_element" should exist
+    And "#mod-quiz-grading-response-2[role='region']" "css_element" should exist
+    And "#mod-quiz-grading-response-1 [data-region='manual-grading-card-status']" "css_element" should exist
+    And "[data-region='manual-grading-progress'][role='status']" "css_element" should exist
+    And "Next response" "link" should exist
+    And "Previous response" "link" should exist
+    And I should see "Save and show next"
+    And I change window size to "small"
+    And "#mod-quiz-grading-response-1" "css_element" should exist
+
+  @javascript
+  Scenario: Unsaved grading is explained before the native save and next
+    Given the following "questions" exist:
+      | questioncategory | qtype | name       | questiontext            |
+      | Test questions   | essay | Essay mark | Explain your reasoning. |
+    And quiz "Quiz 2" contains the following questions:
+      | question   | page |
+      | Essay mark | 1    |
+    And user "student1" has attempted "Quiz 2" with responses:
+      | slot | response       |
+      | 1    | The reasoning. |
+    When I am on the "Quiz 2" "mod_quiz > Manual grading report" page logged in as "teacher1"
+    And I click on "Grade" "link" in the "Essay mark" "table_row"
+    Then I should see "Unsaved edits in this batch: 0 of 1 responses"
+    When I set the field "Mark" to "0.6"
+    Then I should see "Unsaved edits in this batch: 1 of 1 responses"
+    And I should see "Changes in this response have not been saved"
+    And I press "Save and show next"
+    And I should see "All selected attempts have been graded. Returning to the list of questions."
+    And "Essay mark" row "To grade" column of "questionstograde" table should contain "0"
+
+  @javascript
+  Scenario: The manual grading filter remains native and its order is not a fixed sequence
+    Given user "student1" has attempted "Quiz 1" with responses:
+      | slot | response |
+      | 1    | Paris    |
+    When I am on the "Quiz 1" "mod_quiz > Manual grading report" page logged in as "teacher1"
+    And I follow "Also show questions that have been graded automatically"
+    And I click on "update grades" "link" in the "Short answer 001" "table_row"
+    Then I should see "Random order has no fixed next page."
+    And I set the field "Questions per page" to "1"
+    And I press "Change options"
+    And I should see "Unsaved edits in this batch: 0 of 1 responses"
+    And "Save and show next" "button" should exist
