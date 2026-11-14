@@ -59,7 +59,7 @@ class quiz_statistics_report extends report_base {
      * Display the report.
      */
     public function display($quiz, $cm, $course) {
-        global $OUTPUT, $DB;
+        global $OUTPUT, $DB, $PAGE;
 
         raise_memory_limit(MEMORY_HUGE);
 
@@ -270,15 +270,64 @@ class quiz_statistics_report extends report_base {
             $this->table->export_class_instance()->finish_document();
 
         } else {
-            // On-screen display of overview report.
+            // On-screen summary only. Never change the cached calculations or exports.
+            $groupname = get_string('reportresultallaccessible', 'quiz');
+            if ($currentgroup == self::NO_GROUPS_ALLOWED) {
+                $groupname = get_string('reportresultnogroup', 'quiz');
+            } else if ($currentgroup > 0) {
+                $groupname = format_string(groups_get_group_name($currentgroup), true);
+            }
+            $filters = [
+                ['label' => get_string('reportresultgroup', 'quiz'), 'value' => $groupname],
+                ['label' => get_string('calculatefrom', 'quiz_statistics'),
+                    'value' => \quiz_statistics\calculator::using_attempts_lang_string($whichattempts)],
+            ];
+            if (quiz_allows_multiple_tries($quiz)) {
+                $trylabels = [
+                    question_attempt::FIRST_TRY => get_string('firsttry', 'question'),
+                    question_attempt::LAST_TRY => get_string('lasttry', 'question'),
+                    question_attempt::ALL_TRIES => get_string('alltries', 'question'),
+                ];
+                $filters[] = [
+                    'label' => get_string('reportresultwhichtries', 'quiz'),
+                    'value' => $trylabels[$whichtries] ?? get_string('reportresultna', 'quiz'),
+                ];
+            }
+            echo \mod_quiz\output\report_insights::filters($filters);
+
+            $selectedcount = (int) $quizstats->s();
+            $notavailable = get_string('reportresultna', 'quiz');
+            $formatpercentage = static function ($value) use ($selectedcount, $quiz, $notavailable): string {
+                if (!$selectedcount || !is_numeric($value)) {
+                    return $notavailable;
+                }
+                $formatted = quiz_report_scale_summarks_as_percentage($value, $quiz);
+                return $formatted === '' ? $notavailable : (string) $formatted;
+            };
+            echo \mod_quiz\output\report_insights::metrics([
+                ['label' => get_string('reportresultselectedattempts', 'quiz'), 'value' => (string) $selectedcount],
+                ['label' => get_string('reportresultmean', 'quiz'),
+                    'value' => $formatpercentage($selectedcount ? $quizstats->avg() : null)],
+                ['label' => get_string('reportresultmedian', 'quiz'),
+                    'value' => $formatpercentage($quizstats->median)],
+                ['label' => get_string('reportresultdeviation', 'quiz'),
+                    'value' => $formatpercentage($quizstats->standarddeviation)],
+            ], get_string('reportresultstatisticsummary', 'quiz'));
+            echo html_writer::tag('p', get_string('reportresultstatisticsnote', 'quiz'),
+                    ['class' => 'mod-quiz-results-explanation']);
+            $PAGE->requires->js_call_amd('mod_quiz/report_insights', 'init');
+
             echo $OUTPUT->heading(get_string('quizinformation', 'quiz_statistics'), 3);
             echo $this->output_caching_info($quizstats->timemodified, $quiz->id, $groupstudentsjoins, $whichattempts, $reporturl);
             echo $this->everything_download_options($reporturl);
             $quizinfo = $quizstats->get_formatted_quiz_info_data($course, $cm, $quiz);
             echo $this->output_quiz_info_table($quizinfo);
-            if ($quizstats->s()) {
+            if ($selectedcount) {
                 echo $OUTPUT->heading(get_string('quizstructureanalysis', 'quiz_statistics'), 3);
+                echo \mod_quiz\output\report_insights::table_start(
+                        get_string('quizstructureanalysis', 'quiz_statistics'));
                 $this->output_quiz_structure_analysis_table($questionstats);
+                echo \mod_quiz\output\report_insights::table_end();
                 $this->output_statistics_graph($quiz, $qubaids);
             }
         }
@@ -611,6 +660,12 @@ class quiz_statistics_report extends report_base {
         $output = $PAGE->get_renderer('mod_quiz');
         $graphname = get_string('statisticsreportgraph', 'quiz_statistics');
         echo $output->chart($chart, $graphname);
+        $series = [];
+        foreach ($fieldstoplot as $key => $label) {
+            $series[] = ['label' => $label, 'values' => array_values($ydata[$key])];
+        }
+        echo \mod_quiz\output\report_insights::series_chart_data(
+                array_values($xdata), $series, $graphname);
     }
 
     /**

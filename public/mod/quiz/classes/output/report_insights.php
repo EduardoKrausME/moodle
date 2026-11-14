@@ -170,6 +170,45 @@ final class report_insights {
     }
 
     /**
+     * Expose the values of a native multi-series question chart in a table.
+     *
+     * @param array $labels Question position labels.
+     * @param array $series Pairs of translated name and already-calculated values.
+     * @param string $title Chart title.
+     * @return string Accessible chart data without new queries.
+     */
+    public static function series_chart_data(array $labels, array $series, string $title): string {
+        if (!$labels || !$series) {
+            return '';
+        }
+
+        $heading = html_writer::tag('th', get_string('reportresultquestionposition', 'quiz'),
+                ['scope' => 'col']);
+        foreach ($series as $item) {
+            $heading .= html_writer::tag('th', s((string) $item['label']), ['scope' => 'col']);
+        }
+        $rows = '';
+        foreach (array_values($labels) as $index => $label) {
+            $cells = html_writer::tag('th', s((string) $label), ['scope' => 'row']);
+            foreach ($series as $item) {
+                $values = array_values($item['values']);
+                $value = $values[$index] ?? get_string('reportresultna', 'quiz');
+                $cells .= html_writer::tag('td', s((string) $value));
+            }
+            $rows .= html_writer::tag('tr', $cells);
+        }
+
+        $table = html_writer::tag('table',
+            html_writer::tag('caption', s($title)) .
+            html_writer::tag('thead', html_writer::tag('tr', $heading)) .
+            html_writer::tag('tbody', $rows),
+            ['class' => 'table table-sm generaltable']);
+        return html_writer::tag('details',
+            html_writer::tag('summary', get_string('reportresultcharttable', 'quiz')) . $table,
+            ['class' => 'mod-quiz-results-chartdata', 'data-region' => 'quiz-results-chartdata']);
+    }
+
+    /**
      * Open an optional horizontal-scrolling region around the existing table.
      *
      * @param string $title Translated name of the table.

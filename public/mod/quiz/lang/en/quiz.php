@@ -1322,3 +1322,4 @@ $string['reportresultstatisticnocount'] = 'No completed graded attempts match th
 $string['reportresultchartsubtitle'] = 'The chart represents the data set described above; its values are also available as a table.';
 $string['reportresultshowqtext'] = 'Question text';
 $string['reportresultreportsection'] = 'Report data';
+$string['reportresultquestionposition'] = 'Question position';
