@@ -1323,3 +1323,7 @@ $string['reportresultchartsubtitle'] = 'The chart represents the data set descri
 $string['reportresultshowqtext'] = 'Question text';
 $string['reportresultreportsection'] = 'Report data';
 $string['reportresultquestionposition'] = 'Question position';
+$string['reportresultselectednote'] = 'Completed graded attempts selected by the native statistics calculation.';
+$string['reportresultmeannote'] = 'Average mark for the selected completed graded attempts, as a percentage of the maximum.';
+$string['reportresultmediannote'] = 'The middle grade of the selected calculation, not the percentage of passing students.';
+$string['reportresultdeviationnote'] = 'Spread of grades in the selected calculation, expressed on the same percentage scale.';

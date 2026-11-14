@@ -297,7 +297,12 @@ class quiz_statistics_report extends report_base {
 
             $selectedcount = (int) $quizstats->s();
             $notavailable = get_string('reportresultna', 'quiz');
-            $formatpercentage = static function ($value) use ($selectedcount, $quiz, $notavailable): string {
+            $canviewgradefigures = quiz_report_should_show_grades($quiz, $this->context);
+            $formatpercentage = static function ($value) use ($selectedcount, $quiz,
+                    $notavailable, $canviewgradefigures): string {
+                if (!$canviewgradefigures) {
+                    return get_string('reportresultgradeshidden', 'quiz');
+                }
                 if (!$selectedcount || !is_numeric($value)) {
                     return $notavailable;
                 }
@@ -305,13 +310,17 @@ class quiz_statistics_report extends report_base {
                 return $formatted === '' ? $notavailable : (string) $formatted;
             };
             echo \mod_quiz\output\report_insights::metrics([
-                ['label' => get_string('reportresultselectedattempts', 'quiz'), 'value' => (string) $selectedcount],
+                ['label' => get_string('reportresultselectedattempts', 'quiz'), 'value' => (string) $selectedcount,
+                    'note' => get_string('reportresultselectednote', 'quiz')],
                 ['label' => get_string('reportresultmean', 'quiz'),
-                    'value' => $formatpercentage($selectedcount ? $quizstats->avg() : null)],
+                    'value' => $formatpercentage($selectedcount ? $quizstats->avg() : null),
+                    'note' => get_string('reportresultmeannote', 'quiz')],
                 ['label' => get_string('reportresultmedian', 'quiz'),
-                    'value' => $formatpercentage($quizstats->median)],
+                    'value' => $formatpercentage($quizstats->median),
+                    'note' => get_string('reportresultmediannote', 'quiz')],
                 ['label' => get_string('reportresultdeviation', 'quiz'),
-                    'value' => $formatpercentage($quizstats->standarddeviation)],
+                    'value' => $formatpercentage($quizstats->standarddeviation),
+                    'note' => get_string('reportresultdeviationnote', 'quiz')],
             ], get_string('reportresultstatisticsummary', 'quiz'));
             echo html_writer::tag('p', get_string('reportresultstatisticsnote', 'quiz'),
                     ['class' => 'mod-quiz-results-explanation']);
