@@ -303,7 +303,7 @@ class quiz_statistics_report extends report_base {
                 if (!$canviewgradefigures) {
                     return get_string('reportresultgradeshidden', 'quiz');
                 }
-                if (!$selectedcount || !is_numeric($value)) {
+                if (!$selectedcount || !is_numeric($value) || !is_finite((float) $value)) {
                     return $notavailable;
                 }
                 $formatted = quiz_report_scale_summarks_as_percentage($value, $quiz);

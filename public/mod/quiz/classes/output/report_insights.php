@@ -49,7 +49,8 @@ final class report_insights {
         if ($groupid == attempts_report::NO_GROUPS_ALLOWED) {
             $group = get_string('reportresultnogroup', 'quiz');
         } else if ($groupid > 0) {
-            $group = format_string(groups_get_group_name($groupid), true);
+            $group = format_string(groups_get_group_name($groupid), true,
+                    ['context' => \context_module::instance($options->cm->id)]);
         } else {
             $group = get_string('reportresultallaccessible', 'quiz');
         }
@@ -184,14 +185,15 @@ final class report_insights {
 
         $heading = html_writer::tag('th', get_string('reportresultquestionposition', 'quiz'),
                 ['scope' => 'col']);
+        $columns = [];
         foreach ($series as $item) {
             $heading .= html_writer::tag('th', s((string) $item['label']), ['scope' => 'col']);
+            $columns[] = array_values($item['values']);
         }
         $rows = '';
         foreach (array_values($labels) as $index => $label) {
             $cells = html_writer::tag('th', s((string) $label), ['scope' => 'row']);
-            foreach ($series as $item) {
-                $values = array_values($item['values']);
+            foreach ($columns as $values) {
                 $value = $values[$index] ?? get_string('reportresultna', 'quiz');
                 $cells .= html_writer::tag('td', s((string) $value));
             }
