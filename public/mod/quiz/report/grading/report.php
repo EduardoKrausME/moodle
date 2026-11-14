@@ -139,8 +139,14 @@ class quiz_grading_report extends report_base {
             throw new moodle_exception('unknownquestion', 'quiz_grading');
         }
 
+        // Establish group access before handling a POST. The submitted usage ids are untrusted.
+        $this->currentgroup = $this->get_current_group($cm, $course, $this->context);
+        if ($this->currentgroup === self::NO_GROUPS_ALLOWED && data_submitted()) {
+            throw new moodle_exception('invalidattemptid', 'quiz_grading');
+        }
+
         // Process any submitted data.
-        if ($data = data_submitted() && confirm_sesskey() && $this->validate_submitted_marks()) {
+        if (data_submitted() && confirm_sesskey() && $this->validate_submitted_marks()) {
             // Changes done to handle attempts being missed from grading due to redirecting to new page.
             $attemptsgraded = $this->process_submitted_data();
 
@@ -154,7 +160,6 @@ class quiz_grading_report extends report_base {
         }
 
         // Get the group, and the list of significant users.
-        $this->currentgroup = $this->get_current_group($cm, $course, $this->context);
         if ($this->currentgroup == self::NO_GROUPS_ALLOWED) {
             $this->userssql = [];
         } else {
@@ -518,6 +523,42 @@ class quiz_grading_report extends report_base {
     }
 
     /**
+     * Validate submitted question usage ids against the same scope as the grading report.
+     *
+     * The incoming qubaids are hidden form fields, not an authority to grade arbitrary
+     * attempts. Restrict the native question-state lookup to only those submitted ids
+     * to avoid scanning every student attempt in a large course.
+     *
+     * @param int[] $submittedids Question usage ids from the current grading form.
+     * @param int $slot Question slot in the quiz.
+     * @param int $questionid Actual question id (including random question variants).
+     * @param string $grade One of the report's native state filters.
+     * @return bool Whether all submitted ids are eligible in this context.
+     */
+    protected function submitted_usages_are_authorised(array $submittedids, int $slot,
+            int $questionid, string $grade): bool {
+        global $DB;
+
+        if (empty($submittedids) || count(array_unique($submittedids)) !== count($submittedids)) {
+            return false;
+        }
+
+        // Start with the same quiz, completed-attempt and activity-group conditions as the report.
+        $condition = $this->get_qubaids_condition();
+        list($insql, $inparams) = $DB->get_in_or_equal($submittedids, SQL_PARAMS_NAMED, 'gradeusage');
+        $condition->where .= " AND quiza.uniqueid $insql";
+        $condition->params = array_merge($condition->params, $inparams);
+
+        $mapper = new question_engine_data_mapper();
+        list($allowedids) = $mapper->load_questions_usages_where_question_in_state(
+                $condition, $grade, $slot, $questionid);
+
+        sort($submittedids, SORT_NUMERIC);
+        sort($allowedids, SORT_NUMERIC);
+        return $submittedids === $allowedids;
+    }
+
+    /**
      * When saving a grading page, are all the submitted marks valid?
      *
      * @return bool true if all valid, else false.
@@ -529,6 +570,20 @@ class quiz_grading_report extends report_base {
             return false;
         }
         $qubaids = clean_param_array(explode(',', $qubaids), PARAM_INT);
+
+        // Verify that every usage belongs to the current question, grading state,
+        // quiz and authorised group before calling any action-processing API.
+        $slot = optional_param('slot', 0, PARAM_INT);
+        $questionid = optional_param('qid', 0, PARAM_INT);
+        $grade = optional_param('grade', '', PARAM_ALPHA);
+        $slots = optional_param('slots', '', PARAM_SEQUENCE);
+        if ($slot <= 0 || $questionid <= 0 ||
+                !in_array($grade, ['all', 'needsgrading', 'autograded', 'manuallygraded'], true) ||
+                $slots !== (string) $slot ||
+                empty($this->questions[$slot]) ||
+                !$this->submitted_usages_are_authorised($qubaids, $slot, $questionid, $grade)) {
+            throw new moodle_exception('invalidattemptid', 'quiz_grading');
+        }
 
         $slots = optional_param('slots', '', PARAM_SEQUENCE);
         if (!$slots) {
