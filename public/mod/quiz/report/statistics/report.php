@@ -648,8 +648,10 @@ class quiz_statistics_report extends report_base {
 
         // The underlying statistics may be absent for an empty or stale cache.
         if (!$xdata) {
-            echo html_writer::tag('p', get_string('reportresultna', 'quiz'),
-                    ['class' => 'mod-quiz-results-explanation']);
+            if (!$this->table->is_downloading()) {
+                echo html_writer::tag('p', get_string('reportresultna', 'quiz'),
+                        ['class' => 'mod-quiz-results-explanation']);
+            }
             return;
         }
 
@@ -679,12 +681,16 @@ class quiz_statistics_report extends report_base {
         $output = $PAGE->get_renderer('mod_quiz');
         $graphname = get_string('statisticsreportgraph', 'quiz_statistics');
         echo $output->chart($chart, $graphname);
-        $series = [];
-        foreach ($fieldstoplot as $key => $label) {
-            $series[] = ['label' => $label, 'values' => array_values($ydata[$key])];
+        // The existing HTML export contains only the native chart. UI-only
+        // disclosures must never modify the report's exported documents.
+        if (!$this->table->is_downloading()) {
+            $series = [];
+            foreach ($fieldstoplot as $key => $label) {
+                $series[] = ['label' => $label, 'values' => array_values($ydata[$key])];
+            }
+            echo \mod_quiz\output\report_insights::series_chart_data(
+                    array_values($xdata), $series, $graphname);
         }
-        echo \mod_quiz\output\report_insights::series_chart_data(
-                array_values($xdata), $series, $graphname);
     }
 
     /**
