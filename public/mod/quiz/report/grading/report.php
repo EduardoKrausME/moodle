@@ -586,7 +586,9 @@ class quiz_grading_report extends report_base {
                 $slots !== (string) $slot ||
                 empty($this->questions[$slot]) ||
                 !$this->submitted_usages_are_authorised($qubaids, $slot, $questionid, $grade)) {
-            throw new moodle_exception('invalidattemptid', 'quiz_grading');
+            // This also covers answers regraded by someone else since the page was loaded.
+            // Do not process any part of the batch or disclose which usage id failed.
+            throw new moodle_exception('gradinginvalidbatch', 'quiz_grading');
         }
 
         if (!$slots) {
