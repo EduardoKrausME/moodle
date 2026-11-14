@@ -95,3 +95,38 @@ Feature: Basic use of the Statistics report
     And "3" row "Intended weight" column of "questionstatistics" table should contain "33.33%"
     And "3" row "Effective weight" column of "questionstatistics" table should contain "34.55%"
     And "3" row "Discrimination index" column of "questionstatistics" table should contain "86.60%"
+
+  @javascript
+  Scenario: Statistics report shows cached aggregate metrics and accessible question data
+    Given user "student1" has attempted "Quiz 1" with responses:
+      | slot | response |
+      | 1    | True     |
+      | 2    | False    |
+      | 3    | False    |
+    And user "student2" has attempted "Quiz 1" with responses:
+      | slot | response |
+      | 1    | True     |
+      | 2    | True     |
+      | 3    | True     |
+    And user "student3" has attempted "Quiz 1" with responses:
+      | slot | response |
+      | 1    | False    |
+      | 2    | False    |
+      | 3    | False    |
+    When I am on the "Quiz 1" "mod_quiz > Statistics report" page logged in as teacher1
+    And I press "Show report"
+    Then "[data-region='quiz-results-scope']" "css_element" should exist
+    And "[data-region='quiz-results-summary']" "css_element" should exist
+    And I should see "Completed graded attempts in this analysis"
+    And I should see "Median grade"
+    And I should see "These figures use the selected statistics calculation"
+    And "[data-region='quiz-results-table-scroll']" "css_element" should exist
+    And "[data-region='quiz-results-chartdata']" "css_element" should exist
+    And "1" row "Question name" column of "questionstatistics" table should contain "Question A"
+
+  @javascript
+  Scenario: Statistics report shows unavailable aggregate metrics instead of invented zeros
+    When I am on the "Quiz 1" "mod_quiz > Statistics report" page logged in as teacher1
+    Then "[data-region='quiz-results-summary']" "css_element" should exist
+    And I should see "Not available" in "[data-region='quiz-results-summary']" "css_element"
+    And "[data-region='quiz-results-chartdata']" "css_element" should not exist

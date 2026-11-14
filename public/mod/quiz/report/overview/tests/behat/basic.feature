@@ -200,3 +200,19 @@ Feature: Basic use of the Grades report
       | First name  |
       | S1 Student1 |
       | S2 Student2 |
+
+  @javascript
+  Scenario: Grade report shows contextual scope, accessible charts and the unchanged attempts table
+    When I am on the "Quiz 1" "quiz activity" page logged in as teacher1
+    And I navigate to "Results" in current page administration
+    Then "[data-region='quiz-results-scope']" "css_element" should exist
+    And "[data-region='quiz-results-summary']" "css_element" should exist
+    And "[data-region='quiz-results-table-scroll'][role='region'][tabindex='0']" "css_element" should exist
+    And "[data-region='quiz-results-chartdata']" "css_element" should exist
+    And I should see "View chart values as a table"
+    And "S1 Student1" "text" should exist
+    And I click on "All participants" in the "Search groups" search combo box
+    And I wait until "English" "option_role" exists
+    And I click on "English" in the "Search groups" search combo box
+    And I should see "English" in "[data-region='quiz-results-scope']" "css_element"
+    And "[data-region='quiz-results-chartdata']" "css_element" should exist

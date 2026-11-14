@@ -175,3 +175,22 @@ Feature: Basic use of the Responses report
     And the following should exist in the "responses" table:
       | First name  |
       | Student Two |
+
+  @javascript
+  Scenario: Response report explains native question columns without losing filtered responses
+    Given user "student1" has started an attempt at quiz "Quiz 1"
+    And user "student1" has checked answers in their attempt at quiz "Quiz 1":
+      | slot | response |
+      | 1    | 3.14     |
+    And user "student1" has finished an attempt at quiz "Quiz 1"
+    When I am on the "Quiz 1" "mod_quiz > Responses report" page logged in as teacher
+    Then "[data-region='quiz-results-scope']" "css_element" should exist
+    And "[data-region='quiz-results-summary']" "css_element" should exist
+    And "[data-region='quiz-results-table-scroll'][tabindex='0']" "css_element" should exist
+    And I should see "Response content" in "[data-region='quiz-results-scope']" "css_element"
+    And I should see "Correct answer column" in "[data-region='quiz-results-scope']" "css_element"
+    And "Student One" "text" should exist
+    And I set the field "Attempts from" to "enrolled users who have, or do not have, a quiz attempt"
+    And I press "Show report"
+    And I should see "Student Two" in the "responses" "table"
+    And "[data-region='quiz-results-table-scroll']" "css_element" should exist
