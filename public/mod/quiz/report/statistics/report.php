@@ -636,11 +636,21 @@ class quiz_statistics_report extends report_base {
             foreach ($fieldstoplot as $fieldtoplot => $notused) {
                 $value = $questionstatistic->$fieldtoplot;
                 if (is_null($value)) {
-                    $value = 0;
+                    // Missing statistics are not zero. Chart.js can display a gap,
+                    // while the accessible data table labels this as unavailable.
+                    $ydata[$fieldtoplot][$number] = null;
+                    continue;
                 }
                 $value *= $fieldstoplotfactor[$fieldtoplot];
                 $ydata[$fieldtoplot][$number] = number_format($value, 2);
             }
+        }
+
+        // The underlying statistics may be absent for an empty or stale cache.
+        if (!$xdata) {
+            echo html_writer::tag('p', get_string('reportresultna', 'quiz'),
+                    ['class' => 'mod-quiz-results-explanation']);
+            return;
         }
 
         // Create the chart.

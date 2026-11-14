@@ -125,8 +125,8 @@ Feature: Basic use of the Statistics report
     And "1" row "Question name" column of "questionstatistics" table should contain "Question A"
 
   @javascript
-  Scenario: Statistics report shows unavailable aggregate metrics instead of invented zeros
+  Scenario: Statistics report shows a zero attempt count without inventing chart data
     When I am on the "Quiz 1" "mod_quiz > Statistics report" page logged in as teacher1
     Then "[data-region='quiz-results-summary']" "css_element" should exist
-    And I should see "Not available" in "[data-region='quiz-results-summary']" "css_element"
+    And I should see "Completed graded attempts in this analysis"
     And "[data-region='quiz-results-chartdata']" "css_element" should not exist
