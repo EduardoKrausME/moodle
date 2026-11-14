@@ -1,0 +1,61 @@
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+
+/**
+ * Explain horizontal overflow in the native quiz reports without changing data.
+ *
+ * @module mod_quiz/report_insights
+ */
+const SELECTOR = '[data-region="quiz-results-table-scroll"]';
+const HINT = '[data-region="quiz-results-scroll-hint"]';
+
+/**
+ * Show an explanatory hint only when a report table is wider than its viewport.
+ *
+ * @param {HTMLElement} container Native table region.
+ * @returns {boolean} True when content overflows.
+ */
+export const updateOverflow = container => {
+    const overflowing = container.scrollWidth > container.clientWidth + 1;
+    const hint = container.querySelector(HINT);
+    if (hint) {
+        const value = overflowing ? container.dataset.overflowHint || '' : '';
+        if (hint.textContent !== value) {
+            hint.textContent = value;
+        }
+    }
+    return overflowing;
+};
+
+/**
+ * Initialise progressive enhancement after the normal HTML table is rendered.
+ */
+export const init = () => {
+    const tables = document.querySelectorAll(SELECTOR);
+    tables.forEach(container => {
+        if (container.dataset.overflowInitialised === '1') {
+            return;
+        }
+        container.dataset.overflowInitialised = '1';
+        updateOverflow(container);
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(() => updateOverflow(container));
+            observer.observe(container);
+            const table = container.querySelector('table');
+            if (table) {
+                observer.observe(table);
+            }
+        } else {
+            window.addEventListener('resize', () => updateOverflow(container));
+        }
+    });
+};
