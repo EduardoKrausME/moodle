@@ -1,4 +1,4 @@
-@mod @mod_assign @assign_ux_15 @assign_ux_15_2
+@mod @mod_assign @assign_ux_15 @assign_ux_15_1
 Feature: Group submissions show the current team and its confirmation progress
   In order to understand the status of our shared work
   As a learner

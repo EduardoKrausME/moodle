@@ -1,4 +1,4 @@
-@mod @mod_assign @assign_ux_15 @assign_ux_15_3
+@mod @mod_assign @assign_ux_15 @assign_ux_15_2
 Feature: Teachers understand and remove native assignment grading filters without losing other criteria
   In order to find submissions without unexpectedly changing my view
   As a teacher

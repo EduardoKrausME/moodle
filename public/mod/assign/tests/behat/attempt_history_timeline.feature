@@ -1,4 +1,4 @@
-@mod @mod_assign @assign_ux_15 @assign_ux_15_2
+@mod @mod_assign @assign_ux_15 @assign_ux_15_1
 Feature: Students can review their assignment attempts in a chronological timeline
   In order to understand which attempt is active and consult earlier work
   As an authorised learner

@@ -55,7 +55,7 @@ jobs:
           amd = set()
           for item in items:
               n = item['number']
-              shard = (n - 1) // 5 + 1
+              shard = 1 if n <= 7 else 2 if n <= 11 else 3
               assert item['shard'] == shard and item['phpunit'] and item['behat'], n
               for name in item['phpunit']:
                   p = Path(name)

@@ -64,7 +64,7 @@
     {
       "number": 6,
       "title": "Grupos",
-      "shard": 2,
+      "shard": 1,
       "phpunit": [
         "public/mod/assign/tests/local/group_submission_overview_test.php"
       ],
@@ -76,7 +76,7 @@
     {
       "number": 7,
       "title": "Tentativas",
-      "shard": 2,
+      "shard": 1,
       "phpunit": [
         "public/mod/assign/tests/local/attempt_history_overview_test.php"
       ],
@@ -124,7 +124,7 @@
     {
       "number": 11,
       "title": "Filtros",
-      "shard": 3,
+      "shard": 2,
       "phpunit": [
         "public/mod/assign/tests/local/grading_filter_state_test.php"
       ],
