@@ -197,65 +197,71 @@ class quiz_grading_renderer extends plugin_renderer_base {
     /**
      * Render grade question content.
      *
-     * @param question_usage_by_activity $questionusage The question usage that need to grade.
-     * @param int $slot the number used to identify this question within this usage.
-     * @param question_display_options $displayoptions the display options to use.
-     * @param int $questionnumber the number of the question to check.
-     * @param string $heading the question heading text.
-     * @param int $batchnumber Position of this response within the current batch.
-     * @param int $batchsize Number of responses in the batch.
-     * @return string The HTML for the question display.
+     * Keep the original public method signature for third-party renderer overrides.
+     *
+     * @param question_usage_by_activity $questionusage The question usage that needs grading.
+     * @param int $slot Question slot in the usage.
+     * @param question_display_options $displayoptions Native display options.
+     * @param int $questionnumber Number of the question.
+     * @param string $heading Heading permitted by the identity capabilities.
+     * @return string Native question markup.
      */
-    public function render_grade_question($questionusage, $slot, $displayoptions, $questionnumber, $heading,
-            int $batchnumber = 0, int $batchsize = 0) {
+    public function render_grade_question($questionusage, $slot, $displayoptions, $questionnumber, $heading) {
         $output = '';
-
-        if ($batchnumber > 0) {
-            // The numbered label never exposes participant identity when identities are hidden.
-            $label = get_string('gradingbatchresponse', 'quiz_grading', $batchnumber);
-            $output .= html_writer::start_tag('section', [
-                'id' => 'mod-quiz-grading-response-' . $batchnumber,
-                'class' => 'mod-quiz-manual-grading-card',
-                'data-region' => 'manual-grading-card',
-                'role' => 'region',
-                'aria-label' => $label,
-            ]);
-            $output .= html_writer::tag('p', html_writer::tag('strong', $label),
-                    ['class' => 'mod-quiz-manual-grading-card__label']);
-        }
-
         if ($heading) {
             $output .= $this->heading($heading, 4);
         }
-
-        // Retain the native question engine markup, including grade and comment controls.
         $output .= $questionusage->render_question($slot, $displayoptions, $questionnumber);
+        return $output;
+    }
 
-        if ($batchnumber > 0) {
-            $output .= html_writer::tag('p', get_string('gradingbatchunchanged', 'quiz_grading'), [
-                'class' => 'mod-quiz-manual-grading-card__status',
-                'data-region' => 'manual-grading-card-status',
-                'data-clean-message' => get_string('gradingbatchunchanged', 'quiz_grading'),
-                'data-dirty-message' => get_string('gradingbatchunsaved', 'quiz_grading'),
-                'aria-live' => 'polite',
-            ]);
-            $navigation = [];
-            if ($batchnumber > 1) {
-                $navigation[] = html_writer::link('#mod-quiz-grading-response-' . ($batchnumber - 1),
-                        get_string('gradingbatchprevious', 'quiz_grading'));
-            }
-            if ($batchnumber < $batchsize) {
-                $navigation[] = html_writer::link('#mod-quiz-grading-response-' . ($batchnumber + 1),
-                        get_string('gradingbatchnext', 'quiz_grading'));
-            }
-            if ($navigation) {
-                $output .= html_writer::tag('nav', implode(' ', $navigation), [
-                    'class' => 'mod-quiz-manual-grading-card__navigation',
-                    'aria-label' => get_string('gradingbatchnavigation', 'quiz_grading'),
-                ]);
-            }
-            $output .= html_writer::end_tag('section');
+    /**
+     * Wrap rendered question markup in a local navigation region.
+     *
+     * Separate from render_grade_question to preserve its override contract.
+     * No student identity or attempt id is included in the additional markup.
+     *
+     * @param string $questionhtml Unmodified, already rendered native question HTML.
+     * @param int $batchnumber Response position in the current batch.
+     * @param int $batchsize Number of responses in the batch.
+     * @return string Accessible response card with native question content.
+     */
+    public function render_grading_response_card(string $questionhtml, int $batchnumber, int $batchsize): string {
+        $label = get_string('gradingbatchresponse', 'quiz_grading', $batchnumber);
+        $output = html_writer::start_tag('section', [
+            'id' => 'mod-quiz-grading-response-' . $batchnumber,
+            'class' => 'mod-quiz-manual-grading-card',
+            'data-region' => 'manual-grading-card',
+            'role' => 'region',
+            'aria-label' => $label,
+        ]);
+        $output .= html_writer::tag('p', html_writer::tag('strong', $label),
+                ['class' => 'mod-quiz-manual-grading-card__label']);
+
+        $output .= $questionhtml;
+        $output .= html_writer::tag('p', get_string('gradingbatchunchanged', 'quiz_grading'), [
+            'class' => 'mod-quiz-manual-grading-card__status',
+            'data-region' => 'manual-grading-card-status',
+            'data-clean-message' => get_string('gradingbatchunchanged', 'quiz_grading'),
+            'data-dirty-message' => get_string('gradingbatchunsaved', 'quiz_grading'),
+            'aria-live' => 'polite',
+        ]);
+        $navigation = [];
+        if ($batchnumber > 1) {
+            $navigation[] = html_writer::link('#mod-quiz-grading-response-' . ($batchnumber - 1),
+                    get_string('gradingbatchprevious', 'quiz_grading'));
         }
+        if ($batchnumber < $batchsize) {
+            $navigation[] = html_writer::link('#mod-quiz-grading-response-' . ($batchnumber + 1),
+                    get_string('gradingbatchnext', 'quiz_grading'));
+        }
+        if ($navigation) {
+            $output .= html_writer::tag('nav', implode(' ', $navigation), [
+                'class' => 'mod-quiz-manual-grading-card__navigation',
+                'aria-label' => get_string('gradingbatchnavigation', 'quiz_grading'),
+            ]);
+        }
+        $output .= html_writer::end_tag('section');
         return $output;
     }
 

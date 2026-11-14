@@ -119,7 +119,8 @@ final class quiz_grading_navigation_test extends advanced_testcase {
                 return '<div class="que"><input name="q1:1_-mark" value="1"></div>';
             }
         };
-        $html = $renderer->render_grade_question($usage, 1, new question_display_options(), 1, '', 1, 2);
+        $nativehtml = $renderer->render_grade_question($usage, 1, new question_display_options(), 1, '');
+        $html = $renderer->render_grading_response_card($nativehtml, 1, 2);
         $this->assertStringContainsString('data-region="manual-grading-card"', $html);
         $this->assertStringContainsString('aria-label="Response 1 in this batch"', $html);
         $this->assertStringContainsString('href="#mod-quiz-grading-response-2"', $html);
@@ -147,8 +148,9 @@ final class quiz_grading_navigation_test extends advanced_testcase {
                 return '<div class="que">Student answer</div>';
             }
         };
-        $html = $renderer->render_grade_question($usage, 1, new question_display_options(),
-                1, 'Attempt number 1 for authorised student', 2, 2);
+        $nativehtml = $renderer->render_grade_question($usage, 1, new question_display_options(),
+                1, 'Attempt number 1 for authorised student');
+        $html = $renderer->render_grading_response_card($nativehtml, 2, 2);
         $this->assertStringContainsString('Attempt number 1 for authorised student', $html);
         $this->assertStringContainsString('href="#mod-quiz-grading-response-1"', $html);
         $this->assertStringNotContainsString('href="#mod-quiz-grading-response-3"', $html);

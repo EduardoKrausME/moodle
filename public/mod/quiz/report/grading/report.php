@@ -489,15 +489,15 @@ class quiz_grading_report extends report_base {
             $displayoptions->history = question_display_options::HIDDEN;
             $displayoptions->manualcomment = question_display_options::EDITABLE;
 
-            $gradequestioncontent .= $this->renderer->render_grade_question(
+            $nativequestionhtml = $this->renderer->render_grade_question(
                     $quba,
                     $slot,
                     $displayoptions,
                     $this->questions[$slot]->number,
-                    $this->get_question_heading($attempt, $shownames, $showcustomfields),
-                    $batchnumber,
-                    count($qubaids)
+                    $this->get_question_heading($attempt, $shownames, $showcustomfields)
             );
+            $gradequestioncontent .= $this->renderer->render_grading_response_card(
+                    $nativequestionhtml, $batchnumber, count($qubaids));
         }
 
         $pagingbar = new stdClass();
