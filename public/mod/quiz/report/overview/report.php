@@ -100,6 +100,15 @@ class quiz_overview_report extends attempts_report {
 
             // Print the display options.
             $this->form->display();
+
+            echo \mod_quiz\output\report_insights::attempt_scope($options, $currentgroup);
+            echo \mod_quiz\output\report_insights::metrics([
+                ['label' => get_string('reportresultquestions', 'quiz'),
+                    'value' => (string) count($questions)],
+            ], get_string('reportresultoverviewtitle', 'quiz'));
+            echo html_writer::tag('p', get_string('reportresultfilternote', 'quiz'),
+                    ['class' => 'mod-quiz-results-explanation']);
+            $PAGE->requires->js_call_amd('mod_quiz/report_insights', 'init');
         }
 
         $hasstudents = $hasstudents && (!$currentgroup || $this->hasgroupstudents);
@@ -155,7 +164,14 @@ class quiz_overview_report extends attempts_report {
             $this->set_up_table_columns($table, $columns, $headers, $this->get_base_url(), $options, false);
             $table->set_attribute('class', 'generaltable generalbox grades');
 
+            if (!$table->is_downloading()) {
+                echo \mod_quiz\output\report_insights::table_start(
+                        get_string('reportresultreportsection', 'quiz'));
+            }
             $table->out($options->pagesize, false);
+            if (!$table->is_downloading()) {
+                echo \mod_quiz\output\report_insights::table_end();
+            }
 
             if ($canregrade && !$table->is_downloading()) {
                 $this->display_commit_regrade_if_required($quiz, $groupstudentsjoins, $options);
@@ -182,15 +198,20 @@ class quiz_overview_report extends attempts_report {
                     $graphname = get_string('overviewreportgraphgroup', 'quiz_overview', $groupname);
                     // Numerical range data should display in LTR even for RTL languages.
                     echo $output->chart($chart, $graphname, ['dir' => 'ltr']);
+                    echo \mod_quiz\output\report_insights::chart_data($labels, $data, $graphname);
                 }
             }
 
-            if ($DB->record_exists('quiz_grades', ['quiz' => $quiz->id])) {
+            // Do not add global breakdowns to a group-restricted report.
+            $canshowallgroups = $currentgroup === 0 ||
+                    has_capability('moodle/site:accessallgroups', $this->context);
+            if ($canshowallgroups && $DB->record_exists('quiz_grades', ['quiz' => $quiz->id])) {
                 $data = quiz_report_grade_bands($bandwidth, $bands, $quiz->id, new \core\dml\sql_join());
                 $chart = self::get_chart($labels, $data);
                 $graphname = get_string('overviewreportgraph', 'quiz_overview');
                 // Numerical range data should display in LTR even for RTL languages.
                 echo $output->chart($chart, $graphname, ['dir' => 'ltr']);
+                    echo \mod_quiz\output\report_insights::chart_data($labels, $data, $graphname);
             }
         }
 

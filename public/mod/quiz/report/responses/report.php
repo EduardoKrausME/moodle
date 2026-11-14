@@ -49,7 +49,7 @@ require_once($CFG->dirroot . '/mod/quiz/report/responses/first_or_all_responses_
 class quiz_responses_report extends attempts_report {
 
     public function display($quiz, $cm, $course) {
-        global $OUTPUT, $DB;
+        global $OUTPUT, $DB, $PAGE;
 
         list($currentgroup, $studentsjoins, $groupstudentsjoins, $allowedjoins) = $this->init(
                 'responses', 'quiz_responses_settings_form', $quiz, $cm, $course);
@@ -108,6 +108,23 @@ class quiz_responses_report extends attempts_report {
 
             // Print the display options.
             $this->form->display();
+
+            echo \mod_quiz\output\report_insights::attempt_scope($options, $currentgroup);
+            echo \mod_quiz\output\report_insights::filters([
+                ['label' => get_string('reportresultshowqtext', 'quiz'),
+                    'value' => get_string($options->showqtext ? 'reportresultenabled' : 'reportresultdisabled', 'quiz')],
+                ['label' => get_string('reportresultshowresponses', 'quiz'),
+                    'value' => get_string($options->showresponses ? 'reportresultenabled' : 'reportresultdisabled', 'quiz')],
+                ['label' => get_string('reportresultshowanswers', 'quiz'),
+                    'value' => get_string($options->showright ? 'reportresultenabled' : 'reportresultdisabled', 'quiz')],
+            ]);
+            echo \mod_quiz\output\report_insights::metrics([
+                ['label' => get_string('reportresultquestions', 'quiz'),
+                    'value' => (string) count($questions)],
+            ], get_string('reportresultresponsestitle', 'quiz'));
+            echo html_writer::tag('p', get_string('reportresultfilternote', 'quiz'),
+                    ['class' => 'mod-quiz-results-explanation']);
+            $PAGE->requires->js_call_amd('mod_quiz/report_insights', 'init');
         }
 
         $hasstudents = $hasstudents && (!$currentgroup || $this->hasgroupstudents);
@@ -173,7 +190,14 @@ class quiz_responses_report extends attempts_report {
 
             $table->collapsible(true);
 
+            if (!$table->is_downloading()) {
+                echo \mod_quiz\output\report_insights::table_start(
+                        get_string('reportresultreportsection', 'quiz'));
+            }
             $table->out($options->pagesize, false);
+            if (!$table->is_downloading()) {
+                echo \mod_quiz\output\report_insights::table_end();
+            }
         }
         return true;
     }
